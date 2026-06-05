@@ -167,6 +167,10 @@
       event.preventDefault();
       const name = els.personNameInput.value.trim();
       if (!name) return setStatus("Escribe un nombre.");
+
+      const duplicate = state.people.some((p) => p.name.toLowerCase() === name.toLowerCase());
+      if (duplicate) return setStatus("Ya existe un participante con ese nombre.");
+
       state.people.push({ id: createId("p"), name, reminder: "", isGuest: false });
       els.personNameInput.value = "";
       saveAndRender();
@@ -459,7 +463,10 @@
         return `
           <li class="list-item">
             <div class="person-info">
-              <p class="item-title">${escapeHtml(person.name)}</p>
+              <div class="person-name-container">
+                <p class="item-title">${escapeHtml(person.name)}</p>
+                <button class="text-button edit-person-btn" type="button" data-edit-person="${person.id}" title="Editar nombre">Editar</button>
+              </div>
               <div class="person-actions">
                 <button class="reminder-badge ${reminderActive}" type="button" data-reminder-person="${person.id}">
                   ${person.reminder ? "Recordatorio listo" : "Agregar recordatorio"}
@@ -485,6 +492,11 @@
     document.querySelectorAll("[data-guest-person]").forEach((button) => {
       button.addEventListener("click", () => {
         togglePersonGuest(button.dataset.guestPerson);
+      });
+    });
+    document.querySelectorAll("[data-edit-person]").forEach((button) => {
+      button.addEventListener("click", () => {
+        editPersonName(button.dataset.editPerson);
       });
     });
   }
@@ -1015,7 +1027,7 @@
       input.addEventListener("change", () => {
         const key = input.dataset.closeDelivered;
         const current = state.tableClose[key] || {};
-        state.tableClose[key] = { ...current, paidCents: toCents(input.value) };
+        state.tableClose[key] = { ...current, paidCents: Math.max(0, toCents(input.value)) };
         saveAndRender();
       });
     });
@@ -1214,6 +1226,24 @@
     }
     state.people = state.people.filter((person) => person.id !== personId);
     saveAndRender();
+  }
+
+  function editPersonName(personId) {
+    const person = state.people.find((p) => p.id === personId);
+    if (!person) return;
+    const newName = prompt("Editar nombre del participante:", person.name);
+    if (newName === null) return;
+    const trimmed = newName.trim();
+    if (!trimmed) return setStatus("El nombre no puede estar vacÃ­o.");
+
+    const duplicate = state.people.some(
+      (p) => p.id !== personId && p.name.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (duplicate) return setStatus("Ya existe un participante con ese nombre.");
+
+    person.name = trimmed;
+    saveAndRender();
+    setStatus(`Nombre cambiado a ${trimmed}.`);
   }
 
   function togglePersonGuest(personId) {
@@ -1544,8 +1574,29 @@
     textarea.remove();
   }
 
+  let toastTimeout = null;
+  function showToast(message) {
+    let toast = document.getElementById("toastNotification");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "toastNotification";
+      toast.className = "toast-notification";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 3000);
+  }
+
   function setStatus(message) {
-    els.statusLine.textContent = message;
+    if (els.statusLine) {
+      els.statusLine.textContent = message;
+    }
+    showToast(message);
   }
 
   function escapeHtml(value) {
