@@ -506,6 +506,31 @@
     // Criterio 1: Propina e Impuestos Proporcionales
     // ==========================================
 
+    function createMockElement(tagName = "div") {
+      const classList = {
+        add: () => {},
+        remove: () => {},
+        toggle: () => {},
+        contains: () => false
+      };
+      return {
+        tagName: tagName.toUpperCase(),
+        value: "",
+        textContent: "",
+        innerHTML: "",
+        disabled: false,
+        checked: false,
+        classList: classList,
+        dataset: {},
+        style: {},
+        querySelector: () => createMockElement(),
+        querySelectorAll: () => [],
+        addEventListener: () => {},
+        remove: () => {},
+        appendChild: (child) => child
+      };
+    }
+
     function setupMockAppEnvironment() {
       const internals = window._claraInternals;
       // Reiniciar estado
@@ -520,11 +545,33 @@
 
       // Mock de la UI de app.js para evitar crashes
       window.alert = () => {};
-      internals.els.ticketPaidBySelect = { value: "p_1" }; // Ana pagó
-      internals.els.ticketNameInput = { value: "Cuenta Cena" };
-      internals.els.ticketTaxFixed = { value: "0" };
-      internals.els.restaurantDialog = { close: () => {} };
-      internals.els.statusLine = { textContent: "" };
+
+      // Rellenar todos los nulos de els con elementos mockeados
+      for (const key in internals.els) {
+        if (internals.els[key] === null || internals.els[key] === undefined) {
+          internals.els[key] = createMockElement(key.toLowerCase().includes("input") || key.toLowerCase().includes("select") ? "input" : "div");
+        }
+      }
+
+      // Mocks especificos para el test de ticket
+      internals.els.ticketPaidBySelect.value = "p_1";
+      internals.els.ticketNameInput.value = "Cuenta Cena";
+      internals.els.ticketTaxFixed.value = "0";
+      internals.els.restaurantDialog.close = () => {};
+
+      // Mock de document.querySelector global
+      if (!window._originalQuerySelector) {
+        window._originalQuerySelector = document.querySelector;
+        document.querySelector = function(selector) {
+          if (selector === "input[name='ticketTipPercent']:checked") {
+            return { value: "10" };
+          }
+          if (selector === "input[name='shareMode']:checked") {
+            return { value: "easy" };
+          }
+          return window._originalQuerySelector.call(document, selector);
+        };
+      }
     }
 
     function testTipAndTaxProration() {
