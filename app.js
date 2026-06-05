@@ -253,6 +253,37 @@
     document.querySelectorAll(".nav-item").forEach((btn) => {
       btn.addEventListener("click", () => {
         const targetTab = btn.dataset.tab;
+        
+        // Auto-add typed name if leaving tab-group and people list is empty
+        if (targetTab !== "tab-group" && state.people.length === 0) {
+          const typedName = els.personNameInput ? els.personNameInput.value.trim() : "";
+          if (typedName) {
+            const duplicate = state.people.some((p) => p.name.toLowerCase() === typedName.toLowerCase());
+            if (!duplicate) {
+              state.people.push({ id: createId("p"), name: typedName, reminder: "", isGuest: false });
+              if (els.personNameInput) els.personNameInput.value = "";
+              saveAndRender();
+              setStatus(`Se agregó a "${typedName}" automáticamente.`);
+            }
+          }
+        }
+        
+        // Block switching to Gastos/Liquidacion if there are 0 participants
+        if ((targetTab === "tab-expenses" || targetTab === "tab-settlements") && state.people.length === 0) {
+          setStatus("Agrega al menos un participante en la pestaña Grupo para continuar.");
+          if (els.personNameInput) {
+            els.personNameInput.focus();
+          }
+          // Restore active state to tab-group button
+          document.querySelectorAll(".nav-item").forEach((b) => {
+            b.classList.toggle("active", b.dataset.tab === "tab-group");
+          });
+          document.querySelectorAll(".tab-content").forEach((tc) => {
+            tc.classList.toggle("hidden", tc.id !== "tab-group");
+          });
+          return;
+        }
+
         document.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         document.querySelectorAll(".tab-content").forEach((tc) => {
@@ -304,7 +335,7 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: clara-cache-v13\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Clara Error Report\nCache: clara-cache-v14\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
