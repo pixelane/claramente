@@ -122,7 +122,10 @@
     copyStateJsonBtn: document.getElementById("copyStateJsonBtn"),
     forceReloadBtn: document.getElementById("forceReloadBtn"),
     errorConsoleBox: document.getElementById("errorConsoleBox"),
-    copyErrorLogBtn: document.getElementById("copyErrorLogBtn")
+    copyErrorLogBtn: document.getElementById("copyErrorLogBtn"),
+    exportBackupBtn: document.getElementById("exportBackupBtn"),
+    importBackupBtn: document.getElementById("importBackupBtn"),
+    importBackupFile: document.getElementById("importBackupFile")
   };
 
   document.addEventListener("DOMContentLoaded", init);
@@ -302,13 +305,25 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: clara-cache-v10\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Clara Error Report\nCache: clara-cache-v11\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
         setStatus("No se pudo copiar el log de errores.");
       }
     });
+
+    if (els.exportBackupBtn) {
+      els.exportBackupBtn.addEventListener("click", exportBackup);
+    }
+    if (els.importBackupBtn) {
+      els.importBackupBtn.addEventListener("click", () => {
+        if (els.importBackupFile) els.importBackupFile.click();
+      });
+    }
+    if (els.importBackupFile) {
+      els.importBackupFile.addEventListener("change", handleImportBackupFile);
+    }
   }
 
   function loadLocalState() {
@@ -1599,6 +1614,74 @@
     showToast(message);
   }
 
+  function exportBackup() {
+    try {
+      const json = JSON.stringify(state, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const sanitizedName = state.groupName
+        ? state.groupName.trim().toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")
+        : "grupo";
+      const fileName = `grupo-clara-${sanitizedName}.clara`;
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus(`Copia guardada: ${fileName}`);
+    } catch (err) {
+      console.error(err);
+      setStatus("Error al exportar la copia del grupo.");
+    }
+  }
+
+  function handleImportBackupFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const text = e.target.result;
+        const parsed = JSON.parse(text);
+        
+        if (!parsed || (typeof parsed !== "object")) {
+          throw new Error("El contenido no es un objeto válido.");
+        }
+
+        const normalized = normalizeState(parsed);
+        
+        if (normalized.people.length === 0 && normalized.expenses.length === 0 && (!parsed.groupName)) {
+          if (!confirm("El archivo parece estar vacío o no es un formato válido de Clara. ¿Deseas importarlo de todos modos?")) {
+            event.target.value = "";
+            return;
+          }
+        } else {
+          if (!confirm("¿Estás seguro de que quieres cargar esta copia del grupo? Reemplazará todos los datos actuales en este dispositivo.")) {
+            event.target.value = "";
+            return;
+          }
+        }
+
+        state = normalized;
+        saveAndRender();
+        setStatus("Copia del grupo cargada con éxito.");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error al leer el archivo. Asegúrate de que sea una copia de Clara válida.");
+      } finally {
+        event.target.value = "";
+      }
+    };
+    reader.onerror = function() {
+      setStatus("Error al leer el archivo desde el dispositivo.");
+      event.target.value = "";
+    };
+    reader.readAsText(file);
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, "&amp;")
@@ -1627,7 +1710,9 @@
       els,
       init,
       errorLogs,
-      renderErrorConsole
+      renderErrorConsole,
+      exportBackup,
+      handleImportBackupFile
     };
   }
 })();

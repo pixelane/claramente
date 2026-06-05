@@ -101,8 +101,19 @@
               <details class="support-accordion"><summary>Diferencia entre Link fácil y Modo privado</summary><div class="accordion-content"><p><strong>Link fácil:</strong> los datos se cifran localmente y la clave viaja dentro del enlace.</p><p><strong>Modo privado:</strong> el enlace no incluye la clave. Compártela por separado.</p></div></details>
             </div>
           </section>
+          <section class="panel backup-panel" aria-labelledby="backupTitle">
+            <div class="section-header"><div><h2 id="backupTitle">Guardar o cargar copia del grupo</h2><p>Guarda una copia de seguridad en tu dispositivo para no perder los datos del grupo.</p></div></div>
+            <div class="diagnostic-box">
+              <p>Descarga un archivo con todos los participantes y gastos actuales, o sube uno guardado anteriormente para continuar.</p>
+              <div class="diagnostic-actions">
+                <button type="button" class="topbar-button" id="exportBackupBtn">Guardar copia (.clara)</button>
+                <button type="button" class="topbar-button accent-button" id="importBackupBtn">Cargar copia</button>
+                <input type="file" id="importBackupFile" accept=".clara,.json,.txt" style="display: none;">
+              </div>
+            </div>
+          </section>
           <section class="panel support-dev-panel" aria-labelledby="devTitle"><div class="section-header"><div><h2 id="devTitle">Diagnóstico y errores</h2><p>Herramientas técnicas para resolver fallos y reportar problemas.</p></div></div>
-            <div class="diagnostic-box"><p><strong>Versión de caché:</strong> <code id="cacheVersionLabel">clara-cache-v10</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualización</button></div></div>
+            <div class="diagnostic-box"><p><strong>Versión de caché:</strong> <code id="cacheVersionLabel">clara-cache-v11</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualización</button></div></div>
             <div class="error-console-panel"><h3>Consola de errores</h3><div id="errorConsoleBox" class="error-console-box no-errors">No se han detectado errores de ejecución. Todo funciona bien.</div><button type="button" class="primary-button hidden full-action compact-action" id="copyErrorLogBtn">Copiar reporte de errores</button></div>
           </section>
         </div>

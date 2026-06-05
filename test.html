@@ -383,6 +383,17 @@
             fn: testErrorCapturingLogic
           }
         ]
+      },
+      {
+        id: "backup",
+        name: "Criterio 7: Copias de seguridad (Guardar y cargar)",
+        tests: [
+          {
+            name: "Normalización de copia cargada",
+            desc: "Comprueba que al cargar y normalizar un JSON de respaldo se recupere la estructura completa de participantes y gastos.",
+            fn: testBackupRestoreNormalization
+          }
+        ]
       }
     ];
 
@@ -935,6 +946,49 @@
       
       // Limpiar después de la prueba
       internals.errorLogs.length = 0;
+    }
+
+    function testBackupRestoreNormalization() {
+      const internals = window._claraInternals;
+      
+      const rawBackup = {
+        version: 1,
+        groupName: "Cena de Navidad",
+        currency: "EUR",
+        people: [
+          { id: "p1", name: "Carlos", reminder: "Bizum 123", isGuest: false },
+          { id: "p2", name: "Sofia", paypal: "sofia@paypal", isGuest: true }
+        ],
+        expenses: [
+          {
+            id: "e1",
+            description: "Papas",
+            amountCents: 1500,
+            paidBy: "p1",
+            splitWith: ["p1", "p2"],
+            createdAt: 123456789
+          }
+        ],
+        tableClose: {}
+      };
+      
+      const normalized = internals.normalizeState(rawBackup);
+      
+      assertEquals(normalized.groupName, "Cena de Navidad", "El nombre del grupo no se normalizó correctamente");
+      assertEquals(normalized.currency, "EUR", "La moneda no se normalizó correctamente");
+      assertEquals(normalized.people.length, 2, "La cantidad de participantes no es correcta");
+      assertEquals(normalized.people[0].name, "Carlos", "El nombre de Carlos no coincide");
+      assertEquals(normalized.people[0].reminder, "Bizum 123", "El recordatorio de Carlos no coincide");
+      assertEquals(normalized.people[1].name, "Sofia", "El nombre de Sofia no coincide");
+      assertEquals(normalized.people[1].reminder, "PayPal: sofia@paypal", "La migración legacy de PayPal falló");
+      assertEquals(normalized.people[1].isGuest, true, "El estado festejado de Sofia no coincide");
+      
+      assertEquals(normalized.expenses.length, 1, "La cantidad de gastos no es correcta");
+      assertEquals(normalized.expenses[0].description, "Papas", "La descripción del gasto no coincide");
+      assertEquals(normalized.expenses[0].amountCents, 1500, "El monto del gasto en centavos no coincide");
+      assertEquals(normalized.expenses[0].paidBy, "p1", "El pagador del gasto no coincide");
+      assertEquals(normalized.expenses[0].splitWith[0], "p1", "La división del gasto no coincide");
+      assertEquals(normalized.expenses[0].splitWith[1], "p2", "La división del gasto no coincide");
     }
   </script>
 </body>
