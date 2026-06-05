@@ -28,12 +28,29 @@
 
       <div class="main-grid">
         <div id="tab-group" class="tab-content">
-          <section class="panel group-panel" aria-labelledby="groupTitle">
-            <div class="section-header"><div><h2 id="groupTitle"><span class="step-num">1</span>Grupo</h2><p>Datos guardados solo en este navegador hasta que copies un link.</p></div>
-              <label class="field compact-field"><span>Moneda</span><select id="currencyInput"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="COP">COP</option><option value="ARS">ARS</option><option value="CLP">CLP</option></select></label>
+          <details class="panel group-panel" id="groupConfigDetails" open>
+            <summary class="group-summary-header">
+              <div>
+                <h2 id="groupTitle" style="display: inline-block; margin: 0;"><span class="step-num">1</span>Grupo y configuración</h2>
+                <p style="margin: 0; font-size: 0.86rem; color: var(--muted);">Configura el nombre y la moneda del grupo.</p>
+              </div>
+            </summary>
+            <div class="group-config-content">
+              <div class="form-row" style="margin-top: 15px; margin-bottom: 0;">
+                <label class="field"><span>Nombre del grupo</span><input id="groupNameInput" type="text" autocomplete="off" placeholder="Cena, viaje, renta..."></label>
+                <label class="field"><span>Moneda</span>
+                  <select id="currencyInput">
+                    <option value="MXN">MXN</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="COP">COP</option>
+                    <option value="ARS">ARS</option>
+                    <option value="CLP">CLP</option>
+                  </select>
+                </label>
+              </div>
             </div>
-            <label class="field"><span>Nombre del grupo</span><input id="groupNameInput" type="text" autocomplete="off" placeholder="Cena, viaje, renta..."></label>
-          </section>
+          </details>
 
           <section class="panel" aria-labelledby="peopleTitle">
             <div class="section-header"><div><h2 id="peopleTitle">Participantes</h2><p>Agrega a quienes van a dividir gastos.</p></div><span class="counter" id="peopleCount">0</span></div>

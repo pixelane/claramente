@@ -144,6 +144,12 @@
     bindEvents();
     render();
     await restoreFromHash();
+
+    // Auto-collapse group config details if there is already a group name set
+    if (state.groupName) {
+      const details = document.getElementById("groupConfigDetails");
+      if (details) details.removeAttribute("open");
+    }
   }
 
   function bindEvents() {
