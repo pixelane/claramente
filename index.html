@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15803d">
+    <meta name="description" content="Divide gastos compartidos con links privados, sin backend y costo cero.">
+    <title>Clara: cuentas claras</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Clara: cuentas claras.</p>
+          <h1>Clara</h1>
+        </div>
+        <button class="ghost-button topbar-button" id="resetBtn" type="button">Limpiar</button>
+      </header>
+
+      <nav class="bottom-nav" aria-label="Secciones">
+        <button class="nav-item active" data-tab="tab-group" type="button"><span class="nav-icon">01</span><span class="nav-label">Grupo</span></button>
+        <button class="nav-item" data-tab="tab-expenses" type="button"><span class="nav-icon">02</span><span class="nav-label">Gastos</span></button>
+        <button class="nav-item" data-tab="tab-settlements" type="button"><span class="nav-icon">03</span><span class="nav-label">Liquidación</span></button>
+        <button class="nav-item" data-tab="tab-support" type="button"><span class="nav-icon">04</span><span class="nav-label">Soporte</span></button>
+      </nav>
+
+      <div class="main-grid">
+        <div id="tab-group" class="tab-content">
+          <section class="panel group-panel" aria-labelledby="groupTitle">
+            <div class="section-header"><div><h2 id="groupTitle">Grupo</h2><p>Datos guardados solo en este navegador hasta que copies un link.</p></div>
+              <label class="field compact-field"><span>Moneda</span><select id="currencyInput"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="COP">COP</option><option value="ARS">ARS</option><option value="CLP">CLP</option></select></label>
+            </div>
+            <label class="field"><span>Nombre del grupo</span><input id="groupNameInput" type="text" autocomplete="off" placeholder="Cena, viaje, renta..."></label>
+          </section>
+
+          <section class="panel" aria-labelledby="peopleTitle">
+            <div class="section-header"><div><h2 id="peopleTitle">Participantes</h2><p>Agrega a quienes van a dividir gastos.</p></div><span class="counter" id="peopleCount">0</span></div>
+            <form class="inline-form" id="personForm"><label class="sr-only" for="personNameInput">Nombre</label><input id="personNameInput" type="text" autocomplete="off" placeholder="Nombre"><button type="submit">Agregar</button></form>
+            <ul class="list" id="peopleList"></ul>
+            <div class="tab-flow-actions"><button class="primary-button next-tab-btn" data-next-tab="tab-expenses" type="button">Siguiente: agregar gastos</button></div>
+          </section>
+        </div>
+
+        <div id="tab-expenses" class="tab-content hidden">
+          <section class="panel" aria-labelledby="expenseTitle">
+            <div class="section-header"><div><h2 id="expenseTitle">Platillos y gastos</h2><p>Cada entrada se divide solo entre las personas marcadas.</p></div><span class="counter" id="expenseCount">0</span></div>
+            <button class="primary-button full-action" id="openRestaurantBtn" type="button">Modo restaurante</button>
+            <details class="single-expense"><summary>Agregar un gasto general</summary>
+              <form class="expense-form" id="expenseForm">
+                <label class="field"><span>Descripción</span><input id="expenseDescriptionInput" type="text" autocomplete="off" placeholder="Super, hotel, cena..."></label>
+                <div class="form-row"><label class="field"><span>Monto</span><input id="expenseAmountInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></label><label class="field"><span>Pagó</span><select id="expensePaidByInput"></select></label></div>
+                <fieldset class="split-box"><div class="split-header"><legend>Dividir entre</legend><button class="text-button" id="selectAllSplitBtn" type="button">Todos</button></div><div class="chips" id="splitWithList"></div></fieldset>
+                <button class="primary-button" type="submit">Agregar gasto</button>
+              </form>
+            </details>
+            <ul class="list expense-list" id="expenseList"></ul>
+            <div class="tab-flow-actions"><button class="primary-button next-tab-btn" data-next-tab="tab-settlements" type="button">Siguiente: liquidación</button></div>
+          </section>
+        </div>
+
+        <div id="tab-settlements" class="tab-content hidden">
+          <section class="panel" aria-labelledby="balanceTitle"><div class="section-header"><div><h2 id="balanceTitle">Saldos</h2><p>Pagos sugeridos para quedar tablas.</p></div></div><div class="balance-summary" id="balanceList"></div><div class="settlements" id="settlementList"></div><div class="table-close" id="tableClosePanel"></div></section>
+          <section class="panel share-panel" aria-labelledby="shareTitle">
+            <div class="section-header"><div><h2 id="shareTitle">Compartir</h2><p>Copia un link actualizado cuando cambies algo.</p></div></div>
+            <div class="mode-toggle" role="radiogroup" aria-label="Modo de privacidad"><label><input type="radio" name="shareMode" value="easy" checked><span>Link fácil</span></label><label><input type="radio" name="shareMode" value="private"><span>Modo privado</span></label></div>
+            <p class="privacy-note" id="privacyNote"></p><div class="share-actions"><button class="primary-button" id="copyLinkBtn" type="button">Copiar link</button><button id="copyMessageBtn" type="button">Copiar WhatsApp</button></div>
+            <label class="field"><span>Link generado</span><textarea id="shareLinkOutput" readonly rows="3"></textarea></label>
+            <label class="field hidden" id="privateKeyField"><span>Clave privada</span><input id="privateKeyOutput" type="text" readonly></label>
+            <button class="hidden" id="copyPrivateKeyBtn" type="button">Copiar clave</button><p class="status-line" id="statusLine" aria-live="polite"></p>
+          </section>
+        </div>
+
+        <div id="tab-support" class="tab-content hidden">
+          <section class="panel group-panel" aria-labelledby="supportTitle"><div class="section-header"><div><h2 id="supportTitle">Ayuda y soporte</h2><p>Guía rápida y herramientas locales para revisar el estado de Clara.</p></div></div>
+            <div class="accordion-group">
+              <details class="support-accordion"><summary>Cómo empezar a dividir gastos</summary><div class="accordion-content"><p>1. Ve a <strong>Grupo</strong> y registra los nombres de todos los participantes.</p><p>2. En <strong>Gastos</strong>, añade cada compra indicando quién la pagó y entre quiénes se divide.</p><p>3. En <strong>Liquidación</strong> verás los pagos sugeridos para quedar tablas.</p></div></details>
+              <details class="support-accordion"><summary>Cómo escanear un ticket de restaurante</summary><div class="accordion-content"><p>1. En <strong>Gastos</strong>, abre <strong>Modo restaurante</strong>.</p><p>2. Usa el OCR del teclado del celular para pegar el texto del ticket.</p><p>3. Asigna los artículos a cada comensal, elige propina/cargos y presiona <strong>Guardar y dividir</strong>.</p></div></details>
+              <details class="support-accordion"><summary>Cómo funciona el modo festejado</summary><div class="accordion-content"><p>Marca a una persona como <strong>Festejado</strong> desde la lista de participantes.</p><p>En el Cierre de mesa, su parte baja a <strong>$0</strong> y se reparte entre los demás comensales activos.</p></div></details>
+              <details class="support-accordion"><summary>Diferencia entre Link fácil y Modo privado</summary><div class="accordion-content"><p><strong>Link fácil:</strong> los datos se cifran localmente y la clave viaja dentro del enlace.</p><p><strong>Modo privado:</strong> el enlace no incluye la clave. Compártela por separado.</p></div></details>
+            </div>
+          </section>
+          <section class="panel support-dev-panel" aria-labelledby="devTitle"><div class="section-header"><div><h2 id="devTitle">Diagnóstico y errores</h2><p>Herramientas técnicas para resolver fallos y reportar problemas.</p></div></div>
+            <div class="diagnostic-box"><p><strong>Versión de caché:</strong> <code id="cacheVersionLabel">clara-cache-v9</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualización</button></div></div>
+            <div class="error-console-panel"><h3>Consola de errores</h3><div id="errorConsoleBox" class="error-console-box no-errors">No se han detectado errores de ejecución. Todo funciona bien.</div><button type="button" class="primary-button hidden full-action compact-action" id="copyErrorLogBtn">Copiar reporte de errores</button></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <dialog class="restaurant-dialog" id="restaurantDialog"><form method="dialog" id="restaurantForm"><div class="dialog-header"><h2>Modo restaurante</h2><button class="close-dialog-btn" id="closeRestaurantBtn" type="button" aria-label="Cerrar">&times;</button></div><p class="dialog-subtitle">Desglosa una cuenta y asigna platos de forma proporcional.</p>
+      <div class="wizard-step" id="step1"><label class="field"><span>Pegar texto del ticket</span><textarea id="ticketRawInput" rows="6" placeholder="Pega el texto escaneado aquí...&#10;Ejemplo:&#10;1 Pizza familiar 280.00&#10;2 Refrescos 60.00"></textarea><span class="field-hint" id="ocrHint">En celular puedes usar el OCR del teclado para pegar el ticket.</span></label><div class="wizard-actions"><button class="primary-button" id="parseTicketBtn" type="button">Procesar ticket</button><button class="ghost-button" id="manualTicketBtn" type="button">Crear cuenta vacía</button></div></div>
+      <div class="wizard-step hidden" id="step2"><div class="ticket-items-container"><table class="ticket-table"><thead><tr><th>Artículo</th><th class="price-column">Precio</th><th>Asignar comensales</th><th class="remove-column"></th></tr></thead><tbody id="ticketItemsBody"></tbody></table></div><button class="text-button add-ticket-item" id="addTicketItemBtn" type="button">+ Agregar otro artículo</button>
+        <div class="form-row"><fieldset class="tip-field"><legend>Propina</legend><div class="tip-options" id="ticketTipPercent"><label><input type="radio" name="ticketTipPercent" value="0"><span>Sin propina</span></label><label><input type="radio" name="ticketTipPercent" value="5"><span>5%</span></label><label><input type="radio" name="ticketTipPercent" value="10" checked><span>10%</span></label><label><input type="radio" name="ticketTipPercent" value="15"><span>15%</span></label></div></fieldset><label class="field"><span>Cargos adicionales</span><input id="ticketTaxFixed" type="number" min="0" step="0.01" value="0.00" placeholder="0.00"></label></div>
+        <div class="form-row"><label class="field"><span>¿Quién pagó la cuenta?</span><select id="ticketPaidBySelect"></select></label><label class="field"><span>Nombre de la cuenta</span><input id="ticketNameInput" type="text" value="Restaurante" placeholder="Cena, almuerzo..."></label></div>
+        <div class="ticket-summary-box"><div class="summary-line"><span>Subtotal artículos:</span><span id="ticketSubtotalLabel">$0.00</span></div><div class="summary-line"><span>Total calculado:</span><span id="ticketTotalLabel">$0.00</span></div></div>
+        <div class="dialog-actions"><button class="ghost-button" id="backToStep1Btn" type="button">Volver</button><button class="primary-button" id="saveRestaurantBtn" type="button">Guardar y dividir</button></div></div></form></dialog>
+
+    <dialog class="reminder-dialog" id="reminderDialog"><form method="dialog" id="reminderForm"><div class="dialog-header"><h2>Recordatorio de cobro</h2><button class="close-dialog-btn" id="closeReminderBtn" type="button" aria-label="Cerrar">&times;</button></div><p class="dialog-subtitle">Guarda una nota simple para que aparezca en el mensaje de WhatsApp cuando esta persona cobre.</p><input id="reminderPersonIdInput" type="hidden"><p class="dialog-person" id="reminderPersonName"></p><label class="field"><span>Recordatorio</span><textarea id="reminderTextInput" rows="4" autocomplete="off" placeholder="Transferencia BBVA terminación 1234, efectivo, CLABE..., Bizum..."></textarea></label><div class="dialog-actions"><button class="ghost-button" type="button" id="cancelReminderBtn">Cancelar</button><button class="primary-button" type="submit">Guardar</button></div></form></dialog>
+
+    <dialog class="import-dialog" id="privateKeyDialog"><form method="dialog" id="privateKeyForm"><h2>Este link necesita clave</h2><p>Pega la clave que el host compartió aparte.</p><label class="field"><span>Clave</span><input id="privateKeyInput" type="text" autocomplete="off"></label><div class="dialog-actions"><button type="button" id="cancelPrivateKeyBtn">Cancelar</button><button class="primary-button" type="submit">Abrir</button></div></form></dialog>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

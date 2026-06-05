@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Clara - Panel de Pruebas de Calidad</title>
+  <style>
+    :root {
+      --bg-primary: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary: #2563eb;
+      --success: #10b981;
+      --success-bg: #d1fae5;
+      --success-text: #065f46;
+      --fail: #ef4444;
+      --fail-bg: #fee2e2;
+      --fail-text: #991b1b;
+      --neutral-bg: #f1f5f9;
+      --neutral-text: #334155;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      margin: 0;
+      padding: 2rem 1rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      margin: 0.25rem 0 0 0;
+      font-size: 1rem;
+    }
+
+    .btn-run {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background-color 0.2s;
+    }
+
+    .btn-run:hover {
+      background-color: #1d4ed8;
+    }
+
+    /* Summary Dashboard */
+    .summary-dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .card-value {
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .card-value.passed { color: var(--success); }
+    .card-value.failed { color: var(--fail); }
+
+    /* Test Groups */
+    .test-group {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    .group-header {
+      background-color: #f8fafc;
+      padding: 1.25rem 1.5rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .group-badge {
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      background-color: var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .test-case {
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .test-case:last-child {
+      border-bottom: none;
+    }
+
+    .test-case-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .test-case-info {
+      flex: 1;
+    }
+
+    .test-case-name {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin: 0;
+      color: var(--text-main);
+    }
+
+    .test-case-desc {
+      margin: 0.25rem 0 0 0;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .status-badge.passed {
+      background-color: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .status-badge.failed {
+      background-color: var(--fail-bg);
+      color: var(--fail-text);
+    }
+
+    .status-badge.pending {
+      background-color: var(--neutral-bg);
+      color: var(--neutral-text);
+    }
+
+    .error-console {
+      margin-top: 0.75rem;
+      background-color: #fafafa;
+      border: 1px solid #fee2e2;
+      border-left: 4px solid var(--fail);
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.825rem;
+      color: #7f1d1d;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+
+    /* Bug Warning Banner */
+    .banner {
+      background-color: #fffbeb;
+      border: 1px solid #fef3c7;
+      border-left: 4px solid #d97706;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .banner-title {
+      font-weight: 700;
+      color: #92400e;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .banner-body {
+      font-size: 0.9rem;
+      color: #78350f;
+    }
+  </style>
+  <script>
+    // Interceptar DOMContentLoaded para evitar que app.js ejecute init() automáticamente.
+    // Esto previene errores debidos a la falta de elementos HTML reales de la app principal.
+    const originalAddEventListener = document.addEventListener;
+    document.addEventListener = function(type, listener, options) {
+      if (type === "DOMContentLoaded") {
+        window._claraInit = listener;
+        console.log("DOMContentLoaded de app.js interceptado.");
+        return;
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  </script>
+  <!-- Cargamos la app original. Al interceptar DOMContentLoaded, se exporta _claraInternals pero no corre init() -->
+  <script src="app.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div>
+        <h1>Clara — Suite de Pruebas</h1>
+        <p class="subtitle">Verificación automática de reglas de negocio en local</p>
+      </div>
+      <button class="btn-run" onclick="runAllTests()">Ejecutar Suite</button>
+    </header>
+
+    <div id="bugReportBanner" class="banner" style="display: none;">
+      <div class="banner-title">⚠️ Reporte de Bug Encontrado (Nivel Medium)</div>
+      <div class="banner-body" id="bugReportContent"></div>
+    </div>
+
+    <!-- Summary Dashboard -->
+    <div class="summary-dashboard">
+      <div class="card">
+        <span class="card-label">Total Pruebas</span>
+        <span class="card-value" id="statTotal">0</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Aprobadas</span>
+        <span class="card-value passed" id="statPassed">0</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Fallidas</span>
+        <span class="card-value failed" id="statFailed">0</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Tiempo (ms)</span>
+        <span class="card-value" id="statTime">0</span>
+      </div>
+    </div>
+
+    <!-- Test List container -->
+    <div id="testGroupsContainer"></div>
+  </div>
+
+  <script>
+    // Configuración de Mocks y Framework de Pruebas
+    const groups = [
+      {
+        id: "tips",
+        name: "Criterio 1: Propina e Impuestos Proporcionales",
+        tests: [
+          {
+            name: "Prorrateo básico de propina",
+            desc: "Comprueba que la propina (10%) y los impuestos se apliquen de forma proporcional a los consumos individuales.",
+            fn: testTipAndTaxProration
+          },
+          {
+            name: "Propina del 0% sin impuestos",
+            desc: "Verifica que el subtotal y el total coincidan exactamente cuando la propina es 0% y no hay impuestos.",
+            fn: testZeroTipAndTax
+          }
+        ]
+      },
+      {
+        id: "settlements",
+        name: "Criterio 2: Cierre de Mesa (Liquidación)",
+        tests: [
+          {
+            name: "Cálculo de cambio con billete grande",
+            desc: "Verifica que si una persona debe $300 y entrega $500, se calcule un cambio exacto de $200.",
+            fn: testLargeBillChange
+          },
+          {
+            name: "Abono parcial (Faltante)",
+            desc: "Valida que si una persona debe $300 y entrega $100, se calcule un faltante exacto de $200.",
+            fn: testPartialPayment
+          },
+          {
+            name: "Mesa saldada",
+            desc: "Confirma que cuando todos los pagos sugeridos se cubren de manera exacta, el total faltante de la mesa sea $0.",
+            fn: testTableSettedFully
+          }
+        ]
+      },
+      {
+        id: "guests",
+        name: "Criterio 3: Festejado / Invitado",
+        tests: [
+          {
+            name: "Festejado paga $0 y deuda se redistribuye",
+            desc: "Valida que un festejado pague $0 y que su parte original se cargue equitativamente entre los pagadores activos.",
+            fn: testSingleGuestRedistribution
+          },
+          {
+            name: "Bug: Prorrateo de festejado por filas de liquidación (no por personas)",
+            desc: "Comprueba si la deuda del festejado se redistribuye incorrectamente basándose en la cantidad de filas de cobro en lugar de personas.",
+            fn: testGuestRedistributionBug
+          }
+        ]
+      },
+      {
+        id: "crypto",
+        name: "Criterio 4: Criptografía y Compresión",
+        tests: [
+          {
+            name: "Compresión y Descompresión Deflate",
+            desc: "Prueba que packJson y unpackJson mantengan la integridad del JSON usando CompressionStream.",
+            fn: testDeflateCompression
+          },
+          {
+            name: "Cifrado y Descifrado AES-GCM",
+            desc: "Prueba el cifrado de estado con contraseña y su posterior descifrado usando Web Crypto Subtle API.",
+            fn: testAesGcmCrypto
+          }
+        ]
+      },
+      {
+        id: "legacy",
+        name: "Criterio 5: Retrocompatibilidad de Datos",
+        tests: [
+          {
+            name: "Migración de PayPal, Venmo y Bizum a Recordatorio",
+            desc: "Verifica que normalizeState convierta las llaves heredadas de pago en un recordatorio unificado de cobro.",
+            fn: testLegacyMigration
+          }
+        ]
+      },
+      {
+        id: "support",
+        name: "Criterio 6: Ayuda y Consola de Errores",
+        tests: [
+          {
+            name: "Captura automática de errores de JS",
+            desc: "Verifica que los errores de JS no controlados sean correctamente atrapados y registrados en la consola local.",
+            fn: testErrorCapturingLogic
+          }
+        ]
+      }
+    ];
+
+    // Utilidades de aserción
+    function assertEquals(actual, expected, message = "") {
+      if (actual !== expected) {
+        throw new Error(`Aserción fallida: se esperaba [${expected}] pero se obtuvo [${actual}]. ${message}`);
+      }
+    }
+
+    function assert(value, message = "") {
+      if (!value) {
+        throw new Error(`Aserción fallida: expresión evaluada como falsa. ${message}`);
+      }
+    }
+
+    // Inicializar UI al cargar
+    window.addEventListener("load", () => {
+      renderTestStructure();
+      runAllTests();
+    });
+
+    function renderTestStructure() {
+      const container = document.getElementById("testGroupsContainer");
+      container.innerHTML = "";
+      
+      groups.forEach((group) => {
+        const groupEl = document.createElement("div");
+        groupEl.className = "test-group";
+        groupEl.id = `group-${group.id}`;
+        
+        let testsHtml = "";
+        group.tests.forEach((test, idx) => {
+          testsHtml += `
+            <div class="test-case" id="test-${group.id}-${idx}">
+              <div class="test-case-top">
+                <div class="test-case-info">
+                  <h3 class="test-case-name">${test.name}</h3>
+                  <p class="test-case-desc">${test.desc}</p>
+                </div>
+                <span class="status-badge pending" id="badge-${group.id}-${idx}">Pendiente</span>
+              </div>
+              <div class="error-console" id="console-${group.id}-${idx}" style="display: none;"></div>
+            </div>
+          `;
+        });
+
+        groupEl.innerHTML = `
+          <div class="group-header">
+            <span>${group.name}</span>
+            <span class="group-badge" id="group-badge-${group.id}">0 / ${group.tests.length} OK</span>
+          </div>
+          <div class="group-tests">
+            ${testsHtml}
+          </div>
+        `;
+        container.appendChild(groupEl);
+      });
+    }
+
+    async function runAllTests() {
+      const startTime = performance.now();
+      let total = 0;
+      let passed = 0;
+      let failed = 0;
+
+      // Restablecer contadores visuales
+      document.getElementById("statTotal").textContent = "0";
+      document.getElementById("statPassed").textContent = "0";
+      document.getElementById("statFailed").textContent = "0";
+      document.getElementById("statTime").textContent = "0";
+      document.getElementById("bugReportBanner").style.display = "none";
+
+      for (const group of groups) {
+        let groupPassed = 0;
+        
+        for (let idx = 0; idx < group.tests.length; idx++) {
+          const test = group.tests[idx];
+          const badge = document.getElementById(`badge-${group.id}-${idx}`);
+          const consoleEl = document.getElementById(`console-${group.id}-${idx}`);
+          
+          badge.textContent = "Ejecutando...";
+          badge.className = "status-badge pending";
+          consoleEl.style.display = "none";
+          consoleEl.textContent = "";
+
+          total++;
+          try {
+            // Ejecutar la prueba
+            await test.fn();
+            
+            // Éxito
+            badge.textContent = "Aprobado";
+            badge.className = "status-badge passed";
+            passed++;
+            groupPassed++;
+          } catch (error) {
+            // Fallo
+            badge.textContent = "Fallido";
+            badge.className = "status-badge failed";
+            consoleEl.style.display = "block";
+            consoleEl.textContent = `${error.name}: ${error.message}\n${error.stack || ""}`;
+            failed++;
+          }
+
+          // Actualizar estadísticas globales parciales
+          document.getElementById("statTotal").textContent = total;
+          document.getElementById("statPassed").textContent = passed;
+          document.getElementById("statFailed").textContent = failed;
+        }
+
+        // Actualizar badge del grupo
+        document.getElementById(`group-badge-${group.id}`).textContent = `${groupPassed} / ${group.tests.length} OK`;
+      }
+
+      const endTime = performance.now();
+      document.getElementById("statTime").textContent = Math.round(endTime - startTime);
+    }
+
+    // ==========================================
+    // Criterio 1: Propina e Impuestos Proporcionales
+    // ==========================================
+
+    function setupMockAppEnvironment() {
+      const internals = window._claraInternals;
+      // Reiniciar estado
+      internals.state.people = [
+        { id: "p_1", name: "Ana", reminder: "" },
+        { id: "p_2", name: "Luis", reminder: "" },
+        { id: "p_3", name: "Maria", reminder: "" }
+      ];
+      internals.state.expenses = [];
+      internals.state.tableClose = {};
+      internals.ticketItems.length = 0;
+
+      // Mock de la UI de app.js para evitar crashes
+      window.alert = () => {};
+      internals.els.ticketPaidBySelect = { value: "p_1" }; // Ana pagó
+      internals.els.ticketNameInput = { value: "Cuenta Cena" };
+      internals.els.ticketTaxFixed = { value: "0" };
+      internals.els.restaurantDialog = { close: () => {} };
+      internals.els.statusLine = { textContent: "" };
+    }
+
+    function testTipAndTaxProration() {
+      setupMockAppEnvironment();
+      const internals = window._claraInternals;
+
+      // Agregar items:
+      // Tacos por $100.00 asignado a Luis (p_2)
+      // Pizza por $100.00 dividido entre Ana (p_1) y Luis (p_2)
+      internals.ticketItems.push(
+        { name: "Tacos", price: 100.0, splitWith: ["p_2"] },
+        { name: "Pizza", price: 100.0, splitWith: ["p_1", "p_2"] }
+      );
+
+      // Impuestos: $20.00
+      internals.els.ticketTaxFixed.value = "20.00";
+
+      // Mock de la selección de propina (10%)
+      const originalQuerySelector = document.querySelector;
+      document.querySelector = function(selector) {
+        if (selector === "input[name='ticketTipPercent']:checked") {
+          return { value: "10" };
+        }
+        return originalQuerySelector.call(document, selector);
+      };
+
+      try {
+        // Ejecutar prorrateo y guardado
+        internals.saveRestaurantTicket();
+
+        // Subtotal = $200.00
+        // Tip (10%) = $20.00
+        // Impuestos fijos = $20.00
+        // Total = $200 * 1.1 + 20 = $240.00
+        // Multiplicador = 240 / 200 = 1.2
+        //
+        // Consumo previo a propina/tax:
+        // Luis: Tacos ($100) + 50% de Pizza ($50) = $150 (15000 centavos)
+        // Ana: 50% de Pizza ($50) = $50 (5000 centavos)
+        //
+        // Con multiplicador:
+        // Luis debe pagar a Ana: $150 * 1.2 = $180.00 (18000 centavos)
+        // Ana debe pagar: $50 * 1.2 = $60.00 (6000 centavos) [Como Ana pagó la cuenta entera, no se le añade gasto de deuda externa]
+        
+        assertEquals(internals.state.expenses.length, 1, "Debería haber exactamente 1 gasto externo guardado para Luis");
+        const exp = internals.state.expenses[0];
+        assertEquals(exp.paidBy, "p_1", "El gasto debe haber sido pagado por Ana");
+        assertEquals(exp.splitWith[0], "p_2", "El gasto debe cargarse a Luis");
+        assertEquals(exp.amountCents, 18000, "Luis debe deber exactamente 18000 centavos ($180.00)");
+      } finally {
+        document.querySelector = originalQuerySelector;
+      }
+    }
+
+    function testZeroTipAndTax() {
+      setupMockAppEnvironment();
+      const internals = window._claraInternals;
+
+      internals.ticketItems.push(
+        { name: "Agua", price: 50.0, splitWith: ["p_2"] }
+      );
+      internals.els.ticketTaxFixed.value = "0.00";
+
+      const originalQuerySelector = document.querySelector;
+      document.querySelector = function(selector) {
+        if (selector === "input[name='ticketTipPercent']:checked") {
+          return { value: "0" };
+        }
+        return originalQuerySelector.call(document, selector);
+      };
+
+      try {
+        internals.saveRestaurantTicket();
+        // Luis debe exactamente $50.00 (5000 centavos) a Ana
+        assertEquals(internals.state.expenses.length, 1);
+        assertEquals(internals.state.expenses[0].amountCents, 5000);
+      } finally {
+        document.querySelector = originalQuerySelector;
+      }
+    }
+
+
+    // ==========================================
+    // Criterio 2: Cierre de Mesa (Liquidación)
+    // ==========================================
+
+    function testLargeBillChange() {
+      const internals = window._claraInternals;
+      // Simulamos un asentamiento: Luis debe $300 a Ana
+      const settlements = [
+        { from: "p_2", to: "p_1", amountCents: 30000 }
+      ];
+      
+      // Indicamos que Luis entregó $500 (50000 centavos)
+      const key = "settlement:p_2:p_1";
+      internals.state.tableClose = {
+        [key]: { paidCents: 50000, isGuest: false }
+      };
+
+      const rows = internals.buildTableCloseRows(settlements);
+      assertEquals(rows.length, 1);
+      assertEquals(rows[0].amountCents, 30000, "Deuda esperada es 30000 centavos");
+      assertEquals(rows[0].paidCents, 50000, "Pagado esperado es 50000 centavos");
+      assertEquals(rows[0].missingCents, 0, "No debe faltar nada");
+      assertEquals(rows[0].changeCents, 20000, "El cambio debe ser exactamente de 20000 centavos ($200.00)");
+    }
+
+    function testPartialPayment() {
+      const internals = window._claraInternals;
+      const settlements = [
+        { from: "p_2", to: "p_1", amountCents: 30000 }
+      ];
+      
+      // Luis entregó sólo $100
+      const key = "settlement:p_2:p_1";
+      internals.state.tableClose = {
+        [key]: { paidCents: 10000, isGuest: false }
+      };
+
+      const rows = internals.buildTableCloseRows(settlements);
+      assertEquals(rows.length, 1);
+      assertEquals(rows[0].missingCents, 20000, "Debe faltar exactamente $200.00 (20000 centavos)");
+      assertEquals(rows[0].changeCents, 0, "El cambio debe ser $0.00");
+    }
+
+    function testTableSettedFully() {
+      const internals = window._claraInternals;
+      const settlements = [
+        { from: "p_2", to: "p_1", amountCents: 30000 },
+        { from: "p_3", to: "p_1", amountCents: 15000 }
+      ];
+      
+      // Ambos pagan exacto
+      internals.state.tableClose = {
+        "settlement:p_2:p_1": { paidCents: 30000, isGuest: false },
+        "settlement:p_3:p_1": { paidCents: 15000, isGuest: false }
+      };
+
+      const rows = internals.buildTableCloseRows(settlements);
+      const totalMissing = rows.reduce((total, row) => total + row.missingCents, 0);
+      assertEquals(totalMissing, 0, "La mesa debe estar saldada (falta por juntar = $0.00)");
+    }
+
+
+    // ==========================================
+    // Criterio 3: Festejado / Invitado
+    // ==========================================
+
+    function testSingleGuestRedistribution() {
+      const internals = window._claraInternals;
+      // Simulamos que Maria y Luis deben dinero a Ana:
+      // Luis (p_2) debe $200 a Ana
+      // Maria (p_3) debe $100 a Ana
+      const settlements = [
+        { from: "p_2", to: "p_1", amountCents: 20000 },
+        { from: "p_3", to: "p_1", amountCents: 10000 }
+      ];
+
+      // Marcamos a Maria (p_3) como Festejada en el listado de participantes
+      internals.state.people = [
+        { id: "p_1", name: "Ana", reminder: "", isGuest: false },
+        { id: "p_2", name: "Luis", reminder: "", isGuest: false },
+        { id: "p_3", name: "Maria", reminder: "", isGuest: true }
+      ];
+      internals.state.tableClose = {};
+
+      const rows = internals.buildTableCloseRows(settlements);
+      
+      // Buscamos las filas en el cierre de mesa
+      const luisRow = rows.find(r => r.from === "p_2");
+      const mariaRow = rows.find(r => r.from === "p_3");
+
+      assert(luisRow !== undefined);
+      assert(mariaRow !== undefined);
+
+      // Maria no debe pagar nada
+      assertEquals(mariaRow.amountCents, 0, "La deuda de Maria (festejada) debe ser 0");
+      assertEquals(mariaRow.paidCents, 0);
+
+      // La deuda original de Maria ($100) se reparte entre los pagadores no-invitados de la mesa (Luis en este caso).
+      // Por ende, la deuda final de Luis debe ser $200 (original) + $100 (absorbidos) = $300 (30000 centavos)
+      assertEquals(luisRow.amountCents, 30000, "Luis debe absorber los $100 de Maria sumando $300");
+    }
+
+    /**
+     * Este test expone el BUG lógico en `buildTableCloseRows`.
+     * Si Luis tiene dos deudas individuales porque le debe a dos personas distintas:
+     * - Luis (p_2) debe $100 a Ana (p_1)
+     * - Luis (p_2) debe $100 a Carlos (p_4)
+     * Y Bob (p_5) debe $100 a Ana (p_1)
+     * Y Maria (p_3, festejada) debe $100 a Ana (p_1)
+     * 
+     * Dado que hay dos personas pagando de forma efectiva (Luis y Bob), cada uno debería absorber
+     * la mitad de la cuenta de la festejada Maria ($100 / 2 = $50 para cada uno).
+     * Por lo tanto:
+     * - Luis debería absorber $50 en total.
+     * - Bob debería absorber $50 en total.
+     * 
+     * Pero debido a que el código divide la deuda de la festejada sobre las FILAS de liquidación activas
+     * (3 filas en total: Luis->Ana, Luis->Carlos, Bob->Ana), y Luis tiene 2 de estas filas,
+     * Luis termina absorbiendo 2/3 ($66.67) y Bob solo 1/3 ($33.33).
+     */
+    function testGuestRedistributionBug() {
+      const internals = window._claraInternals;
+
+      // Simulamos las deudas
+      const settlements = [
+        { from: "p_2", to: "p_1", amountCents: 10000 }, // Luis a Ana
+        { from: "p_2", to: "p_4", amountCents: 10000 }, // Luis a Carlos
+        { from: "p_5", to: "p_1", amountCents: 10000 }, // Bob a Ana
+        { from: "p_3", to: "p_1", amountCents: 10000 }  // Maria (festejada) a Ana
+      ];
+
+      // Marcamos a Maria (festejada) en el listado de participantes
+      internals.state.people = [
+        { id: "p_1", name: "Ana", reminder: "", isGuest: false },
+        { id: "p_2", name: "Luis", reminder: "", isGuest: false },
+        { id: "p_3", name: "Maria", reminder: "", isGuest: true },
+        { id: "p_4", name: "Carlos", reminder: "", isGuest: false },
+        { id: "p_5", name: "Bob", reminder: "", isGuest: false }
+      ];
+      internals.state.tableClose = {};
+
+      const rows = internals.buildTableCloseRows(settlements);
+
+      const luisRow1 = rows.find(r => r.from === "p_2" && r.to === "p_1");
+      const luisRow2 = rows.find(r => r.from === "p_2" && r.to === "p_4");
+      const bobRow = rows.find(r => r.from === "p_5" && r.to === "p_1");
+
+      const luisTotalAbsorbed = luisRow1.absorbedCents + luisRow2.absorbedCents;
+      const bobTotalAbsorbed = bobRow.absorbedCents;
+
+      // Imprimimos la advertencia si no coinciden
+      if (luisTotalAbsorbed !== bobTotalAbsorbed) {
+        const text = `Se detectó distribución desigual de la deuda de la festejada:\n` +
+          `  - Personas pagando: Luis y Bob (deberían absorber 5000 centavos c/u).\n` +
+          `  - Luis absorbió: ${luisTotalAbsorbed} centavos ($${(luisTotalAbsorbed/100).toFixed(2)})\n` +
+          `  - Bob absorbió: ${bobTotalAbsorbed} centavos ($${(bobTotalAbsorbed/100).toFixed(2)})\n` +
+          `Esto se debe a que la división se realiza sobre la cantidad de deudas individuales (filas) y no por comensal pagador en el cierre.`;
+        
+        document.getElementById("bugReportContent").innerText = text;
+        document.getElementById("bugReportBanner").style.display = "flex";
+        
+        // Lanzamos error controlado para alertar en las pruebas del fallo lógico
+        throw new Error("El prorrateo de festejado se dividió de forma desigual entre personas debido a la cantidad de filas de deuda.");
+      }
+
+      assertEquals(luisTotalAbsorbed, 5000, "Luis debe absorber $50.00");
+      assertEquals(bobTotalAbsorbed, 5000, "Bob debe absorber $50.00");
+    }
+
+
+    // ==========================================
+    // Criterio 4: Criptografía y Compresión
+    // ==========================================
+
+    async function testDeflateCompression() {
+      const internals = window._claraInternals;
+      const originalState = {
+        version: 1,
+        groupName: "Cena Asados",
+        currency: "MXN",
+        people: [{ id: "p1", name: "Lucas", reminder: "" }],
+        expenses: [{ id: "e1", description: "Carne", amountCents: 50000, paidBy: "p1", splitWith: ["p1"], createdAt: Date.now() }],
+        tableClose: {},
+        updatedAt: Date.now()
+      };
+
+      const json = JSON.stringify(originalState);
+      const packed = await internals.packJson(json);
+      
+      // Comprobar que use el prefijo de compresión
+      assert(packed.startsWith("c1:"), "El payload empaquetado debe tener el prefijo de compresión 'c1:'");
+
+      const unpackedJson = await internals.unpackJson(packed);
+      const unpackedState = JSON.parse(unpackedJson);
+
+      assertEquals(unpackedState.groupName, originalState.groupName);
+      assertEquals(unpackedState.people.length, originalState.people.length);
+      assertEquals(unpackedState.expenses[0].amountCents, originalState.expenses[0].amountCents);
+    }
+
+    async function testAesGcmCrypto() {
+      const internals = window._claraInternals;
+      const plainText = "Este es un estado altamente secreto con deudas de billones";
+      const secretKey = "abcdefghijklmnopqrstuvwxyzabcdef"; // Clave de 32 caracteres
+      // En base64url:
+      const secretKeyBase64 = btoa(secretKey).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+
+      const encrypted = await internals.encryptText(plainText, secretKeyBase64);
+      assert(encrypted.includes("."), "El payload cifrado debe incluir el punto separador de IV y datos");
+
+      const decrypted = await internals.decryptText(encrypted, secretKeyBase64);
+      assertEquals(decrypted, plainText, "El texto descifrado debe coincidir exactamente con el original");
+    }
+
+
+    // ==========================================
+    // Criterio 5: Retrocompatibilidad de Datos
+    // ==========================================
+
+    function testLegacyMigration() {
+      const internals = window._claraInternals;
+      const legacyState = {
+        version: 1,
+        groupName: "Heredado",
+        people: [
+          {
+            id: "p_legacy_1",
+            name: "Juan",
+            paypal: "juanito_pp",
+            venmo: "juan_venmo",
+            bizum: "555123456"
+          },
+          {
+            id: "p_legacy_2",
+            name: "Diego",
+            reminder: "Ya tiene recordatorio preestablecido",
+            paypal: "ignorado_porque_ya_hay_reminder"
+          }
+        ],
+        expenses: []
+      };
+
+      const normalized = internals.normalizeState(legacyState);
+
+      assertEquals(normalized.people.length, 2);
+      
+      // Juan debe migrar paypal, venmo y bizum a un recordatorio
+      const juan = normalized.people.find(p => p.id === "p_legacy_1");
+      assert(juan !== undefined);
+      assertEquals(juan.reminder, "PayPal: juanito_pp | Venmo: juan_venmo | Bizum: 555123456", "Recordatorios de Juan concatenados incorrectamente");
+
+      // Diego debe conservar su reminder preestablecido
+      const diego = normalized.people.find(p => p.id === "p_legacy_2");
+      assert(diego !== undefined);
+      assertEquals(diego.reminder, "Ya tiene recordatorio preestablecido", "El recordatorio existente de Diego no se respetó");
+    }
+
+    function testErrorCapturingLogic() {
+      const internals = window._claraInternals;
+      
+      // Limpiar errores previos para aislar el test
+      internals.errorLogs.length = 0;
+      
+      // Simular el disparo de un evento de error unhandled
+      const mockErrorEvent = new ErrorEvent("error", {
+        message: "Error de prueba del test runner",
+        filename: "http://localhost:8000/app.js",
+        lineno: 42,
+        colno: 7,
+        error: new Error("Error de prueba del test runner")
+      });
+      
+      window.dispatchEvent(mockErrorEvent);
+      
+      // Verificar que el log tenga el error
+      assertEquals(internals.errorLogs.length, 1, "Debería haberse capturado 1 error");
+      assertEquals(internals.errorLogs[0].message, "Error de prueba del test runner");
+      assertEquals(internals.errorLogs[0].file, "app.js:42:7");
+      
+      // Limpiar después de la prueba
+      internals.errorLogs.length = 0;
+    }
+  </script>
+</body>
+</html>

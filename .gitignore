@@ -1,0 +1,14 @@
+resumen_chat.json
+codex_context.json
+server.out.log
+server.err.log
+ssh_tunnel.log
+ssh_tunnel_err.log
+server.py
+task.md
+walkthrough.md
+implementation_plan.md
+PLAN_EJECUCION_ANTIGRAVITY.md
+HANDOFF_ANTY_CLARA.md
+.DS_Store
+Thumbs.db
