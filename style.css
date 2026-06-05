@@ -1220,6 +1220,16 @@ body.force-mobile .import-dialog {
   gap: 8px;
 }
 
+@media (max-width: 480px) {
+  .diagnostic-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+body.force-mobile .diagnostic-actions {
+  grid-template-columns: 1fr;
+}
+
 .diagnostic-actions button,
 .compact-action {
   min-height: 38px;
