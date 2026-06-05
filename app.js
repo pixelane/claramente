@@ -232,6 +232,11 @@
     if (els.cancelRestaurantBtn) {
       els.cancelRestaurantBtn.addEventListener("click", () => els.restaurantDialog.close());
     }
+    // Prevent form submission on Enter inside the restaurant dialog (it closes the dialog)
+    const restaurantFormEl = document.getElementById("restaurantForm");
+    if (restaurantFormEl) {
+      restaurantFormEl.addEventListener("submit", (e) => e.preventDefault());
+    }
     els.parseTicketBtn.addEventListener("click", handleParseTicket);
     els.addTicketItemBtn.addEventListener("click", addEmptyTicketItem);
     document.querySelectorAll("input[name='ticketTipPercent']").forEach((input) => {
@@ -335,7 +340,7 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: clara-cache-v15\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Clara Error Report\nCache: clara-cache-v16\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
@@ -589,10 +594,11 @@
       }
       return;
     }
-    // Pre-populate paid by select
-    els.ticketPaidBySelect.innerHTML = state.people
-      .map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
-      .join("");
+    // Pre-populate paid by select — default to "Nadie" for pay-at-the-moment scenarios
+    els.ticketPaidBySelect.innerHTML = `<option value="" selected>Nadie (pago al momento)</option>` +
+      state.people
+        .map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+        .join("");
     
     // Detect OS dynamically for OCR hint
     const hintEl = document.getElementById("ocrHint");
@@ -786,8 +792,7 @@
 
   function saveRestaurantTicket() {
     if (!ticketItems.length) return alert("Agrega al menos un artículo.");
-    const paidBy = els.ticketPaidBySelect.value;
-    if (!paidBy) return alert("Selecciona quién pagó la cuenta.");
+    const paidBy = els.ticketPaidBySelect.value; // "" means nobody paid (pay at the moment)
     const ticketName = els.ticketNameInput.value.trim() || "Restaurante";
 
     for (let i = 0; i < ticketItems.length; i++) {
@@ -826,32 +831,62 @@
 
     const newExpenses = [];
     const restaurantId = createId("r");
-    const payerShareCents = Math.round((personShares.get(paidBy) || 0) * multiplier);
-    personShares.forEach((shareCents, pid) => {
-      if (pid === paidBy || shareCents <= 0) return;
-      
-      const finalShareCents = Math.round(shareCents * multiplier);
-      const itemsList = ticketItems
-        .filter(item => item.splitWith.includes(pid))
-        .map(item => item.name || "Artículo")
-        .join(", ");
-      const limitDesc = itemsList.length > 55 ? itemsList.slice(0, 52) + "..." : itemsList;
-      const description = `${ticketName}: ${limitDesc}`;
 
-      newExpenses.push({
-        id: createId("e"),
-        description,
-        amountCents: finalShareCents,
-        paidBy,
-        splitWith: [pid],
-        createdAt: Date.now(),
-        source: "restaurant",
-        restaurantId,
-        restaurantPaidBy: paidBy,
-        payerShareCents,
-        restaurantName: ticketName
+    if (paidBy) {
+      // Someone paid: create debts from each person to the payer
+      const payerShareCents = Math.round((personShares.get(paidBy) || 0) * multiplier);
+      personShares.forEach((shareCents, pid) => {
+        if (pid === paidBy || shareCents <= 0) return;
+        const finalShareCents = Math.round(shareCents * multiplier);
+        const itemsList = ticketItems
+          .filter(item => item.splitWith.includes(pid))
+          .map(item => item.name || "Artículo")
+          .join(", ");
+        const limitDesc = itemsList.length > 55 ? itemsList.slice(0, 52) + "..." : itemsList;
+        const description = `${ticketName}: ${limitDesc}`;
+
+        newExpenses.push({
+          id: createId("e"),
+          description,
+          amountCents: finalShareCents,
+          paidBy,
+          splitWith: [pid],
+          createdAt: Date.now(),
+          source: "restaurant",
+          restaurantId,
+          restaurantPaidBy: paidBy,
+          payerShareCents,
+          restaurantName: ticketName
+        });
       });
-    });
+    } else {
+      // Nobody paid (pay at the moment): record each person's share as info-only
+      personShares.forEach((shareCents, pid) => {
+        if (shareCents <= 0) return;
+        const finalShareCents = Math.round(shareCents * multiplier);
+        const itemsList = ticketItems
+          .filter(item => item.splitWith.includes(pid))
+          .map(item => item.name || "Artículo")
+          .join(", ");
+        const limitDesc = itemsList.length > 55 ? itemsList.slice(0, 52) + "..." : itemsList;
+        const personName = state.people.find(p => p.id === pid)?.name || "?";
+        const description = `${ticketName}: ${limitDesc}`;
+
+        newExpenses.push({
+          id: createId("e"),
+          description,
+          amountCents: finalShareCents,
+          paidBy: pid,
+          splitWith: [pid],
+          createdAt: Date.now(),
+          source: "restaurant",
+          restaurantId,
+          restaurantPaidBy: "__self__",
+          payerShareCents: finalShareCents,
+          restaurantName: ticketName
+        });
+      });
+    }
 
     if (newExpenses.length > 0) {
       state.expenses.push(...newExpenses);
