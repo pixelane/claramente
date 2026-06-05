@@ -96,9 +96,8 @@
     closeRestaurantBtn: document.getElementById("closeRestaurantBtn"),
     ticketRawInput: document.getElementById("ticketRawInput"),
     parseTicketBtn: document.getElementById("parseTicketBtn"),
-    manualTicketBtn: document.getElementById("manualTicketBtn"),
-    step1: document.getElementById("step1"),
-    step2: document.getElementById("step2"),
+    ocrAccordion: document.getElementById("ocrAccordion"),
+    cancelRestaurantBtn: document.getElementById("cancelRestaurantBtn"),
     ticketItemsBody: document.getElementById("ticketItemsBody"),
     addTicketItemBtn: document.getElementById("addTicketItemBtn"),
     ticketTipPercent: document.getElementById("ticketTipPercent"),
@@ -107,7 +106,6 @@
     ticketNameInput: document.getElementById("ticketNameInput"),
     ticketSubtotalLabel: document.getElementById("ticketSubtotalLabel"),
     ticketTotalLabel: document.getElementById("ticketTotalLabel"),
-    backToStep1Btn: document.getElementById("backToStep1Btn"),
     saveRestaurantBtn: document.getElementById("saveRestaurantBtn"),
     
     reminderDialog: document.getElementById("reminderDialog"),
@@ -231,14 +229,15 @@
     // Restaurant Mode
     els.openRestaurantBtn.addEventListener("click", openRestaurantWizard);
     els.closeRestaurantBtn.addEventListener("click", () => els.restaurantDialog.close());
+    if (els.cancelRestaurantBtn) {
+      els.cancelRestaurantBtn.addEventListener("click", () => els.restaurantDialog.close());
+    }
     els.parseTicketBtn.addEventListener("click", handleParseTicket);
-    els.manualTicketBtn.addEventListener("click", startManualTicket);
     els.addTicketItemBtn.addEventListener("click", addEmptyTicketItem);
     document.querySelectorAll("input[name='ticketTipPercent']").forEach((input) => {
       input.addEventListener("change", updateTicketTotals);
     });
     els.ticketTaxFixed.addEventListener("input", updateTicketTotals);
-    els.backToStep1Btn.addEventListener("click", goBackToStep1);
     els.saveRestaurantBtn.addEventListener("click", saveRestaurantTicket);
 
     els.closeReminderBtn.addEventListener("click", () => els.reminderDialog.close());
@@ -305,7 +304,7 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: clara-cache-v12\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Clara Error Report\nCache: clara-cache-v13\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
@@ -548,7 +547,7 @@
   // Restaurant Mode Logic
   function openRestaurantWizard() {
     if (!state.people.length) {
-      alert("âš ï¸ Para usar el Modo Restaurante, primero debes ir a la pestaÃ±a 'Grupo' y agregar al menos un participante.");
+      alert("⚠️ Para usar el Modo Restaurante, primero debes ir a la pestaña 'Grupo' y agregar al menos un participante.");
       const groupTabBtn = document.querySelector('.nav-item[data-tab="tab-group"]');
       if (groupTabBtn) {
         groupTabBtn.click();
@@ -579,10 +578,15 @@
       }
     }
 
-    // Reset steps
+    // Reset inputs
     els.ticketRawInput.value = "";
-    els.step1.classList.remove("hidden");
-    els.step2.classList.add("hidden");
+    if (els.ocrAccordion) {
+      els.ocrAccordion.removeAttribute("open");
+    }
+    
+    // Initialize list with a single blank item
+    ticketItems = [];
+    addEmptyTicketItem();
     els.restaurantDialog.showModal();
   }
 
@@ -591,34 +595,30 @@
     if (!text) return alert("Pega algún texto primero.");
     const parsed = parseTicketText(text);
     if (!parsed.length) {
-      alert("No encontramos precios claros en el texto. Se creará una lista vacía.");
-      startManualTicket();
+      alert("No encontramos precios claros en el texto. Puedes agregarlos a mano en la tabla.");
       return;
     }
-    ticketItems = parsed.map((item) => ({
+    
+    const newItems = parsed.map((item) => ({
       name: item.name,
       price: item.price,
       splitWith: state.people.map((p) => p.id) // Default split with all
     }));
-    showStep2();
-  }
-
-  function startManualTicket() {
-    ticketItems = [];
-    addEmptyTicketItem();
-    showStep2();
-  }
-
-  function showStep2() {
-    els.step1.classList.add("hidden");
-    els.step2.classList.remove("hidden");
+    
+    // If we only have one empty item, replace it
+    if (ticketItems.length === 1 && !ticketItems[0].name && ticketItems[0].price === 0) {
+      ticketItems = newItems;
+    } else {
+      ticketItems = ticketItems.concat(newItems);
+    }
+    
     renderTicketItems();
     updateTicketTotals();
-  }
-
-  function goBackToStep1() {
-    els.step2.classList.add("hidden");
-    els.step1.classList.remove("hidden");
+    
+    if (els.ocrAccordion) {
+      els.ocrAccordion.removeAttribute("open");
+    }
+    setStatus("Texto procesado y agregado a la tabla.");
   }
 
   function addEmptyTicketItem(focusField = "name") {

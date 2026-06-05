@@ -113,7 +113,7 @@
             </div>
           </section>
           <section class="panel support-dev-panel" aria-labelledby="devTitle"><div class="section-header"><div><h2 id="devTitle">Diagnóstico y errores</h2><p>Herramientas técnicas para resolver fallos y reportar problemas.</p></div></div>
-            <div class="diagnostic-box"><p><strong>Versión de caché:</strong> <code id="cacheVersionLabel">clara-cache-v12</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualización</button></div></div>
+            <div class="diagnostic-box"><p><strong>Versión de caché:</strong> <code id="cacheVersionLabel">clara-cache-v13</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualización</button></div></div>
             <div class="error-console-panel"><h3>Consola de errores</h3><div id="errorConsoleBox" class="error-console-box no-errors">No se han detectado errores de ejecución. Todo funciona bien.</div><button type="button" class="primary-button hidden full-action compact-action" id="copyErrorLogBtn">Copiar reporte de errores</button></div>
           </section>
         </div>
@@ -121,12 +121,66 @@
     </main>
 
     <dialog class="restaurant-dialog" id="restaurantDialog"><form method="dialog" id="restaurantForm"><div class="dialog-header"><h2>Modo restaurante</h2><button class="close-dialog-btn" id="closeRestaurantBtn" type="button" aria-label="Cerrar">&times;</button></div><p class="dialog-subtitle">Desglosa una cuenta y asigna platos de forma proporcional.</p>
-      <div class="wizard-step" id="step1"><label class="field"><span>Pegar texto del ticket</span><textarea id="ticketRawInput" rows="6" placeholder="Pega el texto escaneado aquí...&#10;Ejemplo:&#10;1 Pizza familiar 280.00&#10;2 Refrescos 60.00"></textarea><span class="field-hint" id="ocrHint">En celular puedes usar el OCR del teclado para pegar el ticket.</span></label><div class="wizard-actions"><button class="primary-button" id="parseTicketBtn" type="button">Procesar ticket</button><button class="ghost-button" id="manualTicketBtn" type="button">Crear cuenta vacía</button></div></div>
-      <div class="wizard-step hidden" id="step2"><div class="ticket-items-container"><table class="ticket-table"><thead><tr><th>Artículo</th><th class="price-column">Precio</th><th>Asignar comensales</th><th class="remove-column"></th></tr></thead><tbody id="ticketItemsBody"></tbody></table></div><button class="text-button add-ticket-item" id="addTicketItemBtn" type="button">+ Agregar otro artículo</button>
-        <div class="form-row"><fieldset class="tip-field"><legend>Propina</legend><div class="tip-options" id="ticketTipPercent"><label><input type="radio" name="ticketTipPercent" value="0"><span>Sin propina</span></label><label><input type="radio" name="ticketTipPercent" value="5"><span>5%</span></label><label><input type="radio" name="ticketTipPercent" value="10" checked><span>10%</span></label><label><input type="radio" name="ticketTipPercent" value="15"><span>15%</span></label></div></fieldset><label class="field"><span>Cargos adicionales</span><input id="ticketTaxFixed" type="number" min="0" step="0.01" value="0.00" placeholder="0.00"></label></div>
-        <div class="form-row"><label class="field"><span>¿Quién pagó la cuenta?</span><select id="ticketPaidBySelect"></select></label><label class="field"><span>Nombre de la cuenta</span><input id="ticketNameInput" type="text" value="Restaurante" placeholder="Cena, almuerzo..."></label></div>
-        <div class="ticket-summary-box"><div class="summary-line"><span>Subtotal artículos:</span><span id="ticketSubtotalLabel">$0.00</span></div><div class="summary-line"><span>Total calculado:</span><span id="ticketTotalLabel">$0.00</span></div></div>
-        <div class="dialog-actions"><button class="ghost-button" id="backToStep1Btn" type="button">Volver</button><button class="primary-button" id="saveRestaurantBtn" type="button">Guardar y dividir</button></div></div></form></dialog>
+      <!-- Acordeón Opcional para escanear/pegar texto -->
+      <details class="support-accordion" id="ocrAccordion" style="margin-bottom: 16px;">
+        <summary style="font-weight: 700; color: var(--primary); cursor: pointer; padding: 10px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--panel-soft); display: flex; align-items: center; gap: 8px;">
+          <span>✨</span> Escanear ticket impreso (Opcional)
+        </summary>
+        <div class="accordion-content" style="padding: 12px; border: 1px solid var(--line); border-top: none; border-radius: 0 0 var(--radius) var(--radius); margin-top: -6px; background: #fff;">
+          <label class="field" style="margin-bottom: 8px;">
+            <span>Pegar texto del ticket</span>
+            <textarea id="ticketRawInput" rows="4" placeholder="Pega el texto escaneado aquí...&#10;Ejemplo:&#10;1 Pizza familiar 280.00&#10;2 Refrescos 60.00"></textarea>
+          </label>
+          <span class="field-hint" id="ocrHint" style="display: block; margin-bottom: 10px; font-size: 0.8rem; color: var(--muted);">En celular puedes usar el OCR del teclado (icono de cámara) para pegar el ticket.</span>
+          <button class="primary-button" id="parseTicketBtn" type="button" style="width: 100%; min-height: 38px;">Procesar texto y llenar tabla</button>
+        </div>
+      </details>
+
+      <!-- Tabla y Formulario del ticket (siempre visible) -->
+      <div id="ticketTableContainer">
+        <div class="ticket-items-container">
+          <table class="ticket-table">
+            <thead>
+              <tr>
+                <th>Artículo</th>
+                <th class="price-column">Precio</th>
+                <th>Asignar comensales</th>
+                <th class="remove-column"></th>
+              </tr>
+            </thead>
+            <tbody id="ticketItemsBody"></tbody>
+          </table>
+        </div>
+        <button class="text-button add-ticket-item" id="addTicketItemBtn" type="button" style="margin-bottom: 12px;">+ Agregar otro artículo</button>
+        
+        <div class="form-row">
+          <fieldset class="tip-field">
+            <legend>Propina</legend>
+            <div class="tip-options" id="ticketTipPercent">
+              <label><input type="radio" name="ticketTipPercent" value="0"><span>Sin propina</span></label>
+              <label><input type="radio" name="ticketTipPercent" value="5"><span>5%</span></label>
+              <label><input type="radio" name="ticketTipPercent" value="10" checked><span>10%</span></label>
+              <label><input type="radio" name="ticketTipPercent" value="15"><span>15%</span></label>
+            </div>
+          </fieldset>
+          <label class="field"><span>Cargos adicionales</span><input id="ticketTaxFixed" type="number" min="0" step="0.01" value="0.00" placeholder="0.00"></label>
+        </div>
+        
+        <div class="form-row">
+          <label class="field"><span>¿Quién pagó la cuenta?</span><select id="ticketPaidBySelect"></select></label>
+          <label class="field"><span>Nombre de la cuenta</span><input id="ticketNameInput" type="text" value="Restaurante" placeholder="Cena, almuerzo..."></label>
+        </div>
+        
+        <div class="ticket-summary-box">
+          <div class="summary-line"><span>Subtotal artículos:</span><span id="ticketSubtotalLabel">$0.00</span></div>
+          <div class="summary-line"><span>Total calculado:</span><span id="ticketTotalLabel">$0.00</span></div>
+        </div>
+        
+        <div class="dialog-actions">
+          <button class="ghost-button" id="cancelRestaurantBtn" type="button">Cancelar</button>
+          <button class="primary-button" id="saveRestaurantBtn" type="button">Guardar y dividir</button>
+        </div>
+      </div></form></dialog>
 
     <dialog class="reminder-dialog" id="reminderDialog"><form method="dialog" id="reminderForm"><div class="dialog-header"><h2>Recordatorio de cobro</h2><button class="close-dialog-btn" id="closeReminderBtn" type="button" aria-label="Cerrar">&times;</button></div><p class="dialog-subtitle">Guarda una nota simple para que aparezca en el mensaje de WhatsApp cuando esta persona cobre.</p><input id="reminderPersonIdInput" type="hidden"><p class="dialog-person" id="reminderPersonName"></p><label class="field"><span>Recordatorio</span><textarea id="reminderTextInput" rows="4" autocomplete="off" placeholder="Transferencia BBVA terminación 1234, efectivo, CLABE..., Bizum..."></textarea></label><div class="dialog-actions"><button class="ghost-button" type="button" id="cancelReminderBtn">Cancelar</button><button class="primary-button" type="submit">Guardar</button></div></form></dialog>
 
