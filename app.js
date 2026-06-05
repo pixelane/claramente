@@ -484,6 +484,15 @@
   }
 
   function renderExpenseForm() {
+    const hasPeople = state.people.length > 0;
+    const warningEl = document.getElementById("restaurantWarning");
+    if (warningEl) {
+      warningEl.classList.toggle("hidden", hasPeople);
+    }
+    if (els.openRestaurantBtn) {
+      els.openRestaurantBtn.classList.toggle("disabled-looking", !hasPeople);
+    }
+
     els.expensePaidByInput.innerHTML = state.people.length
       ? state.people.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join("")
       : `<option value="">Agrega participantes</option>`;
@@ -506,7 +515,16 @@
   // Restaurant Mode Logic
   function openRestaurantWizard() {
     if (!state.people.length) {
-      return setStatus("Agrega participantes al grupo antes de usar el modo restaurante.");
+      alert("âš ï¸ Para usar el Modo Restaurante, primero debes ir a la pestaÃ±a 'Grupo' y agregar al menos un participante.");
+      const groupTabBtn = document.querySelector('.nav-item[data-tab="tab-group"]');
+      if (groupTabBtn) {
+        groupTabBtn.click();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        setTimeout(() => {
+          if (els.personNameInput) els.personNameInput.focus();
+        }, 300);
+      }
+      return;
     }
     // Pre-populate paid by select
     els.ticketPaidBySelect.innerHTML = state.people
@@ -879,7 +897,7 @@
       return;
     }
 
-    els.balanceList.innerHTML = state.people
+    let balancesHtml = state.people
       .map((person) => {
         const amount = balances.get(person.id) || 0;
         const className = amount > 0 ? "positive" : amount < 0 ? "negative" : "neutral";
@@ -892,6 +910,16 @@
         `;
       })
       .join("");
+
+    if (!state.expenses.length) {
+      balancesHtml = `
+        <div class="restaurant-warning" style="margin-top: 0; margin-bottom: 16px;">
+          <span>ðŸ’¡ <strong>Falta agregar gastos:</strong> Registra consumos en la pestaÃ±a/columna <strong>Platillos y gastos</strong> para calcular las deudas reales de la mesa.</span>
+        </div>
+      ` + balancesHtml;
+    }
+
+    els.balanceList.innerHTML = balancesHtml;
 
     if (!settlements.length) {
       els.settlementList.innerHTML = `<div class="empty">No hay pagos pendientes.</div>`;

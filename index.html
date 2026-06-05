@@ -29,7 +29,7 @@
       <div class="main-grid">
         <div id="tab-group" class="tab-content">
           <section class="panel group-panel" aria-labelledby="groupTitle">
-            <div class="section-header"><div><h2 id="groupTitle">Grupo</h2><p>Datos guardados solo en este navegador hasta que copies un link.</p></div>
+            <div class="section-header"><div><h2 id="groupTitle"><span class="step-num">1</span>Grupo</h2><p>Datos guardados solo en este navegador hasta que copies un link.</p></div>
               <label class="field compact-field"><span>Moneda</span><select id="currencyInput"><option value="MXN">MXN</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="COP">COP</option><option value="ARS">ARS</option><option value="CLP">CLP</option></select></label>
             </div>
             <label class="field"><span>Nombre del grupo</span><input id="groupNameInput" type="text" autocomplete="off" placeholder="Cena, viaje, renta..."></label>
@@ -45,8 +45,11 @@
 
         <div id="tab-expenses" class="tab-content hidden">
           <section class="panel" aria-labelledby="expenseTitle">
-            <div class="section-header"><div><h2 id="expenseTitle">Platillos y gastos</h2><p>Cada entrada se divide solo entre las personas marcadas.</p></div><span class="counter" id="expenseCount">0</span></div>
+            <div class="section-header"><div><h2 id="expenseTitle"><span class="step-num">2</span>Platillos y gastos</h2><p>Cada entrada se divide solo entre las personas marcadas.</p></div><span class="counter" id="expenseCount">0</span></div>
             <button class="primary-button full-action" id="openRestaurantBtn" type="button">Modo restaurante</button>
+            <div id="restaurantWarning" class="restaurant-warning hidden">
+              <span>⚠️ Agrega participantes en la pestaña <strong>Grupo</strong> para usar el modo restaurante.</span>
+            </div>
             <details class="single-expense"><summary>Agregar un gasto general</summary>
               <form class="expense-form" id="expenseForm">
                 <label class="field"><span>Descripción</span><input id="expenseDescriptionInput" type="text" autocomplete="off" placeholder="Super, hotel, cena..."></label>
@@ -61,7 +64,7 @@
         </div>
 
         <div id="tab-settlements" class="tab-content hidden">
-          <section class="panel" aria-labelledby="balanceTitle"><div class="section-header"><div><h2 id="balanceTitle">Saldos</h2><p>Pagos sugeridos para quedar tablas.</p></div></div><div class="balance-summary" id="balanceList"></div><div class="settlements" id="settlementList"></div><div class="table-close" id="tableClosePanel"></div></section>
+          <section class="panel" aria-labelledby="balanceTitle"><div class="section-header"><div><h2 id="balanceTitle"><span class="step-num">3</span>Saldos</h2><p>Pagos sugeridos para quedar tablas.</p></div></div><div class="balance-summary" id="balanceList"></div><div class="settlements" id="settlementList"></div><div class="table-close" id="tableClosePanel"></div></section>
           <section class="panel share-panel" aria-labelledby="shareTitle">
             <div class="section-header"><div><h2 id="shareTitle">Compartir</h2><p>Copia un link actualizado cuando cambies algo.</p></div></div>
             <div class="mode-toggle" role="radiogroup" aria-label="Modo de privacidad"><label><input type="radio" name="shareMode" value="easy" checked><span>Link fácil</span></label><label><input type="radio" name="shareMode" value="private"><span>Modo privado</span></label></div>
