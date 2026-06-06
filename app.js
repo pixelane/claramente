@@ -1081,6 +1081,15 @@
       return;
     }
 
+    const tableRows = buildTableCloseRows(settlements);
+    const hasTableContributions = tableRows.some((row) => row.amountCents > 0 || row.originalAmountCents > 0);
+    const allBalancesZero = state.people.every((person) => (balances.get(person.id) || 0) === 0);
+    if (hasTableContributions && allBalancesZero) {
+      els.balanceList.innerHTML = "";
+      els.settlementList.innerHTML = "";
+      return;
+    }
+
     let balancesHtml = state.people
       .map((person) => {
         const amount = balances.get(person.id) || 0;
@@ -1146,7 +1155,7 @@
     els.tableClosePanel.innerHTML = `
       <div class="table-close-header">
         <div>
-          <h2>Division de pagos</h2>
+          <h2>Pagos de la mesa</h2>
           <p>Marca quien ya cubrio su parte o cuanto entrego al juntar la cuenta.</p>
         </div>
         <strong class="${missingTotal > 0 || allGuests ? "negative" : "positive"}">
