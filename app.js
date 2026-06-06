@@ -60,11 +60,13 @@
 
   const els = {
     resetBtn: document.getElementById("resetBtn"),
+    supportBtn: document.getElementById("supportBtn"),
     groupNameInput: document.getElementById("groupNameInput"),
     currencyInput: document.getElementById("currencyInput"),
     personForm: document.getElementById("personForm"),
     personNameInput: document.getElementById("personNameInput"),
     peopleList: document.getElementById("peopleList"),
+    guestPanel: document.getElementById("guestPanel"),
     peopleCount: document.getElementById("peopleCount"),
     expenseForm: document.getElementById("expenseForm"),
     expenseDescriptionInput: document.getElementById("expenseDescriptionInput"),
@@ -275,7 +277,7 @@
         
         // Block switching to Gastos/Liquidacion if there are 0 participants
         if ((targetTab === "tab-expenses" || targetTab === "tab-settlements") && state.people.length === 0) {
-          setStatus("Agrega al menos un participante en la pestaña Grupo para continuar.");
+          setStatus("Agrega al menos un participante en Grupo para continuar.");
           if (els.personNameInput) {
             els.personNameInput.focus();
           }
@@ -296,6 +298,16 @@
         });
       });
     });
+
+    if (els.supportBtn) {
+      els.supportBtn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-item").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach((tc) => {
+          tc.classList.toggle("hidden", tc.id !== "tab-support");
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
 
     // Flow buttons event listeners ("Siguiente")
     document.querySelectorAll(".next-tab-btn").forEach((btn) => {
@@ -340,7 +352,7 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: clara-cache-v16\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Clara Error Report\nCache: clara-cache-v17\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
@@ -502,28 +514,18 @@
 
   function renderPeople() {
     if (!state.people.length) {
-      els.peopleList.innerHTML = `<li class="empty">Todavia no hay participantes.</li>`;
+      els.peopleList.innerHTML = `<li class="empty">Agrega los nombres de quienes estan en la mesa.</li>`;
+      renderGuestPanel();
       return;
     }
     els.peopleList.innerHTML = state.people
       .map((person) => {
         const used = isPersonUsed(person.id);
-        const reminderActive = person.reminder ? "active" : "";
-        const guestActive = person.isGuest ? "active" : "";
         return `
           <li class="list-item">
             <div class="person-info">
               <div class="person-name-container">
-                <p class="item-title">${escapeHtml(person.name)}</p>
-                <button class="text-button edit-person-btn" type="button" data-edit-person="${person.id}" title="Editar nombre">Editar</button>
-              </div>
-              <div class="person-actions">
-                <button class="reminder-badge ${reminderActive}" type="button" data-reminder-person="${person.id}">
-                  ${person.reminder ? "Recordatorio listo" : "Agregar recordatorio"}
-                </button>
-                <button class="guest-badge ${guestActive}" type="button" data-guest-person="${person.id}">
-                  ${person.isGuest ? "Festejado" : "Marcar festejado"}
-                </button>
+                <input class="inline-name-input" type="text" value="${escapeHtml(person.name)}" data-person-name="${person.id}" aria-label="Editar nombre de ${escapeHtml(person.name)}">
               </div>
             </div>
             <button class="danger-button" type="button" data-remove-person="${person.id}" ${used ? "disabled" : ""}>Quitar</button>
@@ -534,20 +536,47 @@
     document.querySelectorAll("[data-remove-person]").forEach((button) => {
       button.addEventListener("click", () => removePerson(button.dataset.removePerson));
     });
-    document.querySelectorAll("[data-reminder-person]").forEach((button) => {
-      button.addEventListener("click", () => {
-        openReminderDialog(button.dataset.reminderPerson);
+    document.querySelectorAll("[data-person-name]").forEach((input) => {
+      input.addEventListener("change", () => updatePersonName(input.dataset.personName, input.value));
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          input.blur();
+        }
+        if (event.key === "Escape") {
+          const person = state.people.find((p) => p.id === input.dataset.personName);
+          if (person) input.value = person.name;
+          input.blur();
+        }
       });
     });
+    renderGuestPanel();
+  }
+
+  function renderGuestPanel() {
+    if (!els.guestPanel) return;
+    if (!state.people.length) {
+      els.guestPanel.classList.add("hidden");
+      els.guestPanel.innerHTML = "";
+      return;
+    }
+    els.guestPanel.classList.remove("hidden");
+    els.guestPanel.innerHTML = `
+      <div class="guest-panel-header">
+        <h3>Alguien es cumpleanero o invitado?</h3>
+        <p>Si no va a pagar, marcalo para dividir su parte entre los demas.</p>
+      </div>
+      <div class="chips guest-chips">
+        ${state.people
+          .map((person) => {
+            const active = person.isGuest ? "active" : "";
+            return `<button class="guest-badge ${active}" type="button" data-guest-person="${person.id}">${escapeHtml(person.name)}</button>`;
+          })
+          .join("")}
+      </div>
+    `;
     document.querySelectorAll("[data-guest-person]").forEach((button) => {
-      button.addEventListener("click", () => {
-        togglePersonGuest(button.dataset.guestPerson);
-      });
-    });
-    document.querySelectorAll("[data-edit-person]").forEach((button) => {
-      button.addEventListener("click", () => {
-        editPersonName(button.dataset.editPerson);
-      });
+      button.addEventListener("click", () => togglePersonGuest(button.dataset.guestPerson));
     });
   }
 
@@ -583,7 +612,7 @@
   // Restaurant Mode Logic
   function openRestaurantWizard() {
     if (!state.people.length) {
-      alert("⚠️ Para usar el Modo Restaurante, primero debes ir a la pestaña 'Grupo' y agregar al menos un participante.");
+      alert("Para dividir por platillo, primero agrega al menos un participante en Grupo.");
       const groupTabBtn = document.querySelector('.nav-item[data-tab="tab-group"]');
       if (groupTabBtn) {
         groupTabBtn.click();
@@ -681,7 +710,7 @@
 
   function renderTicketItems() {
     if (!ticketItems.length) {
-      els.ticketItemsBody.innerHTML = `<tr><td colspan="4" class="empty">No hay artículos en la cuenta.</td></tr>`;
+      els.ticketItemsBody.innerHTML = `<tr><td colspan="4" class="empty">Agrega productos manualmente para dividir la cuenta.</td></tr>`;
       return;
     }
 
@@ -691,7 +720,7 @@
         return `
           <tr data-item-index="${index}">
             <td>
-              <input type="text" class="ticket-item-name" value="${escapeHtml(item.name)}" placeholder="Artículo ${index + 1}">
+              <input type="text" class="ticket-item-name" value="${escapeHtml(item.name)}" placeholder="Producto ${index + 1}">
             </td>
             <td>
               <input type="number" min="0" step="0.01" class="ticket-item-price" value="${itemPrice}" placeholder="0.00">
@@ -707,7 +736,7 @@
               </div>
             </td>
             <td>
-              <button type="button" class="danger-button text-button delete-ticket-item-btn" data-item-index="${index}" aria-label="Quitar artículo">&times;</button>
+              <button type="button" class="danger-button text-button delete-ticket-item-btn" data-item-index="${index}" aria-label="Quitar producto">&times;</button>
             </td>
           </tr>
         `;
@@ -791,14 +820,14 @@
   }
 
   function saveRestaurantTicket() {
-    if (!ticketItems.length) return alert("Agrega al menos un artículo.");
+    if (!ticketItems.length) return alert("Agrega al menos un producto.");
     const paidBy = els.ticketPaidBySelect.value; // "" means nobody paid (pay at the moment)
     const ticketName = els.ticketNameInput.value.trim() || "Restaurante";
 
     for (let i = 0; i < ticketItems.length; i++) {
       const item = ticketItems[i];
-      if (item.price <= 0) return alert(`El precio del artículo "${item.name || i+1}" debe ser mayor a 0.`);
-      if (!item.splitWith.length) return alert(`Asigna al menos a un comensal para el artículo "${item.name || i+1}".`);
+      if (item.price <= 0) return alert(`El precio del producto "${item.name || i+1}" debe ser mayor a 0.`);
+      if (!item.splitWith.length) return alert(`Asigna al menos a un comensal para el producto "${item.name || i+1}".`);
     }
 
     let subtotal = 0;
@@ -840,7 +869,7 @@
         const finalShareCents = Math.round(shareCents * multiplier);
         const itemsList = ticketItems
           .filter(item => item.splitWith.includes(pid))
-          .map(item => item.name || "Artículo")
+          .map(item => item.name || "Producto")
           .join(", ");
         const limitDesc = itemsList.length > 55 ? itemsList.slice(0, 52) + "..." : itemsList;
         const description = `${ticketName}: ${limitDesc}`;
@@ -866,7 +895,7 @@
         const finalShareCents = Math.round(shareCents * multiplier);
         const itemsList = ticketItems
           .filter(item => item.splitWith.includes(pid))
-          .map(item => item.name || "Artículo")
+          .map(item => item.name || "Producto")
           .join(", ");
         const limitDesc = itemsList.length > 55 ? itemsList.slice(0, 52) + "..." : itemsList;
         const personName = state.people.find(p => p.id === pid)?.name || "?";
@@ -893,7 +922,7 @@
       saveAndRender();
       setStatus(`Cuenta dividida. ${newExpenses.length} gasto(s) agregado(s).`);
     } else {
-      setStatus("La cuenta se dividió pero no se generaron deudas externas.");
+      setStatus("La cuenta se dividio, pero no se generaron pagos.");
     }
 
     els.restaurantDialog.close();
@@ -927,7 +956,7 @@
         name = name.replace(/\s*c\/u\s*$/, "");
         name = name.replace(/[\.\-\*_]+$/, "").trim();
 
-        if (!name) name = "Artículo";
+        if (!name) name = "Producto";
 
         items.push({ name, price });
       }
@@ -961,7 +990,7 @@
 
   function renderExpenses() {
     if (!state.expenses.length) {
-      els.expenseList.innerHTML = `<li class="empty">No hay gastos registrados.</li>`;
+      els.expenseList.innerHTML = `<li class="empty">Agrega una cuenta por platillo o un gasto compartido para calcular pagos.</li>`;
       return;
     }
     els.expenseList.innerHTML = [...state.expenses]
@@ -969,11 +998,17 @@
       .map((expense) => {
         const payer = personName(expense.paidBy);
         const splitNames = expense.splitWith.map(personName).join(", ");
+        const meta = expense.source === "restaurant" && expense.restaurantPaidBy === "__self__"
+          ? `Aporte de ${payer}`
+          : expense.source === "restaurant"
+            ? `${splitNames} paga a ${payer}`
+            : `Pago ${payer} · dividido entre ${splitNames}`;
         return `
           <li class="list-item">
-            <div>
-              <p class="item-title">${escapeHtml(expense.description)} · ${formatMoney(expense.amountCents)}</p>
-              <p class="item-meta">Pago ${escapeHtml(payer)} · dividido entre ${escapeHtml(splitNames)}</p>
+            <div class="expense-edit-row">
+              <input class="inline-expense-description" type="text" value="${escapeHtml(expense.description)}" data-expense-description="${expense.id}" aria-label="Editar descripcion">
+              <input class="inline-expense-amount" type="number" min="0" step="0.01" inputmode="decimal" value="${(expense.amountCents / 100).toFixed(2)}" data-expense-amount="${expense.id}" aria-label="Editar monto">
+              <p class="item-meta">${escapeHtml(meta)}</p>
             </div>
             <button class="danger-button" type="button" data-remove-expense="${expense.id}">Quitar</button>
           </li>
@@ -982,16 +1017,66 @@
       .join("");
     document.querySelectorAll("[data-remove-expense]").forEach((button) => {
       button.addEventListener("click", () => {
+        if (!confirm("Quitar este gasto?")) return;
         state.expenses = state.expenses.filter((expense) => expense.id !== button.dataset.removeExpense);
         saveAndRender();
       });
     });
+    document.querySelectorAll("[data-expense-description]").forEach((input) => {
+      input.addEventListener("change", () => updateExpenseDescription(input.dataset.expenseDescription, input.value));
+      input.addEventListener("keydown", handleInlineInputKeydown);
+    });
+    document.querySelectorAll("[data-expense-amount]").forEach((input) => {
+      input.addEventListener("change", () => updateExpenseAmount(input.dataset.expenseAmount, input.value));
+      input.addEventListener("keydown", handleInlineInputKeydown);
+    });
+  }
+
+  function handleInlineInputKeydown(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.currentTarget.blur();
+    }
+    if (event.key === "Escape") {
+      render();
+    }
+  }
+
+  function updateExpenseDescription(expenseId, value) {
+    const expense = state.expenses.find((item) => item.id === expenseId);
+    if (!expense) return;
+    const description = String(value || "").trim();
+    if (!description) {
+      render();
+      return setStatus("La descripcion no puede estar vacia.");
+    }
+    if (expense.description === description) return;
+    expense.description = description.slice(0, 80);
+    saveAndRender();
+    setStatus("Gasto actualizado.");
+  }
+
+  function updateExpenseAmount(expenseId, value) {
+    const expense = state.expenses.find((item) => item.id === expenseId);
+    if (!expense) return;
+    const amountCents = toCents(value);
+    if (amountCents <= 0) {
+      render();
+      return setStatus("El monto debe ser mayor a cero.");
+    }
+    if (expense.amountCents === amountCents) return;
+    expense.amountCents = amountCents;
+    if (expense.source === "restaurant" && expense.restaurantPaidBy === "__self__") {
+      expense.payerShareCents = amountCents;
+    }
+    saveAndRender();
+    setStatus("Monto actualizado.");
   }
 
   function renderBalances() {
     const { balances, settlements } = calculateSettlements();
     if (!state.people.length) {
-      els.balanceList.innerHTML = `<div class="empty">Agrega participantes para ver saldos.</div>`;
+      els.balanceList.innerHTML = `<div class="empty">Agrega participantes para calcular pagos.</div>`;
       els.settlementList.innerHTML = "";
       return;
     }
@@ -1013,7 +1098,7 @@
     if (!state.expenses.length) {
       balancesHtml = `
         <div class="restaurant-warning" style="margin-top: 0; margin-bottom: 16px;">
-          <span>ðŸ’¡ <strong>Falta agregar gastos:</strong> Registra consumos en la pestaÃ±a/columna <strong>Platillos y gastos</strong> para calcular las deudas reales de la mesa.</span>
+          <span><strong>Falta agregar gastos:</strong> registra platillos o gastos compartidos para calcular los pagos.</span>
         </div>
       ` + balancesHtml;
     }
@@ -1021,7 +1106,7 @@
     els.balanceList.innerHTML = balancesHtml;
 
     if (!settlements.length) {
-      els.settlementList.innerHTML = `<div class="empty">No hay pagos pendientes.</div>`;
+      els.settlementList.innerHTML = `<div class="empty">Si nadie pago todavia, revisa abajo cuanto aporta cada persona.</div>`;
       return;
     }
 
@@ -1061,8 +1146,8 @@
     els.tableClosePanel.innerHTML = `
       <div class="table-close-header">
         <div>
-          <h2>Cierre de mesa</h2>
-          <p>Marca quien ya cubrio su parte, cuanto entrego o quien va de festejado.</p>
+          <h2>Division de pagos</h2>
+          <p>Marca quien ya cubrio su parte o cuanto entrego al juntar la cuenta.</p>
         </div>
         <strong class="${missingTotal > 0 || allGuests ? "negative" : "positive"}">
           ${allGuests ? "Falta pagador" : missingTotal > 0 ? `Falta ${formatMoney(missingTotal)}` : "Mesa saldada"}
@@ -1081,6 +1166,12 @@
           : ""
       }
       ${allGuests ? `<p class="close-warning">No puede quedar toda la mesa como festejada. Deja al menos una persona que absorba la cuenta.</p>` : ""}
+      <div class="close-header-row" aria-hidden="true">
+        <span>Persona</span>
+        <span>Debe</span>
+        <span>Entrego</span>
+        <span>Estado</span>
+      </div>
       <div class="close-list">
         ${rows.map((row) => renderCloseRow(row)).join("")}
       </div>
@@ -1191,12 +1282,18 @@
   }
 
   function buildRestaurantPayerRows() {
-    const groups = new Map();
+    const restaurantGroups = new Map();
+    const personTotals = new Map();
     state.expenses.forEach((expense) => {
       if (expense.source !== "restaurant" || !expense.restaurantId || !expense.restaurantPaidBy) return;
+      if (expense.restaurantPaidBy === "__self__") {
+        if (!state.people.some((person) => person.id === expense.paidBy)) return;
+        personTotals.set(expense.paidBy, (personTotals.get(expense.paidBy) || 0) + expense.amountCents);
+        return;
+      }
       if (!state.people.some((person) => person.id === expense.restaurantPaidBy)) return;
-      if (!groups.has(expense.restaurantId)) {
-        groups.set(expense.restaurantId, {
+      if (!restaurantGroups.has(expense.restaurantId)) {
+        restaurantGroups.set(expense.restaurantId, {
           restaurantId: expense.restaurantId,
           paidBy: expense.restaurantPaidBy,
           payerShareCents: expense.payerShareCents || 0,
@@ -1205,19 +1302,24 @@
       }
     });
 
-    return Array.from(groups.values())
-      .filter((group) => group.payerShareCents > 0)
-      .map((group) => {
-        const key = `restaurant-payer:${group.restaurantId}:${group.paidBy}`;
+    restaurantGroups.forEach((group) => {
+      if (group.payerShareCents <= 0) return;
+      personTotals.set(group.paidBy, (personTotals.get(group.paidBy) || 0) + group.payerShareCents);
+    });
+
+    return Array.from(personTotals.entries())
+      .filter(([, amountCents]) => amountCents > 0)
+      .map(([personId, amountCents]) => {
+        const key = `restaurant-payer:${personId}:${personId}`;
         const record = state.tableClose[key] || { paidCents: 0 };
-        const payer = state.people.find((person) => person.id === group.paidBy);
+        const payer = state.people.find((person) => person.id === personId);
         return {
-          expenseId: group.restaurantId,
-          from: group.paidBy,
-          to: group.paidBy,
+          expenseId: `restaurant-payer-${personId}`,
+          from: personId,
+          to: personId,
           key,
-          originalAmountCents: group.payerShareCents,
-          amountCents: group.payerShareCents,
+          originalAmountCents: amountCents,
+          amountCents,
           paidCents: record.paidCents || 0,
           isGuest: payer ? Boolean(payer.isGuest) : false,
           absorbedCents: 0,
@@ -1261,14 +1363,9 @@
   }
 
   function renderShareMode() {
-    const mode = selectedShareMode();
-    const showPrivateKey = mode === "private" && Boolean(els.privateKeyOutput.value);
-    els.privateKeyField.classList.toggle("hidden", !showPrivateKey);
-    els.copyPrivateKeyBtn.classList.toggle("hidden", !showPrivateKey);
-    els.privacyNote.textContent =
-      mode === "easy"
-        ? "Comodo: el link trae clave y datos cifrados. Cualquiera con el link completo puede abrirlo."
-        : "Privado: el link no basta. Comparte la clave por otro canal.";
+    els.privateKeyField.classList.add("hidden");
+    els.copyPrivateKeyBtn.classList.add("hidden");
+    els.privacyNote.textContent = "El link incluye los datos para abrir el grupo. Compartelo solo con quienes participan en la cuenta.";
   }
 
   function addExpense() {
@@ -1309,19 +1406,24 @@
     saveAndRender();
   }
 
-  function editPersonName(personId) {
+  function updatePersonName(personId, value) {
     const person = state.people.find((p) => p.id === personId);
     if (!person) return;
-    const newName = prompt("Editar nombre del participante:", person.name);
-    if (newName === null) return;
-    const trimmed = newName.trim();
-    if (!trimmed) return setStatus("El nombre no puede estar vacÃ­o.");
+    const trimmed = String(value || "").trim();
+    if (!trimmed) {
+      render();
+      return setStatus("El nombre no puede estar vacio.");
+    }
 
     const duplicate = state.people.some(
       (p) => p.id !== personId && p.name.toLowerCase() === trimmed.toLowerCase()
     );
-    if (duplicate) return setStatus("Ya existe un participante con ese nombre.");
+    if (duplicate) {
+      render();
+      return setStatus("Ya existe un participante con ese nombre.");
+    }
 
+    if (person.name === trimmed) return;
     person.name = trimmed;
     saveAndRender();
     setStatus(`Nombre cambiado a ${trimmed}.`);
@@ -1382,7 +1484,7 @@
 
   async function generateAndCopyShare(asMessage) {
     try {
-      const mode = selectedShareMode();
+      const mode = "easy";
       const { url, key } = await createShareUrl(mode);
       els.shareLinkOutput.value = url;
       els.privateKeyOutput.value = key || "";
@@ -1391,7 +1493,7 @@
       await copyText(content);
       setStatus(asMessage ? "Mensaje copiado." : "Link copiado.");
     } catch (error) {
-      setStatus(error.message || "No pude crear el link. Revisa el navegador o intenta sin modo privado.");
+      setStatus(error.message || "No pude crear el link. Revisa el navegador.");
     }
   }
 
@@ -1502,19 +1604,23 @@
 
   function createWhatsAppMessage(url, hasPrivateKey) {
     const { settlements } = calculateSettlements();
+    const closeRows = buildTableCloseRows(settlements);
     const title = state.groupName || "Clara: cuentas claras.";
-    const lines = [`${title}`, "", "Pagos sugeridos:"];
-    if (!settlements.length) {
+    const lines = [`${title}`, "", "Pagos:"];
+    if (!settlements.length && !closeRows.length) {
       lines.push("No hay pagos pendientes.");
+    } else if (!settlements.length) {
+      lines.push("Aportes para juntar la cuenta:");
+      closeRows
+        .filter((row) => !row.isGuest)
+        .forEach((row) => {
+          lines.push(`${personName(row.from)} aporta ${formatMoney(row.amountCents)}`);
+        });
     } else {
       settlements.forEach((settlement) => {
         const fromName = personName(settlement.from);
         const toName = personName(settlement.to);
-        const toPerson = state.people.find(p => p.id === settlement.to);
         lines.push(`${fromName} paga ${formatMoney(settlement.amountCents)} a ${toName}`);
-        if (toPerson && toPerson.reminder) {
-          lines.push(`  Recordatorio: ${toPerson.reminder}`);
-        }
       });
     }
     const closeLines = createTableCloseMessageLines(settlements);
@@ -1542,7 +1648,7 @@
       }
     });
 
-    if (!settlements.length) return lines;
+    if (!rows.length) return lines;
     if (guests.length) {
       lines.push(`Festejados: ${guests.map((row) => personName(row.from)).join(", ")}`);
     }
@@ -1560,7 +1666,7 @@
   }
 
   function selectedShareMode() {
-    return document.querySelector("input[name='shareMode']:checked").value;
+    return document.querySelector("input[name='shareMode']:checked")?.value || "easy";
   }
 
   function withHash(hash) {

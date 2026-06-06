@@ -1,109 +1,62 @@
 # Clara
 
-Clara: cuentas claras.
+Clara divide cuentas de mesa y gastos compartidos desde una PWA estatica. No usa backend, login, base de datos remota ni recursos externos.
 
-PWA estatica para dividir gastos compartidos sin backend, sin base de datos remota y con costo de infraestructura $0.
+## Que hace
 
-## Estado actual
-
-MVP local creado con HTML, CSS y JavaScript vanilla.
-
-Incluye:
-
-- Grupo y moneda.
-- Participantes.
-- Recordatorios simples de cobro por participante.
-- Gastos generales.
-- Modo restaurante con ticket por articulos.
-- Asignacion de cada articulo a una o varias personas.
-- Propina y cargos adicionales proporcionales.
-- Parser local de texto de ticket.
-- Calculo de saldos.
-- Pagos sugeridos.
-- Cierre de mesa con pendiente/saldado.
-- Registro de monto entregado y cambio.
-- Modo festejado/invitado con redistribucion entre quienes si pagan.
-- Persistencia en `localStorage`.
-- Compartir por URL hash.
-- Cifrado local con dos modos:
-  - Link facil: el link incluye datos cifrados y clave.
-  - Modo privado: el link incluye datos cifrados y la clave se comparte aparte.
-- Mensaje listo para WhatsApp con pendientes y recordatorios.
-- Service worker basico para uso offline.
-
-No incluye todavia:
-
-- OCR integrado propio.
-- IA.
-- Backend.
-- Login.
-- Pasarela de pagos.
+- Agrega participantes.
+- Divide productos por consumo.
+- Agrega gastos compartidos.
+- Calcula pagos y aportes por persona.
+- Permite juntar dinero al momento con `Nadie (pago al momento)` como opcion por defecto.
+- Maneja cumpleanero o invitado: quien no paga queda en $0 y su parte se reparte entre los demas.
+- Registra cuanto entrego cada persona y calcula faltantes o cambio.
+- Copia resumen para WhatsApp.
+- Copia link del grupo.
+- Guarda datos en `localStorage`.
+- Exporta e importa copia local `.clara`.
 
 ## Como abrir
 
-Abre `index.html` en el navegador.
+Abre `index.html` directamente o sirve la carpeta con cualquier servidor estatico.
 
-Tambien puedes servir la carpeta con cualquier servidor estatico local. No requiere instalacion de dependencias.
+Ejemplo local:
 
-## Como dividir restaurante
+```powershell
+python -m http.server 8000
+```
 
-En modo restaurante:
+Luego abre `http://localhost:8000`.
 
-1. Pega texto del ticket o crea una cuenta vacia.
-2. Agrega articulos y precios.
-3. Marca quienes consumieron cada articulo.
-4. Configura propina y cargos adicionales.
-5. Guarda la cuenta.
+## Flujo recomendado
 
-Clara genera los pagos sugeridos y muestra `Cierre de mesa`.
-
-## Cierre de mesa
-
-Cada pago sugerido puede marcarse como saldado.
-
-Tambien puedes escribir cuanto entrego cada persona:
-
-- Si entrego exacto, queda saldado.
-- Si entrego menos, aparece faltante.
-- Si entrego mas, aparece cambio.
-
-Abajo se muestra cuanto falta por juntar y quienes faltan por pagar.
-
-## Festejado o invitado
-
-En el cierre de mesa puedes marcar a una persona como festejada/invitada.
-
-- Esa persona paga $0.
-- Su parte original se reparte entre quienes si pagan.
-- Si toda la mesa queda como festejada, Clara pide dejar al menos una persona que absorba la cuenta.
+1. Agrega participantes.
+2. Si alguien es cumpleanero o invitado y no va a pagar, marcalo en Grupo.
+3. En Gastos, usa `Dividir por platillo` para capturar productos manualmente.
+4. Si algo se divide por igual, usa `Agregar gasto compartido`.
+5. Revisa `Pagos` para saber cuanto aporta cada quien.
+6. Copia el resumen para WhatsApp.
 
 ## Privacidad
 
-El estado no se envia a un servidor de Clara. Vive en `localStorage` y, cuando se comparte, viaja dentro del hash de la URL.
+El estado vive en el navegador. Cuando copias un link, los datos necesarios para abrir el grupo viajan en la URL. Compartelo solo con quienes participan en la cuenta.
 
-La app no necesita cargar recursos externos para funcionar.
+La app conserva compatibilidad para abrir links privados antiguos, pero la interfaz v1 ya no genera nuevos links privados.
 
-El modo Link facil es comodo: cualquiera con el link completo puede abrir el grupo.
-
-El modo privado separa link y clave: quien tenga solo el link no puede leer los gastos.
-
-Nota importante: el estado guardado en `localStorage` queda en claro dentro del navegador local. El cifrado aplica al link compartido, no al almacenamiento del dispositivo.
-
-En modo privado, el mensaje para WhatsApp no incluye la clave. La clave se copia aparte para mandarla por otro canal.
-
-## Deploy gratis
+## Publicacion gratis
 
 Puede publicarse en GitHub Pages, Cloudflare Pages, Netlify o Vercel como sitio estatico.
 
 Para GitHub Pages:
 
-1. Subir estos archivos a un repositorio.
+1. Subir estos archivos al repo.
 2. Activar Pages desde la rama principal.
-3. Abrir la URL publicada.
+3. Elegir `/` como carpeta publicada.
 
-## Roadmap
+## No incluido en v1
 
-- Exportar/importar JSON.
-- Historial local de grupos.
-- OCR local con Tesseract.js.
-- Parser IA con llave del usuario.
+- OCR integrado.
+- IA.
+- Login o sincronizacion.
+- Pagos reales.
+- Backend.

@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v16";
+const CACHE_NAME = "clara-cache-v17";
 const ASSETS = [
   "./",
   "./index.html",
