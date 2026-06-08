@@ -379,7 +379,7 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: clara-cache-v17\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Clara Error Report\nCache: clara-cache-v18\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
