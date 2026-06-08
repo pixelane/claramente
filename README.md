@@ -15,6 +15,7 @@ Clara divide cuentas de mesa y gastos compartidos desde una PWA estatica. No usa
 - Copia link del grupo.
 - Guarda datos en `localStorage`.
 - Exporta e importa copia local `.clara`.
+- Escanea tickets con OCR local usando archivos servidos desde la misma PWA.
 
 ## Como abrir
 
@@ -32,7 +33,7 @@ Luego abre `http://localhost:8000`.
 
 1. Agrega participantes.
 2. Si alguien es cumpleanero o invitado y no va a pagar, marcalo en Grupo.
-3. En Gastos, usa `Dividir por platillo` para capturar productos manualmente.
+3. En Gastos, usa `Dividir por platillo` para capturar productos manualmente o escanear un ticket.
 4. Si algo se divide por igual, usa `Agregar gasto compartido`.
 5. Revisa `Pagos` para saber cuanto aporta cada quien.
 6. Copia el resumen para WhatsApp.
@@ -40,6 +41,8 @@ Luego abre `http://localhost:8000`.
 ## Privacidad
 
 El estado vive en el navegador. Cuando copias un link, los datos necesarios para abrir el grupo viajan en la URL. Compartelo solo con quienes participan en la cuenta.
+
+Cuando Clara abre un grupo desde un link compartido, limpia el hash de la barra de direcciones para evitar que alguien vuelva a copiar accidentalmente el payload del enlace desde la URL visible.
 
 La app conserva compatibilidad para abrir links privados antiguos, pero la interfaz v1 ya no genera nuevos links privados.
 
@@ -55,7 +58,6 @@ Para GitHub Pages:
 
 ## No incluido en v1
 
-- OCR integrado.
 - IA.
 - Login o sincronizacion.
 - Pagos reales.

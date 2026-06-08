@@ -37,6 +37,14 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
+  const CACHE_NAME = "clara-cache-v19";
+  const OCR_OPTIONS = {
+    workerPath: "worker.min.js",
+    corePath: "tesseract-core-simd.wasm.js",
+    langPath: ".",
+    gzip: true,
+    workerBlobURL: false
+  };
   const UNCOMPRESSED_PREFIX = "u1";
   const COMPRESSED_PREFIX = "c1";
   const EASY_PREFIX = "easy1";
@@ -155,6 +163,11 @@
 
   async function init() {
     if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (sessionStorage.getItem("clara.swReloaded") === CACHE_NAME) return;
+        sessionStorage.setItem("clara.swReloaded", CACHE_NAME);
+        window.location.reload();
+      });
       navigator.serviceWorker.register("sw.js").catch((err) => {
         console.warn("Service worker registration failed", err);
       });
@@ -379,7 +392,7 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: clara-cache-v18\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Clara Error Report\nCache: ${CACHE_NAME}\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
@@ -1903,6 +1916,7 @@
 
     setOcrStatus("Cargando motor de lectura...", 10);
     const worker = await Tesseract.createWorker("spa", undefined, {
+      ...OCR_OPTIONS,
       logger: (m) => {
         if (m.status === "recognizing text") {
           setOcrStatus("Procesando imagen...", Math.round(m.progress * 100));

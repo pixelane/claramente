@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v18";
+const CACHE_NAME = "clara-cache-v19";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,7 +6,11 @@ const ASSETS = [
   "./app.js",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./tesseract.min.js",
+  "./worker.min.js",
+  "./tesseract-core-simd.wasm.js",
+  "./spa.traineddata.gz"
 ];
 
 self.addEventListener("install", (event) => {
@@ -34,20 +38,28 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put("./index.html", responseCopy);
+          });
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
         return cachedResponse;
       }
       return fetch(event.request).then((response) => {
-        // Almacenar en caché recursos de CDNs para Tesseract.js (scripts, worker, WASM, langpacks)
-        const url = event.request.url;
-        if (
-          url.includes("cdn.jsdelivr.net") ||
-          url.includes("unpkg.com") ||
-          url.includes("tessdata") ||
-          url.includes("projectnaptha.com")
-        ) {
+        if (event.request.method === "GET" && response.ok) {
           const responseCopy = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseCopy);
@@ -55,9 +67,6 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       }).catch(() => {
-        if (event.request.mode === "navigate") {
-          return caches.match("./index.html");
-        }
         return new Response("", { status: 503, statusText: "Offline" });
       });
     })

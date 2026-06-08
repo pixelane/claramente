@@ -10,7 +10,7 @@ Clara ya esta publicada en GitHub personal:
 - App publica: https://pixelane.github.io/clara/
 - Tests tecnicos: https://pixelane.github.io/clara/test.html
 - Rama Pages: `main`, path `/`
-- Cache actual: `clara-cache-v10`
+- Cache actual: historico `clara-cache-v10`; runtime actual `clara-cache-v19`
 
 ## Ultimos cambios hechos por Codex
 
@@ -42,7 +42,7 @@ Clara ya esta publicada en GitHub personal:
   - elementos fuera del viewport: `[]`
 - GitHub Pages responde:
   - `/` => `200 OK`
-  - `/sw.js` contiene `clara-cache-v10`
+  - `/sw.js` contenia `clara-cache-v10` en esa revision historica
 
 ## Herramientas necesarias para continuar
 
@@ -86,5 +86,4 @@ git push
    - propina 10%
    - billete entregado mayor al monto
 3. Revisar que en `Liquidacion` no haya scroll lateral y que el cierre de mesa se entienda.
-4. Si hay ajustes, cambiar local primero, validar, subir cache a `clara-cache-v11`, commit y push a `main`.
-
+4. Si hay ajustes, cambiar local primero, validar, subir cache sobre la version vigente, commit y push a `main`.
