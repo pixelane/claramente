@@ -86,6 +86,25 @@
     privateKeyOutput: document.getElementById("privateKeyOutput"),
     copyPrivateKeyBtn: document.getElementById("copyPrivateKeyBtn"),
     privacyNote: document.getElementById("privacyNote"),
+    peopleCount: document.getElementById("peopleCount"),
+    expenseForm: document.getElementById("expenseForm"),
+    expenseDescriptionInput: document.getElementById("expenseDescriptionInput"),
+    expenseAmountInput: document.getElementById("expenseAmountInput"),
+    expensePaidByInput: document.getElementById("expensePaidByInput"),
+    splitWithList: document.getElementById("splitWithList"),
+    selectAllSplitBtn: document.getElementById("selectAllSplitBtn"),
+    expenseList: document.getElementById("expenseList"),
+    expenseCount: document.getElementById("expenseCount"),
+    balanceList: document.getElementById("balanceList"),
+    settlementList: document.getElementById("settlementList"),
+    tableClosePanel: document.getElementById("tableClosePanel"),
+    copyLinkBtn: document.getElementById("copyLinkBtn"),
+    copyMessageBtn: document.getElementById("copyMessageBtn"),
+    shareLinkOutput: document.getElementById("shareLinkOutput"),
+    privateKeyField: document.getElementById("privateKeyField"),
+    privateKeyOutput: document.getElementById("privateKeyOutput"),
+    copyPrivateKeyBtn: document.getElementById("copyPrivateKeyBtn"),
+    privacyNote: document.getElementById("privacyNote"),
     statusLine: document.getElementById("statusLine"),
     privateKeyDialog: document.getElementById("privateKeyDialog"),
     privateKeyForm: document.getElementById("privateKeyForm"),
@@ -99,6 +118,10 @@
     ticketRawInput: document.getElementById("ticketRawInput"),
     parseTicketBtn: document.getElementById("parseTicketBtn"),
     ocrAccordion: document.getElementById("ocrAccordion"),
+    ocrFileInput: document.getElementById("ocrFileInput"),
+    ocrStatusBox: document.getElementById("ocrStatusBox"),
+    ocrProgressBar: document.getElementById("ocrProgressBar"),
+    ocrStatusLabel: document.getElementById("ocrStatusLabel"),
     cancelRestaurantBtn: document.getElementById("cancelRestaurantBtn"),
     ticketItemsBody: document.getElementById("ticketItemsBody"),
     addTicketItemBtn: document.getElementById("addTicketItemBtn"),
@@ -240,6 +263,9 @@
       restaurantFormEl.addEventListener("submit", (e) => e.preventDefault());
     }
     els.parseTicketBtn.addEventListener("click", handleParseTicket);
+    if (els.ocrFileInput) {
+      els.ocrFileInput.addEventListener("change", handleOcrFile);
+    }
     els.addTicketItemBtn.addEventListener("click", addEmptyTicketItem);
     document.querySelectorAll("input[name='ticketTipPercent']").forEach((input) => {
       input.addEventListener("change", updateTicketTotals);
@@ -254,6 +280,7 @@
     els.cancelPrivateKeyBtn.addEventListener("click", () => {
       pendingPrivatePayload = "";
       els.privateKeyDialog.close();
+      history.replaceState(null, "", location.pathname + location.search);
     });
 
     // Tab switching event listeners
@@ -396,10 +423,12 @@
       const imported = await decodeHash(rawHash);
       if (!imported) return;
       if (hasMeaningfulLocalState() && !confirm("El link trae otro grupo. Reemplazar el grupo local?")) {
+        history.replaceState(null, "", location.pathname + location.search);
         return;
       }
       state = normalizeState(imported);
       saveAndRender(false);
+      history.replaceState(null, "", location.pathname + location.search);
       setStatus("Grupo restaurado desde el link.");
     } catch (error) {
       if (error && error.message === "PRIVATE_KEY_REQUIRED") {
@@ -407,6 +436,7 @@
         els.privateKeyDialog.showModal();
         return;
       }
+      history.replaceState(null, "", location.pathname + location.search);
       setStatus("No pude abrir este link. Revisa que este completo.");
     }
   }
@@ -419,6 +449,7 @@
       pendingPrivatePayload = "";
       els.privateKeyInput.value = "";
       els.privateKeyDialog.close();
+      history.replaceState(null, "", location.pathname + location.search);
       setStatus("Grupo privado abierto.");
     } catch {
       setStatus("Clave incorrecta o link privado danado.");
@@ -623,6 +654,7 @@
       }
       return;
     }
+    
     // Pre-populate paid by select — default to "Nadie" for pay-at-the-moment scenarios
     els.ticketPaidBySelect.innerHTML = `<option value="" selected>Nadie (pago al momento)</option>` +
       state.people
@@ -632,15 +664,10 @@
     // Detect OS dynamically for OCR hint
     const hintEl = document.getElementById("ocrHint");
     if (hintEl) {
-      const ua = navigator.userAgent || navigator.vendor || window.opera;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      const isAndroid = /Android/i.test(ua);
-      if (isIOS) {
-        hintEl.innerHTML = `<strong>Tip en iPhone:</strong> Mantén presionado o haz dos toques rápidos en el cuadro y selecciona <strong>"Escanear texto"</strong> (el icono de cámara) para digitalizar el ticket físico con tu cámara.`;
-      } else if (isAndroid) {
-        hintEl.innerHTML = `<strong>Tip en Android:</strong> Abre el teclado, toca los tres puntos <strong>"..."</strong> (u opciones) y selecciona <strong>"Escanear texto"</strong> (o cámara) para digitalizar el ticket impreso con tu cámara.`;
+      if (typeof Tesseract === "undefined") {
+        hintEl.innerHTML = `<span style="color: var(--accent); font-weight: 750; font-size: 0.8rem;">⚠️ OCR offline inactivo (requiere internet la primera vez).</span>`;
       } else {
-        hintEl.innerHTML = `<strong>Tip en celular:</strong> Mantén presionado el cuadro y selecciona <strong>"Escanear texto"</strong> (iOS) o toca los tres puntos de tu teclado (Android) para digitalizar el ticket físico.`;
+        hintEl.innerHTML = `<span style="color: var(--primary); font-weight: 750; font-size: 0.8rem;">Ready: Motor OCR disponible.</span>`;
       }
     }
 
@@ -648,6 +675,9 @@
     els.ticketRawInput.value = "";
     if (els.ocrAccordion) {
       els.ocrAccordion.removeAttribute("open");
+    }
+    if (els.ocrStatusBox) {
+      els.ocrStatusBox.classList.add("hidden");
     }
     
     // Initialize list with a single blank item
@@ -1861,6 +1891,69 @@
       event.target.value = "";
     };
     reader.readAsText(file);
+  }
+
+  let ocrWorker = null;
+
+  async function initOcr() {
+    if (typeof Tesseract === "undefined") {
+      throw new Error("TESSERACT_NOT_LOADED");
+    }
+    if (ocrWorker) return ocrWorker;
+
+    setOcrStatus("Cargando motor de lectura...", 10);
+    const worker = await Tesseract.createWorker("spa", undefined, {
+      logger: (m) => {
+        if (m.status === "recognizing text") {
+          setOcrStatus("Procesando imagen...", Math.round(m.progress * 100));
+        } else if (m.status === "loading spa.traineddata") {
+          setOcrStatus("Descargando diccionario...", Math.round(m.progress * 100));
+        } else {
+          setOcrStatus("Inicializando motor...", 20);
+        }
+      }
+    });
+    ocrWorker = worker;
+    return ocrWorker;
+  }
+
+  async function handleOcrFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!els.ocrStatusBox) return;
+    els.ocrStatusBox.classList.remove("hidden");
+    setOcrStatus("Iniciando motor OCR...", 5);
+
+    try {
+      const worker = await initOcr();
+      setOcrStatus("Analizando texto de imagen...", 50);
+      const { data: { text } } = await worker.recognize(file);
+      
+      els.ticketRawInput.value = text;
+      els.ticketRawInput.dispatchEvent(new Event("input"));
+      
+      setOcrStatus("¡Lectura completada!", 100);
+      setTimeout(() => {
+        if (els.ocrStatusBox) els.ocrStatusBox.classList.add("hidden");
+      }, 2000);
+      setStatus("Texto extraído del ticket.");
+    } catch (err) {
+      console.error("OCR error:", err);
+      if (err.message === "TESSERACT_NOT_LOADED") {
+        alert("El motor de escaneo no está cargado. Se necesita conexión a internet la primera vez. Captura los productos a mano.");
+      } else {
+        alert("Error al procesar la imagen: " + err.message);
+      }
+      if (els.ocrStatusBox) els.ocrStatusBox.classList.add("hidden");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  function setOcrStatus(text, pct) {
+    if (els.ocrStatusLabel) els.ocrStatusLabel.textContent = text;
+    if (els.ocrProgressBar) els.ocrProgressBar.style.width = `${pct}%`;
   }
 
   function escapeHtml(value) {

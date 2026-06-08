@@ -180,11 +180,28 @@
           <button class="close-dialog-btn" id="closeRestaurantBtn" type="button" aria-label="Cerrar">&times;</button>
         </div>
         <p class="dialog-subtitle">Captura los productos manualmente y marca quien consumio cada uno.</p>
-        <div class="hidden">
-          <textarea id="ticketRawInput" rows="4"></textarea>
-          <button id="parseTicketBtn" type="button">Procesar texto</button>
-          <details id="ocrAccordion"><summary>Escanear</summary><span id="ocrHint"></span></details>
-        </div>
+        <details class="ocr-accordion" id="ocrAccordion">
+          <summary>✨ Escanear ticket impreso (Opcional)</summary>
+          <div class="ocr-accordion-content">
+            <p class="field-hint">Toma una foto de tu ticket o sube una imagen para extraer los productos y precios localmente.</p>
+            <div class="ocr-actions">
+              <label class="primary-button file-upload-label">
+                📷 Tomar foto / Subir imagen
+                <input id="ocrFileInput" type="file" accept="image/*" capture="environment" style="display: none;">
+              </label>
+              <span id="ocrHint"></span>
+            </div>
+            <div id="ocrStatusBox" class="ocr-status-box hidden">
+              <div class="ocr-progress-bar-container"><div id="ocrProgressBar" class="ocr-progress-bar" style="width: 0%;"></div></div>
+              <span id="ocrStatusLabel">Cargando motor de lectura...</span>
+            </div>
+            <label class="field">
+              <span>Texto extraído (puedes editarlo si es necesario)</span>
+              <textarea id="ticketRawInput" rows="4" placeholder="Aquí aparecerá el texto del ticket..."></textarea>
+            </label>
+            <button id="parseTicketBtn" class="accent-button full-action" type="button">Procesar texto y llenar tabla</button>
+          </div>
+        </details>
         <div id="ticketTableContainer">
           <div class="ticket-items-container">
             <table class="ticket-table">
@@ -232,6 +249,7 @@
 
     <dialog class="import-dialog" id="privateKeyDialog"><form method="dialog" id="privateKeyForm"><h2>Este link necesita clave</h2><p>Pega la clave que el host compartio aparte.</p><label class="field"><span>Clave</span><input id="privateKeyInput" type="text" autocomplete="off"></label><div class="dialog-actions"><button type="button" id="cancelPrivateKeyBtn">Cancelar</button><button class="primary-button" type="submit">Abrir</button></div></form></dialog>
 
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>

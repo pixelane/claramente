@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v17";
+const CACHE_NAME = "clara-cache-v18";
 const ASSETS = [
   "./",
   "./index.html",
@@ -39,7 +39,22 @@ self.addEventListener("fetch", (event) => {
       if (cachedResponse) {
         return cachedResponse;
       }
-      return fetch(event.request).catch(() => {
+      return fetch(event.request).then((response) => {
+        // Almacenar en caché recursos de CDNs para Tesseract.js (scripts, worker, WASM, langpacks)
+        const url = event.request.url;
+        if (
+          url.includes("cdn.jsdelivr.net") ||
+          url.includes("unpkg.com") ||
+          url.includes("tessdata") ||
+          url.includes("projectnaptha.com")
+        ) {
+          const responseCopy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseCopy);
+          });
+        }
+        return response;
+      }).catch(() => {
         if (event.request.mode === "navigate") {
           return caches.match("./index.html");
         }

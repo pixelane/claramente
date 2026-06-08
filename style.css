@@ -1469,6 +1469,87 @@ details[open] .group-summary-header::after {
   opacity: 1;
 }
 
+/* OCR styles */
+.ocr-accordion {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.ocr-accordion summary {
+  padding: 10px 14px;
+  font-weight: 850;
+  cursor: pointer;
+  user-select: none;
+  background: var(--panel-soft);
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.ocr-accordion-content {
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.ocr-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-upload-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary);
+  min-height: 42px;
+  transition: background 150ms ease;
+}
+
+.file-upload-label:hover {
+  background: #166534;
+}
+
+.ocr-status-box {
+  background: var(--panel-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: var(--ink);
+}
+
+.ocr-status-box.hidden {
+  display: none !important;
+}
+
+.ocr-progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ocr-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  width: 0%;
+  transition: width 150ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1479,3 +1560,4 @@ details[open] .group-summary-header::after {
     transition-duration: 0.01ms !important;
   }
 }
+
