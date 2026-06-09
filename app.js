@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v19";
+  const CACHE_NAME = "clara-cache-v20";
   const OCR_OPTIONS = {
     workerPath: "worker.min.js",
     corePath: "tesseract-core-simd.wasm.js",
@@ -1036,9 +1036,25 @@
       els.expenseList.innerHTML = `<li class="empty">Agrega una cuenta por platillo o un gasto compartido para calcular pagos.</li>`;
       return;
     }
+    const renderedRestaurantIds = new Set();
     els.expenseList.innerHTML = [...state.expenses]
       .sort((a, b) => b.createdAt - a.createdAt)
       .map((expense) => {
+        if (expense.source === "restaurant" && expense.restaurantId) {
+          if (renderedRestaurantIds.has(expense.restaurantId)) return "";
+          renderedRestaurantIds.add(expense.restaurantId);
+          const summary = buildRestaurantExpenseSummary(expense.restaurantId);
+          return `
+          <li class="list-item">
+            <div class="expense-edit-row">
+              <strong>${escapeHtml(summary.description)}</strong>
+              <strong>${formatMoney(summary.amountCents)}</strong>
+              <p class="item-meta">${escapeHtml(summary.meta)}</p>
+            </div>
+            <button class="danger-button" type="button" data-remove-restaurant="${expense.restaurantId}">Quitar</button>
+          </li>
+        `;
+        }
         const payer = personName(expense.paidBy);
         const splitNames = expense.splitWith.map(personName).join(", ");
         const meta = expense.source === "restaurant" && expense.restaurantPaidBy === "__self__"
@@ -1058,6 +1074,13 @@
         `;
       })
       .join("");
+    document.querySelectorAll("[data-remove-restaurant]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!confirm("Quitar esta cuenta por platillo?")) return;
+        state.expenses = state.expenses.filter((expense) => expense.restaurantId !== button.dataset.removeRestaurant);
+        saveAndRender();
+      });
+    });
     document.querySelectorAll("[data-remove-expense]").forEach((button) => {
       button.addEventListener("click", () => {
         if (!confirm("Quitar este gasto?")) return;
@@ -1073,6 +1096,33 @@
       input.addEventListener("change", () => updateExpenseAmount(input.dataset.expenseAmount, input.value));
       input.addEventListener("keydown", handleInlineInputKeydown);
     });
+  }
+
+  function buildRestaurantExpenseSummary(restaurantId) {
+    const groupExpenses = state.expenses.filter((expense) => expense.restaurantId === restaurantId);
+    const first = groupExpenses[0] || {};
+    const paidBy = first.restaurantPaidBy || "";
+    const consumedBy = new Set();
+    let amountCents = 0;
+    let payerShareCents = 0;
+
+    groupExpenses.forEach((expense) => {
+      amountCents += expense.amountCents;
+      if (expense.restaurantPaidBy !== "__self__") {
+        payerShareCents = Math.max(payerShareCents, expense.payerShareCents || 0);
+      }
+      expense.splitWith.forEach((personId) => consumedBy.add(personId));
+    });
+
+    amountCents += payerShareCents;
+    const names = Array.from(consumedBy).map(personName).join(", ") || "Sin comensales";
+    return {
+      description: first.restaurantName || "Cuenta por platillo",
+      amountCents,
+      meta: paidBy === "__self__"
+        ? `Pago al momento · consumido por ${names}`
+        : `Pago ${personName(paidBy)} · consumido por ${names}`
+    };
   }
 
   function handleInlineInputKeydown(event) {
@@ -1494,14 +1544,17 @@
 
   function calculateSettlements() {
     const balances = new Map(state.people.map((person) => [person.id, 0]));
+    const guestIds = new Set(state.people.filter((person) => person.isGuest).map((person) => person.id));
 
     for (const expense of state.expenses) {
       const validSplit = expense.splitWith.filter((id) => balances.has(id));
       if (!balances.has(expense.paidBy) || !validSplit.length) continue;
       balances.set(expense.paidBy, balances.get(expense.paidBy) + expense.amountCents);
-      const baseShare = Math.floor(expense.amountCents / validSplit.length);
-      let remainder = expense.amountCents - baseShare * validSplit.length;
-      for (const personId of validSplit) {
+      const payingSplit = validSplit.filter((id) => !guestIds.has(id));
+      const effectiveSplit = payingSplit.length ? payingSplit : validSplit;
+      const baseShare = Math.floor(expense.amountCents / effectiveSplit.length);
+      let remainder = expense.amountCents - baseShare * effectiveSplit.length;
+      for (const personId of effectiveSplit) {
         const extra = remainder > 0 ? 1 : 0;
         remainder -= extra;
         balances.set(personId, balances.get(personId) - baseShare - extra);
@@ -1927,6 +1980,10 @@
         }
       }
     });
+    await worker.setParameters({
+      preserve_interword_spaces: "1",
+      tessedit_pageseg_mode: "6"
+    });
     ocrWorker = worker;
     return ocrWorker;
   }
@@ -1941,8 +1998,10 @@
 
     try {
       const worker = await initOcr();
+      setOcrStatus("Mejorando imagen...", 25);
+      const imageForOcr = await preprocessImageForOcr(file);
       setOcrStatus("Analizando texto de imagen...", 50);
-      const { data: { text } } = await worker.recognize(file);
+      const { data: { text } } = await worker.recognize(imageForOcr);
       
       els.ticketRawInput.value = text;
       els.ticketRawInput.dispatchEvent(new Event("input"));
@@ -1963,6 +2022,55 @@
     } finally {
       event.target.value = "";
     }
+  }
+
+  async function preprocessImageForOcr(file) {
+    const source = "createImageBitmap" in window
+      ? await createImageBitmap(file)
+      : await loadImageElement(file);
+    const maxSide = Math.max(source.width, source.height);
+    const scale = Math.min(3, Math.max(1, 2400 / maxSide));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(source.width * scale);
+    canvas.height = Math.round(source.height * scale);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    if (typeof source.close === "function") source.close();
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+      const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.45 + 128));
+      const cleaned = contrasted > 245 ? 255 : contrasted < 25 ? 0 : contrasted;
+      data[i] = cleaned;
+      data[i + 1] = cleaned;
+      data[i + 2] = cleaned;
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob || file);
+      }, "image/png");
+    });
+  }
+
+  function loadImageElement(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   function setOcrStatus(text, pct) {

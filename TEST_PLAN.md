@@ -16,6 +16,7 @@
 2. Marcar Maria.
 3. Confirmar que queda destacada.
 4. Desmarcar Maria.
+5. Con dos personas y Maria marcada, confirmar que un platillo compartido no deja a Maria con pago pendiente.
 
 ## Dividir por platillo
 
@@ -80,5 +81,5 @@
 3. Confirmar que los chips de productos son tocables.
 4. Confirmar que no hay errores persistentes en consola.
 5. Confirmar que `app.js` y `sw.js` pasan `node --check`.
-6. En Ayuda, confirmar que la version de cache visible es `clara-cache-v19`.
+6. En Ayuda, confirmar que la version de cache visible es `clara-cache-v20`.
 7. Abrir la app una segunda vez y confirmar que no aparece una version vieja antes de recargar.
