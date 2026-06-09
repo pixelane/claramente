@@ -70,5 +70,13 @@
 3. Confirmar que los chips de productos son tocables.
 4. Confirmar que no hay errores persistentes en consola.
 5. Confirmar que `app.js` y `sw.js` pasan `node --check`.
-6. En Ayuda, confirmar que la version de cache visible es `clara-cache-v21`.
+6. En Ayuda, confirmar que la version de cache visible es `clara-cache-v22`.
 7. Abrir la app una segunda vez y confirmar que no aparece una version vieja antes de recargar.
+
+## Seguridad estatica
+
+1. Confirmar que `index.html` incluye una politica CSP sin scripts externos.
+2. Confirmar que el modulo OCR no aparece en el modal de platillos.
+3. Importar una copia `.clara` valida y confirmar que carga normal.
+4. Intentar importar un archivo mayor a 350 KB y confirmar que se rechaza.
+5. Abrir un link compartido excesivamente largo y confirmar que la app lo limpia sin cargarlo.

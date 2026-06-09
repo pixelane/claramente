@@ -37,14 +37,12 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v21";
-  const OCR_OPTIONS = {
-    workerPath: "worker.min.js",
-    corePath: "tesseract-core-simd.wasm.js",
-    langPath: ".",
-    gzip: true,
-    workerBlobURL: false
-  };
+  const CACHE_NAME = "clara-cache-v22";
+  const MAX_HASH_LENGTH = 180000;
+  const MAX_BACKUP_BYTES = 350000;
+  const MAX_PEOPLE = 80;
+  const MAX_EXPENSES = 500;
+  const MAX_TABLE_CLOSE_RECORDS = 600;
   const UNCOMPRESSED_PREFIX = "u1";
   const COMPRESSED_PREFIX = "c1";
   const EASY_PREFIX = "easy1";
@@ -125,11 +123,6 @@
     closeRestaurantBtn: document.getElementById("closeRestaurantBtn"),
     ticketRawInput: document.getElementById("ticketRawInput"),
     parseTicketBtn: document.getElementById("parseTicketBtn"),
-    ocrAccordion: document.getElementById("ocrAccordion"),
-    ocrFileInput: document.getElementById("ocrFileInput"),
-    ocrStatusBox: document.getElementById("ocrStatusBox"),
-    ocrProgressBar: document.getElementById("ocrProgressBar"),
-    ocrStatusLabel: document.getElementById("ocrStatusLabel"),
     cancelRestaurantBtn: document.getElementById("cancelRestaurantBtn"),
     ticketItemsBody: document.getElementById("ticketItemsBody"),
     addTicketItemBtn: document.getElementById("addTicketItemBtn"),
@@ -193,18 +186,18 @@
 
   function bindEvents() {
     els.groupNameInput.addEventListener("input", () => {
-      state.groupName = els.groupNameInput.value.trim();
+      state.groupName = sanitizeText(els.groupNameInput.value, 80);
       saveAndRender(false);
     });
 
     els.currencyInput.addEventListener("change", () => {
-      state.currency = els.currencyInput.value;
+      state.currency = sanitizeCurrency(els.currencyInput.value);
       saveAndRender();
     });
 
     els.personForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const name = els.personNameInput.value.trim();
+      const name = sanitizeText(els.personNameInput.value, 40);
       if (!name) return setStatus("Escribe un nombre.");
 
       const duplicate = state.people.some((p) => p.name.toLowerCase() === name.toLowerCase());
@@ -275,9 +268,8 @@
     if (restaurantFormEl) {
       restaurantFormEl.addEventListener("submit", (e) => e.preventDefault());
     }
-    els.parseTicketBtn.addEventListener("click", handleParseTicket);
-    if (els.ocrFileInput) {
-      els.ocrFileInput.addEventListener("change", handleOcrFile);
+    if (els.parseTicketBtn) {
+      els.parseTicketBtn.addEventListener("click", handleParseTicket);
     }
     els.addTicketItemBtn.addEventListener("click", addEmptyTicketItem);
     document.querySelectorAll("input[name='ticketTipPercent']").forEach((input) => {
@@ -303,14 +295,14 @@
         
         // Auto-add typed name if leaving tab-group and people list is empty
         if (targetTab !== "tab-group" && state.people.length === 0) {
-          const typedName = els.personNameInput ? els.personNameInput.value.trim() : "";
+          const typedName = els.personNameInput ? sanitizeText(els.personNameInput.value, 40) : "";
           if (typedName) {
             const duplicate = state.people.some((p) => p.name.toLowerCase() === typedName.toLowerCase());
             if (!duplicate) {
               state.people.push({ id: createId("p"), name: typedName, reminder: "", isGuest: false });
               if (els.personNameInput) els.personNameInput.value = "";
               saveAndRender();
-              setStatus(`Se agregó a "${typedName}" automáticamente.`);
+              setStatus(`Se agrego a "${typedName}" automaticamente.`);
             }
           }
         }
@@ -431,6 +423,11 @@
   async function restoreFromHash() {
     const rawHash = location.hash.slice(1);
     if (!rawHash) return;
+    if (rawHash.length > MAX_HASH_LENGTH) {
+      history.replaceState(null, "", location.pathname + location.search);
+      setStatus("El link es demasiado grande para abrirlo con seguridad.");
+      return;
+    }
 
     try {
       const imported = await decodeHash(rawHash);
@@ -469,44 +466,69 @@
     }
   }
 
+  function sanitizeText(value, maxLength) {
+    return String(value ?? "")
+      .replace(/[\u0000-\u001f\u007f-\u009f]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, maxLength);
+  }
+
+  function sanitizeCurrency(value) {
+    const next = sanitizeText(value || "MXN", 8).toUpperCase();
+    return /^[A-Z]{3,8}$/.test(next) ? next : "MXN";
+  }
+
+  function sanitizeId(value, prefix) {
+    const clean = String(value ?? "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 18);
+    return clean || createId(prefix || "id");
+  }
+
+  function isReasonableObject(value) {
+    return Boolean(value && typeof value === "object" && !Array.isArray(value));
+  }
+
   function normalizeState(candidate) {
     const next = emptyState();
-    if (!candidate || typeof candidate !== "object") return next;
+    if (!isReasonableObject(candidate)) return next;
     next.version = Number(candidate.version) || 1;
-    next.groupName = String(candidate.groupName || "").slice(0, 80);
-    next.currency = String(candidate.currency || "MXN").slice(0, 8);
+    next.groupName = sanitizeText(candidate.groupName, 80);
+    next.currency = sanitizeCurrency(candidate.currency);
     next.people = Array.isArray(candidate.people)
-      ? candidate.people.map((person) => {
+      ? candidate.people.slice(0, MAX_PEOPLE).map((person) => {
+          if (!isReasonableObject(person)) return null;
           const legacyReminder = [
             person.paypal ? `PayPal: ${person.paypal}` : "",
             person.venmo ? `Venmo: ${person.venmo}` : "",
             person.bizum ? `Bizum: ${person.bizum}` : ""
           ].filter(Boolean).join(" | ");
           return {
-            id: String(person.id || createId("p")).slice(0, 18),
-            name: String(person.name || "Persona").slice(0, 40),
-            reminder: String(person.reminder || legacyReminder || "").slice(0, 160),
+            id: sanitizeId(person.id || createId("p"), "p"),
+            name: sanitizeText(person.name || "Persona", 40) || "Persona",
+            reminder: sanitizeText(person.reminder || legacyReminder || "", 160),
             isGuest: Boolean(person.isGuest)
           };
-        })
+        }).filter(Boolean)
       : [];
     const peopleIds = new Set(next.people.map((person) => person.id));
     next.expenses = Array.isArray(candidate.expenses)
       ? candidate.expenses
+          .slice(0, MAX_EXPENSES)
+          .filter(isReasonableObject)
           .map((expense) => ({
-            id: String(expense.id || createId("e")).slice(0, 18),
-            description: String(expense.description || "Gasto").slice(0, 80),
+            id: sanitizeId(expense.id || createId("e"), "e"),
+            description: sanitizeText(expense.description || "Gasto", 80) || "Gasto",
             amountCents: normalizeExpenseAmount(expense),
-            paidBy: String(expense.paidBy || ""),
+            paidBy: sanitizeId(expense.paidBy || "", "p"),
             splitWith: Array.isArray(expense.splitWith)
-              ? expense.splitWith.map(String).filter((id) => peopleIds.has(id))
+              ? expense.splitWith.map((id) => sanitizeId(id, "p")).filter((id) => peopleIds.has(id))
               : [],
             createdAt: Number(expense.createdAt) || Date.now(),
-            source: String(expense.source || "").slice(0, 24),
-            restaurantId: String(expense.restaurantId || "").slice(0, 18),
-            restaurantPaidBy: String(expense.restaurantPaidBy || "").slice(0, 18),
+            source: sanitizeText(expense.source || "", 24),
+            restaurantId: sanitizeId(expense.restaurantId || "", "r"),
+            restaurantPaidBy: expense.restaurantPaidBy ? sanitizeId(expense.restaurantPaidBy, "p") : "",
             payerShareCents: Math.max(0, toCents(expense.payerShareCents || 0)),
-            restaurantName: String(expense.restaurantName || "").slice(0, 80)
+            restaurantName: sanitizeText(expense.restaurantName || "", 80)
           }))
           .filter((expense) => expense.amountCents > 0 && peopleIds.has(expense.paidBy) && expense.splitWith.length > 0)
       : [];
@@ -517,9 +539,9 @@
 
   function normalizeTableClose(candidate, expenses, peopleIds) {
     const next = {};
-    if (!candidate || typeof candidate !== "object") return next;
-    Object.entries(candidate).forEach(([key, record]) => {
-      if (!record || typeof record !== "object") return;
+    if (!isReasonableObject(candidate)) return next;
+    Object.entries(candidate).slice(0, MAX_TABLE_CLOSE_RECORDS).forEach(([key, record]) => {
+      if (!isReasonableObject(record)) return;
       const parts = String(key).split(":");
       if (parts.length !== 3) return;
       if (parts[0] === "restaurant-payer") {
@@ -668,30 +690,12 @@
       return;
     }
     
-    // Pre-populate paid by select — default to "Nadie" for pay-at-the-moment scenarios
+    // Pre-populate paid by select, default to "Nadie" for pay-at-the-moment scenarios
     els.ticketPaidBySelect.innerHTML = `<option value="" selected>Nadie (pago al momento)</option>` +
       state.people
         .map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
         .join("");
     
-    // Detect OS dynamically for OCR hint
-    const hintEl = document.getElementById("ocrHint");
-    if (hintEl) {
-      if (typeof Tesseract === "undefined") {
-        hintEl.innerHTML = `<span style="color: var(--accent); font-weight: 750; font-size: 0.8rem;">⚠️ OCR offline inactivo (requiere internet la primera vez).</span>`;
-      } else {
-        hintEl.innerHTML = `<span style="color: var(--primary); font-weight: 750; font-size: 0.8rem;">Ready: Motor OCR disponible.</span>`;
-      }
-    }
-
-    // Reset inputs
-    els.ticketRawInput.value = "";
-    if (els.ocrAccordion) {
-      els.ocrAccordion.removeAttribute("open");
-    }
-    if (els.ocrStatusBox) {
-      els.ocrStatusBox.classList.add("hidden");
-    }
     
     // Initialize list with a single blank item
     ticketItems = [];
@@ -700,8 +704,9 @@
   }
 
   function handleParseTicket() {
+    if (!els.ticketRawInput) return;
     const text = els.ticketRawInput.value.trim();
-    if (!text) return alert("Pega algún texto primero.");
+    if (!text) return alert("Pega algun texto primero.");
     const parsed = parseTicketText(text);
     if (!parsed.length) {
       alert("No encontramos precios claros en el texto. Puedes agregarlos a mano en la tabla.");
@@ -724,9 +729,6 @@
     renderTicketItems();
     updateTicketTotals();
     
-    if (els.ocrAccordion) {
-      els.ocrAccordion.removeAttribute("open");
-    }
     setStatus("Texto procesado y agregado a la tabla.");
   }
 
@@ -790,7 +792,7 @@
     document.querySelectorAll(".ticket-item-name").forEach((input) => {
       input.addEventListener("input", (e) => {
         const idx = parseInt(e.target.closest("tr").dataset.itemIndex);
-        ticketItems[idx].name = e.target.value.trim();
+        ticketItems[idx].name = sanitizeText(e.target.value, 80);
       });
       input.addEventListener("keydown", (e) => {
         if (e.key !== "Enter") return;
@@ -865,7 +867,7 @@
   function saveRestaurantTicket() {
     if (!ticketItems.length) return alert("Agrega al menos un producto.");
     const paidBy = els.ticketPaidBySelect.value; // "" means nobody paid (pay at the moment)
-    const ticketName = els.ticketNameInput.value.trim() || "Restaurante";
+    const ticketName = sanitizeText(els.ticketNameInput.value, 80) || "Restaurante";
 
     for (let i = 0; i < ticketItems.length; i++) {
       const item = ticketItems[i];
@@ -912,7 +914,7 @@
         const finalShareCents = Math.round(shareCents * multiplier);
         const itemsList = ticketItems
           .filter(item => item.splitWith.includes(pid))
-          .map(item => item.name || "Producto")
+          .map(item => sanitizeText(item.name || "Producto", 80) || "Producto")
           .join(", ");
         const limitDesc = itemsList.length > 55 ? itemsList.slice(0, 52) + "..." : itemsList;
         const description = `${ticketName}: ${limitDesc}`;
@@ -938,7 +940,7 @@
         const finalShareCents = Math.round(shareCents * multiplier);
         const itemsList = ticketItems
           .filter(item => item.splitWith.includes(pid))
-          .map(item => item.name || "Producto")
+          .map(item => sanitizeText(item.name || "Producto", 80) || "Producto")
           .join(", ");
         const limitDesc = itemsList.length > 55 ? itemsList.slice(0, 52) + "..." : itemsList;
         const personName = state.people.find(p => p.id === pid)?.name || "?";
@@ -999,6 +1001,7 @@
         name = name.replace(/\s*c\/u\s*$/, "");
         name = name.replace(/[\.\-\*_]+$/, "").trim();
 
+        name = sanitizeText(name, 80);
         if (!name) name = "Producto";
 
         items.push({ name, price });
@@ -1024,7 +1027,7 @@
     const personIndex = state.people.findIndex((p) => p.id === personId);
     if (personIndex === -1) return;
 
-    state.people[personIndex].reminder = els.reminderTextInput.value.trim().slice(0, 160);
+    state.people[personIndex].reminder = sanitizeText(els.reminderTextInput.value, 160);
 
     saveAndRender();
     els.reminderDialog.close();
@@ -1061,7 +1064,7 @@
           ? `Aporte de ${payer}`
           : expense.source === "restaurant"
             ? `${splitNames} paga a ${payer}`
-            : `Pago ${payer} · dividido entre ${splitNames}`;
+            : `Pago ${payer} - dividido entre ${splitNames}`;
         return `
           <li class="list-item">
             <div class="expense-edit-row">
@@ -1120,8 +1123,8 @@
       description: first.restaurantName || "Cuenta por platillo",
       amountCents,
       meta: paidBy === "__self__"
-        ? `Pago al momento · consumido por ${names}`
-        : `Pago ${personName(paidBy)} · consumido por ${names}`
+        ? `Pago al momento - consumido por ${names}`
+        : `Pago ${personName(paidBy)} - consumido por ${names}`
     };
   }
 
@@ -1138,13 +1141,13 @@
   function updateExpenseDescription(expenseId, value) {
     const expense = state.expenses.find((item) => item.id === expenseId);
     if (!expense) return;
-    const description = String(value || "").trim();
+    const description = sanitizeText(value, 80);
     if (!description) {
       render();
       return setStatus("La descripcion no puede estar vacia.");
     }
     if (expense.description === description) return;
-    expense.description = description.slice(0, 80);
+    expense.description = description;
     saveAndRender();
     setStatus("Gasto actualizado.");
   }
@@ -1315,7 +1318,7 @@
     if (!els.errorConsoleBox) return;
     if (errorLogs.length === 0) {
       els.errorConsoleBox.className = "error-console-box no-errors";
-      els.errorConsoleBox.innerHTML = "No se han detectado errores de ejecución. Todo funciona bien.";
+      els.errorConsoleBox.innerHTML = "No se han detectado errores de ejecucion. Todo funciona bien.";
       els.copyErrorLogBtn.classList.add("hidden");
       return;
     }
@@ -1475,15 +1478,18 @@
   }
 
   function addExpense() {
-    const description = els.expenseDescriptionInput.value.trim();
+    const description = sanitizeText(els.expenseDescriptionInput.value, 80);
     const amountCents = toCents(els.expenseAmountInput.value);
-    const paidBy = els.expensePaidByInput.value;
-    const splitWith = Array.from(document.querySelectorAll("[data-split-id]:checked")).map((input) => input.dataset.splitId);
+    const peopleIds = new Set(state.people.map((person) => person.id));
+    const paidBy = sanitizeId(els.expensePaidByInput.value, "p");
+    const splitWith = Array.from(document.querySelectorAll("[data-split-id]:checked"))
+      .map((input) => sanitizeId(input.dataset.splitId, "p"))
+      .filter((id) => peopleIds.has(id));
 
     if (!state.people.length) return setStatus("Agrega participantes primero.");
     if (!description) return setStatus("Agrega una descripcion.");
     if (amountCents <= 0) return setStatus("El monto debe ser mayor a cero.");
-    if (!paidBy) return setStatus("Selecciona quien pago.");
+    if (!peopleIds.has(paidBy)) return setStatus("Selecciona quien pago.");
     if (!splitWith.length) return setStatus("Selecciona al menos una persona para dividir.");
 
     state.expenses.push({
@@ -1515,7 +1521,7 @@
   function updatePersonName(personId, value) {
     const person = state.people.find((p) => p.id === personId);
     if (!person) return;
-    const trimmed = String(value || "").trim();
+    const trimmed = sanitizeText(value, 40);
     if (!trimmed) {
       render();
       return setStatus("El nombre no puede estar vacio.");
@@ -1624,6 +1630,9 @@
   }
 
   async function decodeHash(rawHash, privateKey) {
+    if (typeof rawHash !== "string" || rawHash.length > MAX_HASH_LENGTH) {
+      throw new Error("PAYLOAD_TOO_LARGE");
+    }
     const parts = rawHash.split(":");
     const prefix = parts[0];
 
@@ -1780,7 +1789,7 @@
 
   function withHash(hash) {
     const url = new URL(location.href);
-    // Limpiar los parámetros de modo forzado al compartir para no obligar a los invitados
+    // Limpiar los parametros de modo forzado al compartir para no obligar a los invitados
     url.searchParams.delete("mode");
     url.searchParams.delete("view");
     url.hash = hash;
@@ -1902,7 +1911,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       const sanitizedName = state.groupName
-        ? state.groupName.trim().toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")
+        ? sanitizeText(state.groupName, 80).toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")
         : "grupo";
       const fileName = `grupo-clara-${sanitizedName}.clara`;
       a.href = url;
@@ -1921,26 +1930,34 @@
   function handleImportBackupFile(event) {
     const file = event.target.files[0];
     if (!file) return;
+    if (file.size > MAX_BACKUP_BYTES) {
+      setStatus("La copia es demasiado grande para cargarla con seguridad.");
+      event.target.value = "";
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
         const text = e.target.result;
+        if (typeof text !== "string" || text.length > MAX_BACKUP_BYTES) {
+          throw new Error("El archivo excede el tamano permitido.");
+        }
         const parsed = JSON.parse(text);
         
         if (!parsed || (typeof parsed !== "object")) {
-          throw new Error("El contenido no es un objeto válido.");
+          throw new Error("El contenido no es un objeto valido.");
         }
 
         const normalized = normalizeState(parsed);
         
         if (normalized.people.length === 0 && normalized.expenses.length === 0 && (!parsed.groupName)) {
-          if (!confirm("El archivo parece estar vacío o no es un formato válido de Clara. ¿Deseas importarlo de todos modos?")) {
+          if (!confirm("El archivo parece estar vacio o no es un formato valido de Clara. Deseas importarlo de todos modos?")) {
             event.target.value = "";
             return;
           }
         } else {
-          if (!confirm("¿Estás seguro de que quieres cargar esta copia del grupo? Reemplazará todos los datos actuales en este dispositivo.")) {
+          if (!confirm("Estas seguro de que quieres cargar esta copia del grupo? Reemplazara todos los datos actuales en este dispositivo.")) {
             event.target.value = "";
             return;
           }
@@ -1948,10 +1965,10 @@
 
         state = normalized;
         saveAndRender();
-        setStatus("Copia del grupo cargada con éxito.");
+        setStatus("Copia del grupo cargada con exito.");
       } catch (err) {
         console.error(err);
-        setStatus("Error al leer el archivo. Asegúrate de que sea una copia de Clara válida.");
+        setStatus("Error al leer el archivo. Asegurate de que sea una copia de Clara valida.");
       } finally {
         event.target.value = "";
       }
@@ -1961,125 +1978,6 @@
       event.target.value = "";
     };
     reader.readAsText(file);
-  }
-
-  let ocrWorker = null;
-
-  async function initOcr() {
-    if (typeof Tesseract === "undefined") {
-      throw new Error("TESSERACT_NOT_LOADED");
-    }
-    if (ocrWorker) return ocrWorker;
-
-    setOcrStatus("Cargando motor de lectura...", 10);
-    const worker = await Tesseract.createWorker("spa", undefined, {
-      ...OCR_OPTIONS,
-      logger: (m) => {
-        if (m.status === "recognizing text") {
-          setOcrStatus("Procesando imagen...", Math.round(m.progress * 100));
-        } else if (m.status === "loading spa.traineddata") {
-          setOcrStatus("Descargando diccionario...", Math.round(m.progress * 100));
-        } else {
-          setOcrStatus("Inicializando motor...", 20);
-        }
-      }
-    });
-    await worker.setParameters({
-      preserve_interword_spaces: "1",
-      tessedit_pageseg_mode: "6"
-    });
-    ocrWorker = worker;
-    return ocrWorker;
-  }
-
-  async function handleOcrFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (!els.ocrStatusBox) return;
-    els.ocrStatusBox.classList.remove("hidden");
-    setOcrStatus("Iniciando motor OCR...", 5);
-
-    try {
-      const worker = await initOcr();
-      setOcrStatus("Mejorando imagen...", 25);
-      const imageForOcr = await preprocessImageForOcr(file);
-      setOcrStatus("Analizando texto de imagen...", 50);
-      const { data: { text } } = await worker.recognize(imageForOcr);
-      
-      els.ticketRawInput.value = text;
-      els.ticketRawInput.dispatchEvent(new Event("input"));
-      
-      setOcrStatus("¡Lectura completada!", 100);
-      setTimeout(() => {
-        if (els.ocrStatusBox) els.ocrStatusBox.classList.add("hidden");
-      }, 2000);
-      setStatus("Texto extraído del ticket.");
-    } catch (err) {
-      console.error("OCR error:", err);
-      if (err.message === "TESSERACT_NOT_LOADED") {
-        alert("El motor de escaneo no está cargado. Se necesita conexión a internet la primera vez. Captura los productos a mano.");
-      } else {
-        alert("Error al procesar la imagen: " + err.message);
-      }
-      if (els.ocrStatusBox) els.ocrStatusBox.classList.add("hidden");
-    } finally {
-      event.target.value = "";
-    }
-  }
-
-  async function preprocessImageForOcr(file) {
-    const source = "createImageBitmap" in window
-      ? await createImageBitmap(file)
-      : await loadImageElement(file);
-    const maxSide = Math.max(source.width, source.height);
-    const scale = Math.min(3, Math.max(1, 2400 / maxSide));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(source.width * scale);
-    canvas.height = Math.round(source.height * scale);
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
-    if (typeof source.close === "function") source.close();
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-      const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-      const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.45 + 128));
-      const cleaned = contrasted > 245 ? 255 : contrasted < 25 ? 0 : contrasted;
-      data[i] = cleaned;
-      data[i + 1] = cleaned;
-      data[i + 2] = cleaned;
-    }
-    ctx.putImageData(imageData, 0, 0);
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        resolve(blob || file);
-      }, "image/png");
-    });
-  }
-
-  function loadImageElement(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = reject;
-        image.src = reader.result;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function setOcrStatus(text, pct) {
-    if (els.ocrStatusLabel) els.ocrStatusLabel.textContent = text;
-    if (els.ocrProgressBar) els.ocrProgressBar.style.width = `${pct}%`;
   }
 
   function escapeHtml(value) {
