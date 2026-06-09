@@ -15,7 +15,6 @@ Clara divide cuentas de mesa y gastos compartidos desde una PWA estatica. No usa
 - Copia link del grupo.
 - Guarda datos en `localStorage`.
 - Exporta e importa copia local `.clara`.
-- Escanea tickets con OCR local usando archivos servidos desde la misma PWA.
 
 ## Como abrir
 
@@ -33,7 +32,7 @@ Luego abre `http://localhost:8000`.
 
 1. Agrega participantes.
 2. Si alguien es cumpleanero o invitado y no va a pagar, marcalo en Grupo.
-3. En Gastos, usa `Dividir por platillo` para capturar productos manualmente o escanear un ticket.
+3. En Gastos, usa `Dividir por platillo` para capturar productos manualmente.
 4. Si algo se divide por igual, usa `Agregar gasto compartido`.
 5. Revisa `Pagos` para saber cuanto aporta cada quien.
 6. Copia el resumen para WhatsApp.

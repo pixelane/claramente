@@ -30,17 +30,6 @@
 5. Probar propina `Sin propina`, `5%`, `10%` y `15%`.
 6. Guardar y dividir.
 
-## OCR local
-
-1. Ir a `Gastos`.
-2. Abrir `Dividir por platillo`.
-3. Abrir `Escanear ticket impreso (Opcional)`.
-4. Confirmar que el motor OCR esta disponible.
-5. Subir una imagen de ticket.
-6. Confirmar que el texto aparece en el cuadro editable.
-7. Presionar `Procesar texto y llenar tabla`.
-8. Confirmar que los productos detectados quedan listos para asignar.
-
 ## Pagos cuando nadie pago
 
 1. Ir a `Pagos`.
@@ -81,5 +70,5 @@
 3. Confirmar que los chips de productos son tocables.
 4. Confirmar que no hay errores persistentes en consola.
 5. Confirmar que `app.js` y `sw.js` pasan `node --check`.
-6. En Ayuda, confirmar que la version de cache visible es `clara-cache-v20`.
+6. En Ayuda, confirmar que la version de cache visible es `clara-cache-v21`.
 7. Abrir la app una segunda vez y confirmar que no aparece una version vieja antes de recargar.

@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v20";
+  const CACHE_NAME = "clara-cache-v21";
   const OCR_OPTIONS = {
     workerPath: "worker.min.js",
     corePath: "tesseract-core-simd.wasm.js",
@@ -1242,7 +1242,11 @@
     const changeTotal = rows.reduce((total, row) => total + row.changeCents, 0);
     const pendingRows = rows.filter((row) => row.missingCents > 0 && !row.isGuest);
     const guestRows = rows.filter((row) => row.isGuest);
+    const visibleRows = rows.filter((row) => !row.isGuest);
     const absorbedTotal = guestRows.reduce((total, row) => total + row.originalAmountCents, 0);
+    const guestSummaryText = guestRows.length && visibleRows.length === 1
+      ? `Cubierto por ${personName(visibleRows[0].from)}: ${formatMoney(absorbedTotal)}`
+      : `Incluido en quienes pagan: ${formatMoney(absorbedTotal)}`;
     const allGuests = guestRows.length > 0 && guestRows.length === rows.length;
 
     els.tableClosePanel.innerHTML = `
@@ -1263,7 +1267,7 @@
         guestRows.length
           ? `<div class="guest-summary">
               <strong>Festejados: ${guestRows.map((row) => escapeHtml(personName(row.from))).join(", ")}</strong>
-              <span>Absorbido por la mesa: ${formatMoney(absorbedTotal)}</span>
+              <span>${escapeHtml(guestSummaryText)}</span>
             </div>`
           : ""
       }
@@ -1275,7 +1279,7 @@
         <span>Estado</span>
       </div>
       <div class="close-list">
-        ${rows.map((row) => renderCloseRow(row)).join("")}
+        ${visibleRows.map((row) => renderCloseRow(row)).join("")}
       </div>
       <div class="close-pending">
         <h3>Faltan por pagar</h3>
@@ -1434,7 +1438,7 @@
     const isPaid = row.missingCents === 0;
     const status = row.isGuest ? "Festejado" : isPaid ? "Saldado" : row.paidCents > 0 ? `Falta ${formatMoney(row.missingCents)}` : "Pendiente";
     const change = row.changeCents > 0 ? `<span class="positive">Cambio ${formatMoney(row.changeCents)}</span>` : "";
-    const absorbed = row.absorbedCents > 0 ? `<span class="neutral">Absorbe ${formatMoney(row.absorbedCents)} de festejados</span>` : "";
+    const absorbed = row.absorbedCents > 0 ? `<span class="neutral">Incluye invitado(s): ${formatMoney(row.absorbedCents)}</span>` : "";
     const original = row.isGuest ? `<span class="neutral">Parte original: ${formatMoney(row.originalAmountCents)}</span>` : "";
     const amountLine = row.isPayerContribution
       ? `<span>Aporta ${formatMoney(row.amountCents)} a la cuenta</span>`

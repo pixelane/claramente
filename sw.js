@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v20";
+const CACHE_NAME = "clara-cache-v21";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,11 +6,7 @@ const ASSETS = [
   "./app.js",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png",
-  "./tesseract.min.js",
-  "./worker.min.js",
-  "./tesseract-core-simd.wasm.js",
-  "./spa.traineddata.gz"
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
