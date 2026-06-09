@@ -1192,7 +1192,7 @@
         const className = amount > 0 ? "positive" : amount < 0 ? "negative" : "neutral";
         const label = amount > 0 ? "cobra" : amount < 0 ? "debe" : "en cero";
         return `
-          <div class="balance-row">
+          <div class="balance-row is-${className}">
             <span>${escapeHtml(person.name)}</span>
             <span class="${className}">${label} ${formatMoney(Math.abs(amount))}</span>
           </div>
