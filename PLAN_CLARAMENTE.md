@@ -34,7 +34,6 @@ Los atajos no deben verse con el mismo peso que la accion principal. Deben agrup
 
 Ejemplos de atajos validos:
 
-- `Pegar varios nombres`.
 - `Todos comieron esto`.
 - `Repetir ultimo producto`.
 - `Agregar otro igual`.
@@ -99,15 +98,14 @@ Acciones:
 
 Atajos secundarios:
 
-- `Pegar varios nombres`
-- `Usar nombres de ejemplo`
+- Marcar `No paga` para invitado o cumpleanero cuando ya hay personas en la mesa.
 
 Reglas:
 
 - Usar `Personas` como nombre principal de la seccion.
 - No mostrar configuracion de grupo al inicio.
 - No mostrar moneda salvo en `Mas opciones`.
-- No mostrar cumpleanero/invitado hasta que haya al menos 2 personas.
+- Cumpleanero/invitado se marca como `No paga`: puede consumir, pero su parte se reparte entre quienes si pagan.
 
 ### Paso 2: Cuenta
 
@@ -297,7 +295,6 @@ Riesgo a evitar:
 - Moneda.
 - Propina.
 - Cargos adicionales.
-- Cumpleanero/invitado.
 - Exportar/importar copia.
 - Diagnostico y consola de errores.
 - Link del grupo.

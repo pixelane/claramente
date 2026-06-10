@@ -6,22 +6,23 @@
     currency: "MXN"
   });
 
-  const screens = ["start", "people", "type", "products", "payer", "result"];
+  const screens = ["start", "people", "type", "items", "paid", "result"];
   const progress = {
     start: "Inicio",
     people: "1 de 5",
     type: "2 de 5",
-    products: "3 de 5",
-    payer: "4 de 5",
+    items: "3 de 5",
+    paid: "4 de 5",
     result: "5 de 5"
   };
 
   const state = {
     screen: "start",
+    itemMode: "product",
     people: [],
-    products: [],
-    payerMode: "",
-    payerId: "",
+    items: [],
+    paidMode: "",
+    paidById: "",
     editing: null
   };
 
@@ -38,6 +39,24 @@
     toast: document.getElementById("toast")
   };
 
+  const iconPaths = {
+    back: '<path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    user: '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>',
+    users: '<path d="M16 21a6 6 0 0 0-12 0"/><circle cx="10" cy="8" r="4"/><path d="M22 21a5 5 0 0 0-5-5"/><path d="M16 3.2a4 4 0 0 1 0 7.6"/>',
+    plate: '<circle cx="12" cy="12" r="7"/><path d="M5 3v6"/><path d="M3 3v6"/><path d="M7 3v6"/><path d="M19 3v18"/>',
+    group: '<path d="M4 8h16"/><path d="M4 16h16"/><path d="M8 4v16"/><path d="M16 4v16"/>',
+    person: '<circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>',
+    gift: '<path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H8.5A2.5 2.5 0 1 1 11 4.5L12 7Z"/><path d="M12 7h3.5A2.5 2.5 0 1 0 13 4.5L12 7Z"/>',
+    coin: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 7v10"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>',
+    close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
+    check: '<path d="m5 12 4 4L19 6"/>',
+    trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/>'
+  };
+
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
@@ -52,13 +71,14 @@
   function render() {
     els.progressLabel.textContent = progress[state.screen];
     els.backBtn.hidden = state.screen === "start";
+    els.backBtn.innerHTML = `${icon("back")}<span>Atras</span>`;
 
     const renderer = {
       start: renderStart,
       people: renderPeople,
       type: renderType,
-      products: renderProducts,
-      payer: renderPayer,
+      items: renderItems,
+      paid: renderPaid,
       result: renderResult
     }[state.screen];
 
@@ -68,7 +88,7 @@
 
   function renderHeader(title, help = "", kicker = "claramente") {
     return `
-      <div>
+      <div class="screen-head">
         <p class="screen-kicker">${escapeHtml(kicker)}</p>
         <h1 class="screen-title">${escapeHtml(title)}</h1>
         ${help ? `<p class="screen-help">${escapeHtml(help)}</p>` : ""}
@@ -79,45 +99,54 @@
   function renderStart() {
     return `
       ${renderHeader("Vamos a dividir la cuenta", "No necesitas registrarte. Todo queda en este celular.")}
+      <div class="welcome-mark" aria-hidden="true">${icon("coin")}</div>
       <div class="panel">
-        <button class="primary-button" type="button" data-go="people">Empezar</button>
+        <button class="primary-button" type="button" data-go="people">${icon("plus")}<span>Empezar</span></button>
         <button class="secondary-button" type="button" data-toast="Abrir cuenta guardada queda para una siguiente prueba.">Abrir cuenta guardada</button>
       </div>
     `;
   }
 
   function renderPeople() {
-    const canContinue = state.people.length >= 2;
+    const canContinue = state.people.length >= 2 && payers().length > 0;
+    const message = state.people.length < 2
+      ? "Agrega al menos a dos personas"
+      : payers().length === 0
+        ? "Al menos una persona debe pagar"
+        : "Ya estan todos";
+
     return `
-      ${renderHeader("Quienes estan en la mesa?", "Agrega una persona a la vez.")}
+      ${renderHeader("Quienes estan en la mesa?", "Agrega una persona a la vez. Marca invitado o cumpleanero si esa persona no va a pagar.")}
       <form class="panel form-grid" id="personForm" novalidate>
         <label class="field">
           <span>Nombre</span>
           <input id="personNameInput" name="personName" type="text" autocomplete="off" placeholder="Ana">
         </label>
         <p class="error-text" id="peopleError"></p>
-        <button class="primary-button" type="submit">Agregar</button>
+        <button class="primary-button" type="submit">${icon("plus")}<span>Agregar persona</span></button>
       </form>
       <div class="list" aria-label="Personas agregadas">
         ${state.people.length ? state.people.map(renderPersonCard).join("") : `<div class="empty-state">Agrega a quienes estan en la mesa.</div>`}
       </div>
       <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="type" ${canContinue ? "" : "disabled"}>${canContinue ? "Ya estan todos" : "Agrega al menos a dos personas"}</button>
+        <button class="primary-button" type="button" data-go="type" ${canContinue ? "" : "disabled"}>${message}</button>
       </div>
     `;
   }
 
   function renderPersonCard(person) {
+    const badge = person.isGuest ? "Invitado: no paga" : "Paga su parte";
     return `
-      <article class="person-card">
+      <article class="person-card ${person.isGuest ? "is-guest" : ""}">
         <span class="initial" aria-hidden="true">${escapeHtml(initialFor(person.name))}</span>
         <div class="card-main">
           <h2 class="card-title">${escapeHtml(person.name)}</h2>
-          <p class="card-meta">Persona en la mesa</p>
+          <p class="card-meta">${escapeHtml(badge)}</p>
         </div>
         <div class="card-actions">
-          <button class="mini-button" type="button" data-edit-person="${person.id}">Editar</button>
-          <button class="mini-button mini-danger" type="button" data-remove-person="${person.id}">Quitar</button>
+          <button class="mini-button" type="button" data-toggle-guest="${person.id}">${icon(person.isGuest ? "user" : "gift")}<span>${person.isGuest ? "Si paga" : "No paga"}</span></button>
+          <button class="mini-button" type="button" data-edit-person="${person.id}">${icon("edit")}<span>Editar</span></button>
+          <button class="mini-button mini-danger" type="button" data-remove-person="${person.id}">${icon("trash")}<span>Quitar</span></button>
         </div>
       </article>
     `;
@@ -125,109 +154,256 @@
 
   function renderType() {
     return `
-      ${renderHeader("Que van a dividir?", "Elige el camino que mas se parece a tu cuenta.")}
+      ${renderHeader("Que van a dividir?", "Elige el tipo de cosa que vas a agregar ahora. Puedes volver aqui para mezclar productos y gastos.")}
       <div class="list">
-        <button class="choice-card" type="button" data-go="products">
-          <strong>Productos de la cuenta</strong>
-          <span>Tacos, pizza, refrescos</span>
-        </button>
-        <button class="choice-card" type="button" data-toast="Gasto para todos entra en la siguiente version del prototipo.">
-          <strong>Gasto para todos</strong>
-          <span>Propina, taxi, botella</span>
-        </button>
-        <button class="choice-card" type="button" data-toast="Gasto de una persona entra en la siguiente version del prototipo.">
-          <strong>Gasto de una persona</strong>
-          <span>Un cafe, un extra, estacionamiento</span>
-        </button>
+        ${renderTypeChoice("product", "Productos de la cuenta", "Tacos, pizza, refrescos", "plate")}
+        ${renderTypeChoice("shared", "Gasto para todos", "Propina, taxi, botella", "group")}
+        ${renderTypeChoice("single", "Gasto de una persona", "Un extra que solo es de alguien", "person")}
+      </div>
+      ${state.items.length ? `
+        <div class="panel compact-panel">
+          <p class="panel-note">Ya llevas ${state.items.length} ${state.items.length === 1 ? "cosa" : "cosas"} en la cuenta.</p>
+          <button class="secondary-button" type="button" data-go="items">Ver lo agregado</button>
+        </div>
+      ` : ""}
+    `;
+  }
+
+  function renderTypeChoice(mode, title, help, iconName) {
+    return `
+      <button class="choice-card" type="button" data-item-mode="${mode}">
+        <span class="choice-icon">${icon(iconName)}</span>
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(help)}</span>
+      </button>
+    `;
+  }
+
+  function renderItems() {
+    const canContinue = itemsReady() && payers().length > 0;
+    return `
+      ${renderHeader(itemQuestion(), itemHelp())}
+      ${renderItemForm()}
+      <section class="list" aria-label="Cuenta agregada">
+        ${state.items.length ? state.items.map(renderItemCard).join("") : `<div class="empty-state">Agrega lo primero de la cuenta.</div>`}
+      </section>
+      <div class="quick-row" aria-label="Agregar otro tipo">
+        <button class="quick-button ${state.itemMode === "product" ? "active" : ""}" type="button" data-item-mode="product">Producto</button>
+        <button class="quick-button ${state.itemMode === "shared" ? "active" : ""}" type="button" data-item-mode="shared">Para todos</button>
+        <button class="quick-button ${state.itemMode === "single" ? "active" : ""}" type="button" data-item-mode="single">De alguien</button>
+      </div>
+      <div class="sticky-actions">
+        <button class="primary-button" type="button" data-go="paid" ${canContinue ? "" : "disabled"}>${canContinue ? "Ya termine la cuenta" : continueMessage()}</button>
       </div>
     `;
   }
 
-  function renderProducts() {
-    const canContinue = state.products.length > 0 && state.products.every((product) => product.eatenBy.length > 0);
+  function itemQuestion() {
+    if (state.itemMode === "shared") return "Que gasto se reparte entre todos?";
+    if (state.itemMode === "single") return "Este gasto es solo de alguien?";
+    return "Que producto aparece en la cuenta?";
+  }
+
+  function itemHelp() {
+    if (state.itemMode === "shared") return "Clara divide este monto entre las personas que si pagan.";
+    if (state.itemMode === "single") return "Ejemplo: si Ana pidio un cafe y Luis lo pago, el cafe es de Ana y lo pago Luis.";
+    return "Agrega el producto, luego toca quien lo consumio.";
+  }
+
+  function renderItemForm() {
+    if (state.itemMode === "shared") {
+      return `
+        <form class="panel form-grid" id="sharedForm" novalidate>
+          <label class="field">
+            <span>Nombre del gasto</span>
+            <input id="sharedNameInput" name="itemName" type="text" autocomplete="off" placeholder="Propina">
+          </label>
+          <label class="field">
+            <span>Monto</span>
+            <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+          </label>
+          <p class="error-text" id="itemError"></p>
+          <button class="primary-button" type="submit">${icon("plus")}<span>Agregar gasto para todos</span></button>
+        </form>
+      `;
+    }
+
+    if (state.itemMode === "single") {
+      return `
+        <form class="panel form-grid" id="singleForm" novalidate>
+          <label class="field">
+            <span>Nombre del gasto</span>
+            <input id="singleNameInput" name="itemName" type="text" autocomplete="off" placeholder="Cafe">
+          </label>
+          <label class="field">
+            <span>Monto</span>
+            <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+          </label>
+          <label class="field">
+            <span>De quien es</span>
+            <select name="ownerId">${personOptions()}</select>
+          </label>
+          <label class="field">
+            <span>Quien lo pago</span>
+            <select name="paidById">${personOptions()}</select>
+          </label>
+          <p class="error-text" id="itemError"></p>
+          <button class="primary-button" type="submit">${icon("plus")}<span>Agregar gasto de una persona</span></button>
+        </form>
+      `;
+    }
+
     return `
-      ${renderHeader("Que producto aparece en la cuenta?", "Agrega un producto, elige quien lo comio y sigue con el siguiente.")}
       <form class="panel form-grid" id="productForm" novalidate>
         <label class="field">
           <span>Producto</span>
-          <input id="productNameInput" name="productName" type="text" autocomplete="off" placeholder="Pizza">
+          <input id="productNameInput" name="itemName" type="text" autocomplete="off" placeholder="Pizza">
         </label>
         <label class="field">
           <span>Precio</span>
-          <input id="productPriceInput" name="productPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+          <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
         </label>
-        <p class="error-text" id="productError"></p>
-        <button class="primary-button" type="submit">Agregar producto</button>
+        <p class="error-text" id="itemError"></p>
+        <button class="primary-button" type="submit">${icon("plus")}<span>Agregar producto</span></button>
       </form>
-      <section class="list" aria-label="Productos agregados">
-        ${state.products.length ? state.products.map(renderProductCard).join("") : `<div class="empty-state">Agrega el primer producto de la cuenta.</div>`}
-      </section>
-      <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="payer" ${canContinue ? "" : "disabled"}>${canContinue ? "Ya termine la cuenta" : "Falta elegir quien comio"}</button>
-      </div>
     `;
   }
 
-  function renderProductCard(product) {
-    const eaterNames = product.eatenBy.map(personName).join(", ");
-    const missing = product.eatenBy.length === 0;
+  function renderItemCard(item) {
+    if (item.type === "shared") return renderSharedCard(item);
+    if (item.type === "single") return renderSingleCard(item);
+    return renderProductCard(item);
+  }
+
+  function renderProductCard(item) {
+    const names = namesFor(item.eatenBy);
+    const missing = item.eatenBy.length === 0;
     return `
       <article class="product-card">
-        <div>
-          <h2 class="card-title">${escapeHtml(product.name)}</h2>
-          <p class="money">${formatMoney(product.priceCents)}</p>
-          <p class="card-meta">${missing ? "Elige quien comio esto" : `Lo comieron: ${escapeHtml(eaterNames)}`}</p>
+        <div class="card-row">
+          <span class="card-icon">${icon("plate")}</span>
+          <div>
+            <h2 class="card-title">${escapeHtml(item.name)}</h2>
+            <p class="money">${formatMoney(item.amountCents)}</p>
+          </div>
         </div>
+        <p class="card-meta">${missing ? "Elige quien comio esto" : `Lo comieron: ${escapeHtml(names)}`}</p>
         ${missing ? `<div class="product-warning">Elige quien comio esto para seguir.</div>` : ""}
-        <div class="person-picker" aria-label="Quien comio ${escapeHtml(product.name)}">
-          ${state.people.map((person) => renderPickButton(person, product)).join("")}
-          <button class="pick-button" type="button" data-product-all="${product.id}">Todos comieron esto</button>
+        <div class="person-picker" aria-label="Quien comio ${escapeAttr(item.name)}">
+          ${state.people.map((person) => renderPickButton(person, item.eatenBy, `data-toggle-eater="${item.id}:${person.id}"`)).join("")}
+          <button class="pick-button" type="button" data-item-all="${item.id}">Todos comieron esto</button>
         </div>
-        <div class="card-actions">
-          <button class="mini-button" type="button" data-edit-product="${product.id}">Editar</button>
-          <button class="mini-button" type="button" data-duplicate-product="${product.id}">Duplicar</button>
-          <button class="mini-button mini-danger" type="button" data-remove-product="${product.id}">Quitar</button>
-        </div>
+        ${renderItemActions(item)}
       </article>
     `;
   }
 
-  function renderPickButton(person, product) {
-    const active = product.eatenBy.includes(person.id);
-    return `<button class="pick-button ${active ? "active" : ""}" type="button" data-toggle-eater="${product.id}:${person.id}">${escapeHtml(person.name)}</button>`;
+  function renderSharedCard(item) {
+    return `
+      <article class="product-card shared-card">
+        <div class="card-row">
+          <span class="card-icon">${icon("group")}</span>
+          <div>
+            <h2 class="card-title">${escapeHtml(item.name)}</h2>
+            <p class="money">${formatMoney(item.amountCents)}</p>
+          </div>
+        </div>
+        <p class="tag-line">Se divide entre: ${escapeHtml(namesFor(item.splitWith))}</p>
+        ${renderItemActions(item)}
+      </article>
+    `;
   }
 
-  function renderPayer() {
-    const canContinue = state.payerMode === "none" || (state.payerMode === "single" && state.payerId);
+  function renderSingleCard(item) {
     return `
-      ${renderHeader("Alguien ya pago la cuenta?", "Elige como se pago para calcular el resultado.")}
-      <div class="list">
-        <button class="choice-card ${state.payerMode === "none" ? "active" : ""}" type="button" data-payer-mode="none">
-          <strong>Todavia nadie pago</strong>
-          <span>Clara dira cuanto aporta cada persona.</span>
-        </button>
-        <button class="choice-card ${state.payerMode === "single" ? "active" : ""}" type="button" data-payer-mode="single">
-          <strong>Una persona pago</strong>
-          <span>Elige quien pago para calcular quien le devuelve.</span>
-        </button>
-      </div>
-      ${state.payerMode === "single" ? renderPayerPeople() : ""}
-      <button class="secondary-button" type="button" data-toast="Pagaron varias personas queda como flujo avanzado de la siguiente prueba.">Pagaron varias personas</button>
-      <p class="error-text" id="payerError"></p>
-      <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="result" ${canContinue ? "" : "disabled"}>${canContinue ? "Calcular cuenta" : "Elige una opcion"}</button>
+      <article class="product-card single-card">
+        <div class="card-row">
+          <span class="card-icon">${icon("person")}</span>
+          <div>
+            <h2 class="card-title">${escapeHtml(item.name)}</h2>
+            <p class="money">${formatMoney(item.amountCents)}</p>
+          </div>
+        </div>
+        <p class="tag-line">De: ${escapeHtml(personName(item.ownerId))}</p>
+        <p class="tag-line">Pago: ${escapeHtml(personName(item.paidById))}</p>
+        ${renderItemActions(item)}
+      </article>
+    `;
+  }
+
+  function renderItemActions(item) {
+    return `
+      <div class="card-actions">
+        <button class="mini-button" type="button" data-edit-item="${item.id}">${icon("edit")}<span>Editar</span></button>
+        <button class="mini-button" type="button" data-duplicate-item="${item.id}">${icon("copy")}<span>Otro igual</span></button>
+        <button class="mini-button mini-danger" type="button" data-remove-item="${item.id}">${icon("trash")}<span>Quitar</span></button>
       </div>
     `;
   }
 
-  function renderPayerPeople() {
+  function renderPickButton(person, selectedIds, dataAttr) {
+    const active = selectedIds.includes(person.id);
+    return `
+      <button class="pick-button ${active ? "active" : ""} ${person.isGuest ? "guest-pick" : ""}" type="button" ${dataAttr}>
+        ${active ? icon("check") : ""}
+        <span>${escapeHtml(person.name)}</span>
+      </button>
+    `;
+  }
+
+  function renderPaid() {
+    const canContinue = paidReady();
+    return `
+      ${renderHeader("Alguien ya pago la cuenta?", "Si varias personas pagaron cosas distintas, elige esa opcion y marca quien pago cada cosa.")}
+      <div class="list">
+        ${renderPaidMode("none", "Todavia nadie pago", "Clara dira cuanto aporta cada persona.", "coin")}
+        ${renderPaidMode("single", "Una persona pago todo", "Elige quien pago para calcular quien le devuelve.", "user")}
+        ${renderPaidMode("multiple", "Varias personas pagaron", "Marca quien pago cada producto o gasto.", "users")}
+      </div>
+      ${state.paidMode === "single" ? renderPaidPeople() : ""}
+      ${state.paidMode === "multiple" ? renderMultiplePaid() : ""}
+      <p class="error-text" id="paidError"></p>
+      <div class="sticky-actions">
+        <button class="primary-button" type="button" data-go="result" ${canContinue ? "" : "disabled"}>${canContinue ? "Calcular cuenta" : paidMessage()}</button>
+      </div>
+    `;
+  }
+
+  function renderPaidMode(mode, title, help, iconName) {
+    return `
+      <button class="choice-card ${state.paidMode === mode ? "active" : ""}" type="button" data-paid-mode="${mode}">
+        <span class="choice-icon">${icon(iconName)}</span>
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(help)}</span>
+      </button>
+    `;
+  }
+
+  function renderPaidPeople() {
     return `
       <section class="list" aria-label="Quien pago">
         ${state.people.map((person) => `
-          <button class="payer-card ${state.payerId === person.id ? "active" : ""}" type="button" data-payer="${person.id}">
+          <button class="payer-card ${state.paidById === person.id ? "active" : ""}" type="button" data-paid-by="${person.id}">
+            <span class="choice-icon">${icon(person.isGuest ? "gift" : "user")}</span>
             <strong>${escapeHtml(person.name)}</strong>
-            <span>Pago la cuenta</span>
+            <span>${person.isGuest ? "Pago, aunque no aporta" : "Pago la cuenta"}</span>
           </button>
+        `).join("")}
+      </section>
+    `;
+  }
+
+  function renderMultiplePaid() {
+    return `
+      <section class="list paid-list" aria-label="Quien pago cada cosa">
+        ${state.items.map((item) => `
+          <article class="product-card paid-item">
+            <h2 class="card-title">${escapeHtml(item.name)}</h2>
+            <p class="card-meta">${itemLabel(item)} · ${formatMoney(item.amountCents)}</p>
+            <div class="person-picker">
+              ${state.people.map((person) => renderPickButton(person, [item.paidById].filter(Boolean), `data-item-paid="${item.id}:${person.id}"`)).join("")}
+            </div>
+          </article>
         `).join("")}
       </section>
     `;
@@ -236,18 +412,18 @@
   function renderResult() {
     const result = calculateResult();
     return `
-      ${renderHeader("Listo, asi queda la cuenta", result.mode === "none" ? "Cada quien aporta su parte." : "Estos son los pagos sugeridos.")}
+      ${renderHeader("Listo, asi queda la cuenta", result.help)}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
       <div class="panel">
-        <button class="primary-button" type="button" data-share-whatsapp>Enviar por WhatsApp</button>
-        <button class="secondary-button" type="button" data-copy-summary>Copiar resumen</button>
+        <button class="primary-button" type="button" data-share-whatsapp>${icon("send")}<span>Enviar por WhatsApp</span></button>
+        <button class="secondary-button" type="button" data-copy-summary>${icon("copy")}<span>Copiar resumen</span></button>
       </div>
-      <div class="panel">
+      <div class="panel edit-shortcuts">
         <button class="secondary-button" type="button" data-go="people">Editar personas</button>
-        <button class="secondary-button" type="button" data-go="products">Editar productos</button>
-        <button class="secondary-button" type="button" data-go="payer">Editar quien pago</button>
+        <button class="secondary-button" type="button" data-go="items">Editar cuenta</button>
+        <button class="secondary-button" type="button" data-go="paid">Editar quien pago</button>
       </div>
     `;
   }
@@ -255,6 +431,7 @@
   function renderResultCard(card) {
     return `
       <article class="result-card ${card.kind}">
+        <span class="result-icon">${icon(card.kind === "receive" ? "coin" : card.kind === "neutral" ? "gift" : "send")}</span>
         <strong>${escapeHtml(card.text)}</strong>
       </article>
     `;
@@ -264,6 +441,8 @@
     event.preventDefault();
     if (event.target.id === "personForm") addPerson(event.target);
     if (event.target.id === "productForm") addProduct(event.target);
+    if (event.target.id === "sharedForm") addShared(event.target);
+    if (event.target.id === "singleForm") addSingle(event.target);
   }
 
   function handleRootClick(event) {
@@ -272,18 +451,24 @@
 
     if (button.dataset.go) return goTo(button.dataset.go);
     if (button.dataset.toast) return showToast(button.dataset.toast);
+    if (button.dataset.itemMode) return chooseItemMode(button.dataset.itemMode);
     if (button.dataset.editPerson) return openPersonEdit(button.dataset.editPerson);
     if (button.dataset.removePerson) return removePerson(button.dataset.removePerson);
-    if (button.dataset.editProduct) return openProductEdit(button.dataset.editProduct);
-    if (button.dataset.removeProduct) return removeProduct(button.dataset.removeProduct);
-    if (button.dataset.duplicateProduct) return duplicateProduct(button.dataset.duplicateProduct);
-    if (button.dataset.productAll) return selectAllEaters(button.dataset.productAll);
+    if (button.dataset.toggleGuest) return toggleGuest(button.dataset.toggleGuest);
+    if (button.dataset.editItem) return openItemEdit(button.dataset.editItem);
+    if (button.dataset.removeItem) return removeItem(button.dataset.removeItem);
+    if (button.dataset.duplicateItem) return duplicateItem(button.dataset.duplicateItem);
+    if (button.dataset.itemAll) return selectAllEaters(button.dataset.itemAll);
     if (button.dataset.toggleEater) {
-      const [productId, personId] = button.dataset.toggleEater.split(":");
-      return toggleEater(productId, personId);
+      const [itemId, personId] = button.dataset.toggleEater.split(":");
+      return toggleEater(itemId, personId);
     }
-    if (button.dataset.payerMode) return setPayerMode(button.dataset.payerMode);
-    if (button.dataset.payer) return setPayer(button.dataset.payer);
+    if (button.dataset.paidMode) return setPaidMode(button.dataset.paidMode);
+    if (button.dataset.paidBy) return setPaidBy(button.dataset.paidBy);
+    if (button.dataset.itemPaid) {
+      const [itemId, personId] = button.dataset.itemPaid.split(":");
+      return setItemPaidBy(itemId, personId);
+    }
     if (button.hasAttribute("data-share-whatsapp")) return shareWhatsApp();
     if (button.hasAttribute("data-copy-summary")) return copySummary();
   }
@@ -292,45 +477,85 @@
     const input = form.elements.personName;
     const name = sanitizeText(input.value, 40);
     const error = document.getElementById("peopleError");
-    if (!name) {
-      error.textContent = "Falta el nombre";
-      input.focus();
-      return;
-    }
+    if (!name) return showFieldError(error, input, "Falta el nombre");
     if (state.people.some((person) => person.name.toLowerCase() === name.toLowerCase())) {
-      error.textContent = "Ese nombre ya esta en la mesa";
-      input.focus();
-      return;
+      return showFieldError(error, input, "Ese nombre ya esta en la mesa");
     }
-    state.people.push({ id: createId("p"), name });
+    state.people.push({ id: createId("p"), name, isGuest: false });
+    syncSharedSplits();
     input.value = "";
     render();
   }
 
   function addProduct(form) {
-    const nameInput = form.elements.productName;
-    const priceInput = form.elements.productPrice;
-    const name = sanitizeText(nameInput.value, 60);
-    const priceCents = toCents(priceInput.value);
-    const error = document.getElementById("productError");
-    if (!name) {
-      error.textContent = "Falta el producto";
-      nameInput.focus();
-      return;
-    }
-    if (priceCents <= 0) {
-      error.textContent = "Ponle un precio";
-      priceInput.focus();
-      return;
-    }
-    state.products.push({
+    const values = readItemForm(form);
+    if (!values) return;
+    state.items.push({
       id: createId("prod"),
-      name,
-      priceCents,
+      type: "product",
+      name: values.name,
+      amountCents: values.amountCents,
       eatenBy: []
     });
-    nameInput.value = "";
-    priceInput.value = "";
+    clearItemForm(form);
+    render();
+  }
+
+  function addShared(form) {
+    const values = readItemForm(form);
+    if (!values) return;
+    const splitWith = payers().map((person) => person.id);
+    state.items.push({
+      id: createId("shared"),
+      type: "shared",
+      name: values.name,
+      amountCents: values.amountCents,
+      splitWith
+    });
+    clearItemForm(form);
+    render();
+  }
+
+  function addSingle(form) {
+    const values = readItemForm(form);
+    if (!values) return;
+    state.items.push({
+      id: createId("single"),
+      type: "single",
+      name: values.name,
+      amountCents: values.amountCents,
+      ownerId: form.elements.ownerId.value,
+      paidById: form.elements.paidById.value
+    });
+    clearItemForm(form);
+    render();
+  }
+
+  function readItemForm(form) {
+    const nameInput = form.elements.itemName;
+    const amountInput = form.elements.itemAmount;
+    const error = document.getElementById("itemError");
+    const name = sanitizeText(nameInput.value, 60);
+    const amountCents = toCents(amountInput.value);
+    if (!name) {
+      showFieldError(error, nameInput, form.id === "productForm" ? "Falta el producto" : "Falta el nombre");
+      return null;
+    }
+    if (amountCents <= 0) {
+      showFieldError(error, amountInput, "Ponle un precio");
+      return null;
+    }
+    return { name, amountCents };
+  }
+
+  function clearItemForm(form) {
+    form.elements.itemName.value = "";
+    form.elements.itemAmount.value = "";
+  }
+
+  function chooseItemMode(mode) {
+    state.itemMode = mode;
+    state.screen = mode ? "items" : state.screen;
     render();
   }
 
@@ -340,12 +565,16 @@
       showToast("Agrega al menos a dos personas para dividir.");
       return;
     }
-    if (screen === "payer" && !productsReady()) {
-      showToast("Elige quien comio cada producto.");
+    if (screen === "type" && payers().length === 0) {
+      showToast("Al menos una persona debe pagar.");
       return;
     }
-    if (screen === "result" && !payerReady()) {
-      showToast("Elige como se pago la cuenta.");
+    if (screen === "paid" && !itemsReady()) {
+      showToast(continueMessage());
+      return;
+    }
+    if (screen === "result" && !paidReady()) {
+      showToast(paidMessage());
       return;
     }
     state.screen = screen;
@@ -359,16 +588,40 @@
     render();
   }
 
-  function productsReady() {
-    return state.products.length > 0 && state.products.every((product) => product.eatenBy.length > 0);
+  function itemsReady() {
+    if (!state.items.length) return false;
+    return state.items.every((item) => {
+      if (item.type === "product") return item.eatenBy.length > 0;
+      if (item.type === "shared") return item.splitWith.length > 0;
+      if (item.type === "single") return item.ownerId && item.paidById;
+      return false;
+    });
   }
 
-  function payerReady() {
-    return state.payerMode === "none" || (state.payerMode === "single" && state.payerId);
+  function continueMessage() {
+    if (!state.items.length) return "Agrega algo a la cuenta";
+    if (payers().length === 0) return "Al menos una persona debe pagar";
+    if (state.items.some((item) => item.type === "product" && item.eatenBy.length === 0)) return "Falta elegir quien comio";
+    if (state.items.some((item) => item.type === "shared" && item.splitWith.length === 0)) return "Falta elegir quienes lo dividen";
+    return "Revisa la cuenta";
+  }
+
+  function paidReady() {
+    if (state.paidMode === "none") return true;
+    if (state.paidMode === "single") return Boolean(state.paidById);
+    if (state.paidMode === "multiple") return state.items.every((item) => Boolean(item.paidById));
+    return false;
+  }
+
+  function paidMessage() {
+    if (!state.paidMode) return "Elige una opcion";
+    if (state.paidMode === "single") return "Elige quien pago";
+    if (state.paidMode === "multiple") return "Falta marcar quien pago";
+    return "Calcular cuenta";
   }
 
   function openPersonEdit(personId) {
-    const person = state.people.find((item) => item.id === personId);
+    const person = findPerson(personId);
     if (!person) return;
     state.editing = { type: "person", id: personId };
     openSheet("Editar persona", `
@@ -376,38 +629,76 @@
         <span>Nombre</span>
         <input name="personName" type="text" value="${escapeAttr(person.name)}" autocomplete="off">
       </label>
+      <label class="toggle-line">
+        <input name="isGuest" type="checkbox" ${person.isGuest ? "checked" : ""}>
+        <span>Es invitado o cumpleanero y no paga</span>
+      </label>
     `, `
       <button class="primary-button" type="submit">Guardar cambios</button>
-      <button class="danger-button" type="button" data-sheet-remove>Quitar persona</button>
+      <button class="danger-button" type="button" data-sheet-remove>Eliminar persona</button>
     `);
   }
 
-  function openProductEdit(productId) {
-    const product = state.products.find((item) => item.id === productId);
-    if (!product) return;
-    state.editing = { type: "product", id: productId };
-    openSheet("Editar producto", `
-      <label class="field">
-        <span>Producto</span>
-        <input name="productName" type="text" value="${escapeAttr(product.name)}" autocomplete="off">
-      </label>
-      <label class="field">
-        <span>Precio</span>
-        <input name="productPrice" type="number" min="0" step="0.01" inputmode="decimal" value="${(product.priceCents / 100).toFixed(2)}">
-      </label>
-      <div class="field">
-        <span>Quien comio esto</span>
-        <div class="person-picker">
-          ${state.people.map((person) => {
-            const active = product.eatenBy.includes(person.id) ? "active" : "";
-            return `<button class="pick-button ${active}" type="button" data-sheet-eater="${person.id}">${escapeHtml(person.name)}</button>`;
-          }).join("")}
-        </div>
-      </div>
-    `, `
+  function openItemEdit(itemId) {
+    const item = findItem(itemId);
+    if (!item) return;
+    state.editing = { type: "item", id: itemId };
+    openSheet(editTitle(item), editBody(item), `
       <button class="primary-button" type="submit">Guardar cambios</button>
-      <button class="danger-button" type="button" data-sheet-remove>Eliminar producto</button>
+      <button class="danger-button" type="button" data-sheet-remove>Eliminar ${escapeHtml(itemDeleteName(item))}</button>
     `);
+  }
+
+  function editTitle(item) {
+    if (item.type === "shared") return "Editar gasto para todos";
+    if (item.type === "single") return "Editar gasto de una persona";
+    return "Editar producto";
+  }
+
+  function editBody(item) {
+    const base = `
+      <label class="field">
+        <span>${item.type === "product" ? "Producto" : "Nombre del gasto"}</span>
+        <input name="itemName" type="text" value="${escapeAttr(item.name)}" autocomplete="off">
+      </label>
+      <label class="field">
+        <span>Monto</span>
+        <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" value="${(item.amountCents / 100).toFixed(2)}">
+      </label>
+    `;
+
+    if (item.type === "product") {
+      return `${base}
+        <div class="field">
+          <span>Quien comio esto</span>
+          <div class="person-picker">
+            ${state.people.map((person) => renderPickButton(person, item.eatenBy, `data-sheet-person="${person.id}"`)).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    if (item.type === "shared") {
+      return `${base}
+        <div class="field">
+          <span>Quienes dividen esto</span>
+          <div class="person-picker">
+            ${state.people.map((person) => renderPickButton(person, item.splitWith, `data-sheet-person="${person.id}"`)).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    return `${base}
+      <label class="field">
+        <span>De quien es</span>
+        <select name="ownerId">${personOptions(item.ownerId)}</select>
+      </label>
+      <label class="field">
+        <span>Quien lo pago</span>
+        <select name="paidById">${personOptions(item.paidById)}</select>
+      </label>
+    `;
   }
 
   function openSheet(title, body, actions) {
@@ -415,10 +706,8 @@
     els.sheetBody.innerHTML = body;
     els.sheetActions.innerHTML = actions;
     els.sheetActions.querySelector("[data-sheet-remove]")?.addEventListener("click", removeEditingItem);
-    els.sheetBody.querySelectorAll("[data-sheet-eater]").forEach((button) => {
-      button.addEventListener("click", () => {
-        button.classList.toggle("active");
-      });
+    els.sheetBody.querySelectorAll("[data-sheet-person]").forEach((button) => {
+      button.addEventListener("click", () => button.classList.toggle("active"));
     });
     els.sheet.showModal();
     window.setTimeout(() => els.sheetBody.querySelector("input")?.focus(), 0);
@@ -434,23 +723,34 @@
     if (!state.editing) return;
 
     if (state.editing.type === "person") {
-      const person = state.people.find((item) => item.id === state.editing.id);
+      const person = findPerson(state.editing.id);
       if (!person) return closeSheet();
       const name = sanitizeText(els.editForm.elements.personName.value, 40);
       if (!name) return showToast("Falta el nombre");
       person.name = name;
+      person.isGuest = Boolean(els.editForm.elements.isGuest.checked);
+      syncSharedSplits();
     }
 
-    if (state.editing.type === "product") {
-      const product = state.products.find((item) => item.id === state.editing.id);
-      if (!product) return closeSheet();
-      const name = sanitizeText(els.editForm.elements.productName.value, 60);
-      const priceCents = toCents(els.editForm.elements.productPrice.value);
-      if (!name) return showToast("Falta el producto");
-      if (priceCents <= 0) return showToast("Ponle un precio");
-      product.name = name;
-      product.priceCents = priceCents;
-      product.eatenBy = Array.from(els.sheetBody.querySelectorAll("[data-sheet-eater].active")).map((button) => button.dataset.sheetEater);
+    if (state.editing.type === "item") {
+      const item = findItem(state.editing.id);
+      if (!item) return closeSheet();
+      const name = sanitizeText(els.editForm.elements.itemName.value, 60);
+      const amountCents = toCents(els.editForm.elements.itemAmount.value);
+      if (!name) return showToast(item.type === "product" ? "Falta el producto" : "Falta el nombre");
+      if (amountCents <= 0) return showToast("Ponle un precio");
+      item.name = name;
+      item.amountCents = amountCents;
+      if (item.type === "product") {
+        item.eatenBy = selectedSheetPeople();
+      }
+      if (item.type === "shared") {
+        item.splitWith = selectedSheetPeople();
+      }
+      if (item.type === "single") {
+        item.ownerId = els.editForm.elements.ownerId.value;
+        item.paidById = els.editForm.elements.paidById.value;
+      }
     }
 
     closeSheet();
@@ -458,111 +758,223 @@
     render();
   }
 
+  function selectedSheetPeople() {
+    return Array.from(els.sheetBody.querySelectorAll("[data-sheet-person].active")).map((button) => button.dataset.sheetPerson);
+  }
+
   function removeEditingItem() {
     if (!state.editing) return;
     if (state.editing.type === "person") removePerson(state.editing.id, true);
-    if (state.editing.type === "product") removeProduct(state.editing.id, true);
+    if (state.editing.type === "item") removeItem(state.editing.id, true);
     closeSheet();
   }
 
   function removePerson(personId, skipConfirm = false) {
     if (!skipConfirm && !confirm("Quitar a esta persona?")) return;
     state.people = state.people.filter((person) => person.id !== personId);
-    state.products.forEach((product) => {
-      product.eatenBy = product.eatenBy.filter((id) => id !== personId);
+    state.items.forEach((item) => {
+      if (item.type === "product") item.eatenBy = item.eatenBy.filter((id) => id !== personId);
+      if (item.type === "shared") item.splitWith = item.splitWith.filter((id) => id !== personId);
+      if (item.type === "single") {
+        if (item.ownerId === personId) item.ownerId = state.people[0]?.id || "";
+        if (item.paidById === personId) item.paidById = state.people[0]?.id || "";
+      }
+      if (item.paidById === personId) item.paidById = "";
     });
-    if (state.payerId === personId) state.payerId = "";
+    if (state.paidById === personId) state.paidById = "";
+    syncSharedSplits();
     render();
   }
 
-  function removeProduct(productId, skipConfirm = false) {
-    if (!skipConfirm && !confirm("Quitar este producto?")) return;
-    state.products = state.products.filter((product) => product.id !== productId);
+  function removeItem(itemId, skipConfirm = false) {
+    if (!skipConfirm && !confirm("Quitar esto de la cuenta?")) return;
+    state.items = state.items.filter((item) => item.id !== itemId);
     render();
   }
 
-  function duplicateProduct(productId) {
-    const product = state.products.find((item) => item.id === productId);
-    if (!product) return;
-    state.products.push({
-      id: createId("prod"),
-      name: product.name,
-      priceCents: product.priceCents,
-      eatenBy: [...product.eatenBy]
+  function duplicateItem(itemId) {
+    const item = findItem(itemId);
+    if (!item) return;
+    const copy = JSON.parse(JSON.stringify(item));
+    copy.id = createId(item.type);
+    state.items.push(copy);
+    showToast("Agregado otro igual");
+    render();
+  }
+
+  function toggleGuest(personId) {
+    const person = findPerson(personId);
+    if (!person) return;
+    person.isGuest = !person.isGuest;
+    syncSharedSplits();
+    render();
+  }
+
+  function toggleEater(itemId, personId) {
+    const item = findItem(itemId);
+    if (!item || item.type !== "product") return;
+    item.eatenBy = item.eatenBy.includes(personId)
+      ? item.eatenBy.filter((id) => id !== personId)
+      : [...item.eatenBy, personId];
+    render();
+  }
+
+  function selectAllEaters(itemId) {
+    const item = findItem(itemId);
+    if (!item || item.type !== "product") return;
+    item.eatenBy = state.people.map((person) => person.id);
+    render();
+  }
+
+  function setPaidMode(mode) {
+    state.paidMode = mode;
+    if (mode !== "single") state.paidById = "";
+    if (mode === "multiple") {
+      state.items.forEach((item) => {
+        if (item.type === "single" && item.paidById) return;
+        item.paidById = item.paidById || "";
+      });
+    }
+    render();
+  }
+
+  function setPaidBy(personId) {
+    state.paidById = personId;
+    render();
+  }
+
+  function setItemPaidBy(itemId, personId) {
+    const item = findItem(itemId);
+    if (!item) return;
+    item.paidById = personId;
+    render();
+  }
+
+  function syncSharedSplits() {
+    const payerIds = payers().map((person) => person.id);
+    state.items.forEach((item) => {
+      if (item.type === "shared" && item.splitWith.length === 0) item.splitWith = [...payerIds];
+      if (item.type === "shared") item.splitWith = item.splitWith.filter((id) => state.people.some((person) => person.id === id));
     });
-    showToast("Producto duplicado");
-    render();
-  }
-
-  function toggleEater(productId, personId) {
-    const product = state.products.find((item) => item.id === productId);
-    if (!product) return;
-    product.eatenBy = product.eatenBy.includes(personId)
-      ? product.eatenBy.filter((id) => id !== personId)
-      : [...product.eatenBy, personId];
-    render();
-  }
-
-  function selectAllEaters(productId) {
-    const product = state.products.find((item) => item.id === productId);
-    if (!product) return;
-    product.eatenBy = state.people.map((person) => person.id);
-    render();
-  }
-
-  function setPayerMode(mode) {
-    state.payerMode = mode;
-    if (mode === "none") state.payerId = "";
-    render();
-  }
-
-  function setPayer(personId) {
-    state.payerId = personId;
-    render();
   }
 
   function calculateResult() {
-    const contributions = calculateContributions();
-    if (state.payerMode === "none") {
+    if (state.paidMode === "none") {
+      const contributions = calculateContributions();
+      const cards = state.people
+        .map((person) => {
+          const amount = contributions.get(person.id) || 0;
+          if (person.isGuest) return { kind: "neutral", text: `${person.name} no paga esta vez` };
+          return amount > 0 ? { kind: "owe", text: `${person.name} aporta ${formatMoney(amount)}` } : null;
+        })
+        .filter(Boolean);
+
       return {
-        mode: "none",
-        cards: state.people
-          .map((person) => ({
-            kind: "owe",
-            text: `${person.name} aporta ${formatMoney(contributions.get(person.id) || 0)}`
-          }))
-          .filter((card) => !card.text.endsWith(formatMoney(0)))
+        help: "Cada quien aporta su parte antes de pagar.",
+        cards: cards.length ? cards : [{ kind: "neutral", text: "No hay pagos pendientes." }]
       };
     }
 
-    const payer = state.people.find((person) => person.id === state.payerId);
-    const cards = state.people
-      .filter((person) => person.id !== state.payerId)
-      .map((person) => ({
-        kind: "owe",
-        text: `${person.name} le paga ${formatMoney(contributions.get(person.id) || 0)} a ${payer?.name || "quien pago"}`
-      }))
-      .filter((card) => !card.text.includes(formatMoney(0)));
+    const balances = calculateBalances();
+    const settlements = settleBalances(balances);
+    const cards = settlements.map((payment) => ({
+      kind: "owe",
+      text: `${personName(payment.from)} le paga ${formatMoney(payment.amount)} a ${personName(payment.to)}`
+    }));
 
     return {
-      mode: "single",
+      help: "Estos son los pagos sugeridos.",
       cards: cards.length ? cards : [{ kind: "neutral", text: "No hay pagos pendientes." }]
     };
   }
 
   function calculateContributions() {
     const totals = new Map(state.people.map((person) => [person.id, 0]));
-    state.products.forEach((product) => {
-      if (!product.eatenBy.length) return;
-      const base = Math.floor(product.priceCents / product.eatenBy.length);
-      let remainder = product.priceCents - base * product.eatenBy.length;
-      product.eatenBy.forEach((personId) => {
-        const extra = remainder > 0 ? 1 : 0;
-        remainder -= extra;
-        totals.set(personId, (totals.get(personId) || 0) + base + extra);
+    state.items.forEach((item) => {
+      const chargedIds = chargedPeopleFor(item);
+      distribute(item.amountCents, chargedIds).forEach((amount, personId) => {
+        totals.set(personId, (totals.get(personId) || 0) + amount);
       });
     });
     return totals;
+  }
+
+  function calculateBalances() {
+    const balances = new Map(state.people.map((person) => [person.id, 0]));
+    state.items.forEach((item) => {
+      const paidBy = state.paidMode === "single" ? state.paidById : item.paidById;
+      if (!paidBy) return;
+      balances.set(paidBy, (balances.get(paidBy) || 0) + item.amountCents);
+      distribute(item.amountCents, chargedPeopleFor(item)).forEach((amount, personId) => {
+        balances.set(personId, (balances.get(personId) || 0) - amount);
+      });
+    });
+    return balances;
+  }
+
+  function chargedPeopleFor(item) {
+    const payerIds = payers().map((person) => person.id);
+    if (item.type === "product") {
+      const chargedIds = nonGuestIds(item.eatenBy);
+      return chargedIds.length ? chargedIds : payerIds;
+    }
+    if (item.type === "shared") {
+      const chargedIds = nonGuestIds(item.splitWith);
+      return chargedIds.length ? chargedIds : payerIds;
+    }
+    if (item.type === "single") {
+      const owner = findPerson(item.ownerId);
+      if (owner && !owner.isGuest) return [owner.id];
+      return payerIds;
+    }
+    return [];
+  }
+
+  function nonGuestIds(ids) {
+    return ids.filter((id) => {
+      const person = findPerson(id);
+      return person && !person.isGuest;
+    });
+  }
+
+  function distribute(amountCents, ids) {
+    const result = new Map();
+    const uniqueIds = Array.from(new Set(ids)).filter(Boolean);
+    if (!uniqueIds.length) return result;
+    const base = Math.floor(amountCents / uniqueIds.length);
+    let remainder = amountCents - base * uniqueIds.length;
+    uniqueIds.forEach((id) => {
+      const extra = remainder > 0 ? 1 : 0;
+      remainder -= extra;
+      result.set(id, base + extra);
+    });
+    return result;
+  }
+
+  function settleBalances(balances) {
+    const debtors = [];
+    const creditors = [];
+    balances.forEach((amount, personId) => {
+      if (amount < 0) debtors.push({ personId, amount: -amount });
+      if (amount > 0) creditors.push({ personId, amount });
+    });
+
+    const payments = [];
+    let debtorIndex = 0;
+    let creditorIndex = 0;
+
+    while (debtorIndex < debtors.length && creditorIndex < creditors.length) {
+      const debtor = debtors[debtorIndex];
+      const creditor = creditors[creditorIndex];
+      const amount = Math.min(debtor.amount, creditor.amount);
+      if (amount > 0) payments.push({ from: debtor.personId, to: creditor.personId, amount });
+      debtor.amount -= amount;
+      creditor.amount -= amount;
+      if (debtor.amount === 0) debtorIndex += 1;
+      if (creditor.amount === 0) creditorIndex += 1;
+    }
+
+    return payments;
   }
 
   function summaryLines() {
@@ -595,19 +1007,62 @@
     textarea.remove();
   }
 
+  function showFieldError(error, input, message) {
+    error.textContent = message;
+    input.focus();
+  }
+
   function focusFirstField() {
-    window.setTimeout(() => {
-      els.root.querySelector("input")?.focus();
-    }, 0);
+    window.setTimeout(() => els.root.querySelector("input")?.focus(), 0);
   }
 
   function showToast(message) {
     els.toast.textContent = message;
     els.toast.classList.add("show");
     window.clearTimeout(showToast.timer);
-    showToast.timer = window.setTimeout(() => {
-      els.toast.classList.remove("show");
-    }, 2100);
+    showToast.timer = window.setTimeout(() => els.toast.classList.remove("show"), 2200);
+  }
+
+  function payers() {
+    return state.people.filter((person) => !person.isGuest);
+  }
+
+  function findPerson(personId) {
+    return state.people.find((person) => person.id === personId);
+  }
+
+  function findItem(itemId) {
+    return state.items.find((item) => item.id === itemId);
+  }
+
+  function namesFor(ids) {
+    return ids.map(personName).join(", ") || "Falta elegir";
+  }
+
+  function personName(personId) {
+    return findPerson(personId)?.name || "Persona";
+  }
+
+  function personOptions(selectedId = "") {
+    return state.people.map((person) => `
+      <option value="${escapeAttr(person.id)}" ${selectedId === person.id ? "selected" : ""}>${escapeHtml(person.name)}</option>
+    `).join("");
+  }
+
+  function itemLabel(item) {
+    if (item.type === "shared") return "Gasto para todos";
+    if (item.type === "single") return `De ${personName(item.ownerId)}`;
+    return "Producto";
+  }
+
+  function itemDeleteName(item) {
+    if (item.type === "product") return "producto";
+    return "gasto";
+  }
+
+  function icon(name) {
+    const path = iconPaths[name] || iconPaths.coin;
+    return `<svg class="mono-icon" viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
   }
 
   function createId(prefix) {
@@ -626,10 +1081,6 @@
 
   function formatMoney(cents) {
     return moneyFormatter.format((cents || 0) / 100);
-  }
-
-  function personName(personId) {
-    return state.people.find((person) => person.id === personId)?.name || "Persona";
   }
 
   function initialFor(name) {
