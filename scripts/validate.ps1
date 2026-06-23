@@ -69,7 +69,7 @@ function Test-Csp([string]$RelativePath) {
 
 Push-Location $repoRoot
 try {
-  Write-Host "Validating Clara at $repoRoot" -ForegroundColor Cyan
+  Write-Host "Validating Claramente at $repoRoot" -ForegroundColor Cyan
 
   $requiredFiles = @(
     "index.html",

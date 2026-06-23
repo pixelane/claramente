@@ -1,6 +1,6 @@
-# Clara
+# Claramente
 
-Clara divide cuentas de mesa y gastos compartidos desde una PWA estatica. No usa backend, login, base de datos remota ni recursos externos.
+Claramente divide cuentas de mesa y gastos compartidos desde una PWA estatica. No usa backend, login, base de datos remota ni recursos externos.
 
 ## Que hace
 
@@ -14,7 +14,7 @@ Clara divide cuentas de mesa y gastos compartidos desde una PWA estatica. No usa
 - Copia resumen para WhatsApp.
 - Copia link del grupo.
 - Guarda datos en `localStorage`.
-- Exporta e importa copia local `.clara`.
+- Exporta e importa copia local `.claramente`.
 
 ## Como abrir
 
@@ -41,7 +41,7 @@ Luego abre `http://localhost:8000`.
 
 El estado vive en el navegador. Cuando copias un link, los datos necesarios para abrir el grupo viajan en la URL. Compartelo solo con quienes participan en la cuenta.
 
-Cuando Clara abre un grupo desde un link compartido, limpia el hash de la barra de direcciones para evitar que alguien vuelva a copiar accidentalmente el payload del enlace desde la URL visible.
+Cuando Claramente abre un grupo desde un link compartido, limpia el hash de la barra de direcciones para evitar que alguien vuelva a copiar accidentalmente el payload del enlace desde la URL visible.
 
 La app conserva compatibilidad para abrir links privados antiguos, pero la interfaz v1 ya no genera nuevos links privados.
 

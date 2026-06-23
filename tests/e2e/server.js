@@ -37,5 +37,5 @@ http.createServer((request, response) => {
     response.end(body);
   });
 }).listen(port, host, () => {
-  console.log(`Clara E2E server: http://${host}:${port}`);
+  console.log(`Claramente E2E server: http://${host}:${port}`);
 });

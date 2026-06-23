@@ -18,7 +18,7 @@ function run() {
 
   assert.equal(getShellRedirect({
     pathname: "/index.html",
-    search: "?shell=clara",
+    search: "?shell=claramente-full",
     hash: "",
     width: 390
   }), "");

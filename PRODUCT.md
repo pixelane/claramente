@@ -8,10 +8,10 @@ product
 People splitting a shared meal, table, trip, or small group expense from a phone. They are usually in a noisy, social context and need quick answers without creating an account or learning finance terms.
 
 ## Product Purpose
-Clara helps a group enter people, platillos, shared expenses, who paid, who consumed each item, and the final payments. Success means a non-technical person can understand what they owe or receive in seconds, then share the result by WhatsApp or link.
+Claramente helps a group enter people, platillos, shared expenses, who paid, who consumed each item, and the final payments. Success means a non-technical person can understand what they owe or receive in seconds, then share the result by WhatsApp or link.
 
 ## Brand Personality
-Clear, warm, practical. Clara should feel human and calm around money, with enough confidence that users trust the totals.
+Clear, warm, practical. Claramente should feel human and calm around money, with enough confidence that users trust the totals.
 
 ## Anti-references
 Do not make it feel like an enterprise dashboard, a bank app, a crypto wallet, a generic SaaS landing page, or a childish bill-splitting toy. Avoid decorative UI that gets in the way of entering people, expenses, and payments.

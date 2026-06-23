@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#f2a93b">
     <meta name="description" content="Divide cuentas de mesa y gastos compartidos sin backend y costo cero.">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
-    <title>Clara: cuentas claras</title>
+    <title>Claramente: cuentas claras</title>
     <link rel="icon" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
@@ -15,8 +15,8 @@
     <main class="app-shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Clara: cuentas claras.</p>
-          <h1>Clara</h1>
+          <p class="eyebrow">Claramente: cuentas claras.</p>
+          <h1>Claramente</h1>
         </div>
         <div class="topbar-actions">
           <button class="ghost-button topbar-button" id="supportBtn" type="button" aria-label="Ayuda y soporte">?</button>
@@ -145,7 +145,7 @@
             <div class="section-header">
               <div>
                 <h2 id="supportTitle">Ayuda y soporte</h2>
-                <p>Guia rapida y herramientas locales para revisar Clara.</p>
+                <p>Guia rapida y herramientas locales para revisar Claramente.</p>
               </div>
             </div>
             <div class="accordion-group">
@@ -159,15 +159,15 @@
             <div class="diagnostic-box">
               <p>Descarga un archivo con todos los participantes y gastos actuales, o sube uno guardado anteriormente para continuar.</p>
               <div class="diagnostic-actions">
-                <button type="button" class="topbar-button" id="exportBackupBtn">Guardar copia (.clara)</button>
+                <button type="button" class="topbar-button" id="exportBackupBtn">Guardar copia (.claramente)</button>
                 <button type="button" class="topbar-button accent-button" id="importBackupBtn">Cargar copia</button>
-                <input type="file" id="importBackupFile" accept=".clara,.json,.txt" style="display: none;">
+                <input type="file" id="importBackupFile" accept=".claramente,.clara,.json,.txt" style="display: none;">
               </div>
             </div>
           </section>
           <section class="panel support-dev-panel" aria-labelledby="devTitle">
             <div class="section-header"><div><h2 id="devTitle">Diagnostico y errores</h2><p>Herramientas tecnicas para resolver fallos y reportar problemas.</p></div></div>
-            <div class="diagnostic-box"><p><strong>Version de cache:</strong> <code id="cacheVersionLabel">clara-cache-v31</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualizacion</button></div></div>
+            <div class="diagnostic-box"><p><strong>Version de cache:</strong> <code id="cacheVersionLabel">clara-cache-v32</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualizacion</button></div></div>
             <div class="error-console-panel"><h3>Consola de errores</h3><div id="errorConsoleBox" class="error-console-box no-errors">No se han detectado errores de ejecucion. Todo funciona bien.</div><button type="button" class="primary-button hidden full-action compact-action" id="copyErrorLogBtn">Copiar reporte de errores</button></div>
           </section>
         </div>

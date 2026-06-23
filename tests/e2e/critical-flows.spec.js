@@ -6,7 +6,7 @@ async function openFixture(page, fixture, viewport) {
   await page.addInitScript((state) => {
     window.localStorage.setItem("clara.state.v1", JSON.stringify(state));
   }, fixture.state);
-  await page.goto("/index.html?shell=clara");
+  await page.goto("/index.html?shell=claramente-full");
   if (viewport && viewport.width < 720) {
     const paymentsButton = page.locator('.nav-item[data-tab="tab-settlements"]');
     await expect(paymentsButton).toBeVisible();
@@ -28,7 +28,7 @@ test("elige la shell correcta por dispositivo", async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.goto("/claramente.html");
   await expect(page).toHaveURL(/index\.html$/);
-  await expect(page.getByRole("heading", { name: "Clara" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Claramente" })).toBeVisible();
 });
 
 test("muestra aportaciones cuando todavia nadie pago", async ({ page }) => {

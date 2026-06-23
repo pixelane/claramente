@@ -367,8 +367,8 @@
         <button class="secondary-button" type="button" data-go="items">Editar cuenta antes de calcular</button>
       </div>
       <div class="list paid-mode-list" aria-label="Forma de pago">
-        ${renderPaidMode("none", "Nadie ha pagado todavia", "Clara dice cuanto aporta cada persona antes de pagar.", "coin")}
-        ${renderPaidMode("single", "Una persona pago toda la cuenta", "Elige a esa persona y Clara calcula cuanto le devuelven.", "user")}
+        ${renderPaidMode("none", "Nadie ha pagado todavia", "Claramente dice cuanto aporta cada persona antes de pagar.", "coin")}
+        ${renderPaidMode("single", "Una persona pago toda la cuenta", "Elige a esa persona y Claramente calcula cuanto le devuelven.", "user")}
         ${renderPaidMode("multiple", "Pagos separados por producto", "Usa esto si cada producto o cargo lo pago alguien distinto.", "users")}
       </div>
       ${state.paidMode === "single" ? renderPaidPeople() : ""}

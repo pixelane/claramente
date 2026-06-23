@@ -4,10 +4,10 @@ Estado: propuesta de Fase 0. No cambia el formato guardado actual.
 
 ## Fuente de verdad
 
-El estado enriquecido de Clara (`clara.state.v1`) es la base porque ya soporta persistencia, enlaces, backups, pagos de mesa y compatibilidad hacia atras.
+El estado enriquecido de Claramente (`clara.state.v1`) es la base porque ya soporta persistencia, enlaces, backups, pagos de mesa y compatibilidad hacia atras.
 
 ```text
-ClaraState
+ClaramenteState
   version: 1
   groupName: string
   currency: string
@@ -103,11 +103,11 @@ Estos valores no pertenecen al modelo persistido:
 
 ## Diferencias que deben resolverse antes de migrar
 
-1. Claramente conserva productos y consumidores individuales; Clara puede consolidarlos en descripciones por persona.
-2. El modo `none` de Clara esta ligado a metadatos de restaurante y no representa todavia cualquier gasto generico sin pagar.
-3. Claramente permite un pagador por item en `multiple`; Clara expresa el pagador por `Expense`.
-4. `tableClose` existe solo en Clara.
-5. Clara soporta links, backups, recordatorios y normalizacion legacy; Claramente no.
+1. Claramente conserva productos y consumidores individuales; la shell completa puede consolidarlos en descripciones por persona.
+2. El modo `none` esta ligado a metadatos de restaurante y no representa todavia cualquier gasto generico sin pagar.
+3. Claramente permite un pagador por item en `multiple`; la shell completa expresa el pagador por `Expense`.
+4. `tableClose` existe solo en la shell completa de Claramente.
+5. La shell completa soporta links, backups, recordatorios y normalizacion legacy; la shell guiada movil todavia no.
 
 Decision propuesta:
 

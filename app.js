@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v31";
+  const CACHE_NAME = "clara-cache-v32";
   const MAX_HASH_LENGTH = 180000;
   const MAX_BACKUP_BYTES = 350000;
   const MAX_PEOPLE = 80;
@@ -384,7 +384,7 @@
         const logText = errorLogs
           .map((log) => `[${log.time}] (${log.file}) ${log.message}\nStack: ${log.stack || "N/A"}`)
           .join("\n\n");
-        const info = `Clara Error Report\nCache: ${CACHE_NAME}\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
+        const info = `Claramente Error Report\nCache: ${CACHE_NAME}\nUA: ${navigator.userAgent}\nURL: ${window.location.href}\n\n${logText}`;
         await copyText(info);
         setStatus("Log de errores copiado al portapapeles.");
       } catch (err) {
@@ -1682,7 +1682,7 @@
   function createWhatsAppMessage(url, hasPrivateKey) {
     const { settlements } = calculateSettlements();
     const closeRows = buildTableCloseRows(settlements);
-    const title = state.groupName || "Clara: cuentas claras.";
+    const title = state.groupName || "Claramente: cuentas claras.";
     const lines = [`${title}`, "", "Pagos:"];
     if (!settlements.length && !closeRows.length) {
       lines.push("No hay pagos pendientes.");
@@ -1872,7 +1872,7 @@
       const sanitizedName = state.groupName
         ? sanitizeText(state.groupName, 80).toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-")
         : "grupo";
-      const fileName = `grupo-clara-${sanitizedName}.clara`;
+      const fileName = `grupo-claramente-${sanitizedName}.claramente`;
       a.href = url;
       a.download = fileName;
       document.body.appendChild(a);
@@ -1911,7 +1911,7 @@
         const normalized = normalizeState(parsed);
         
         if (normalized.people.length === 0 && normalized.expenses.length === 0 && (!parsed.groupName)) {
-          if (!confirm("El archivo parece estar vacio o no es un formato valido de Clara. Deseas importarlo de todos modos?")) {
+          if (!confirm("El archivo parece estar vacio o no es un formato valido de Claramente. Deseas importarlo de todos modos?")) {
             event.target.value = "";
             return;
           }
@@ -1927,7 +1927,7 @@
         setStatus("Copia del grupo cargada con exito.");
       } catch (err) {
         console.error(err);
-        setStatus("Error al leer el archivo. Asegurate de que sea una copia de Clara valida.");
+        setStatus("Error al leer el archivo. Asegurate de que sea una copia de Claramente valida.");
       } finally {
         event.target.value = "";
       }

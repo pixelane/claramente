@@ -3,6 +3,7 @@
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   }
+  root.ClaramenteShellRouter = api;
   root.ClaraShellRouter = api;
   if (typeof window !== "undefined") {
     api.routeCurrentWindow(window);
@@ -19,7 +20,7 @@
     const params = new URLSearchParams(search.replace(/^\?/, ""));
     const forcedShell = params.get("shell");
 
-    if (forcedShell === "clara" || forcedShell === "claramente") return "";
+    if (["claramente-full", "clara", "claramente"].includes(forcedShell)) return "";
     if (hash && page === "index.html") return "";
     if (page === "index.html" && width > 0 && width <= MOBILE_MAX_WIDTH) return "claramente.html";
     if (page === "claramente.html" && width > MOBILE_MAX_WIDTH) return "index.html";

@@ -64,7 +64,7 @@ try {
       }
     }
     if (-not $ready) {
-      throw "The Clara E2E server did not start."
+      throw "The Claramente E2E server did not start."
     }
   }
 

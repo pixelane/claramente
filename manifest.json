@@ -1,7 +1,7 @@
 {
-  "name": "Clara",
-  "short_name": "Clara",
-  "description": "Clara: cuentas claras. Divide gastos compartidos con links privados, sin backend y costo cero.",
+  "name": "Claramente",
+  "short_name": "Claramente",
+  "description": "Claramente: cuentas claras. Divide gastos compartidos con links privados, sin backend y costo cero.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#faf8f5",
