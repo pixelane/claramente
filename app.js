@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v23";
+  const CACHE_NAME = "clara-cache-v31";
   const MAX_HASH_LENGTH = 180000;
   const MAX_BACKUP_BYTES = 350000;
   const MAX_PEOPLE = 80;
@@ -764,13 +764,13 @@
         const itemPrice = item.price > 0 ? item.price.toFixed(2) : "";
         return `
           <tr data-item-index="${index}">
-            <td>
+            <td class="ticket-product-cell">
               <input type="text" class="ticket-item-name" value="${escapeHtml(item.name)}" placeholder="Producto ${index + 1}">
             </td>
-            <td>
+            <td class="ticket-price-cell">
               <input type="number" min="0" step="0.01" class="ticket-item-price" value="${itemPrice}" placeholder="0.00">
             </td>
-            <td>
+            <td class="ticket-consumer-cell">
               <div class="item-bubbles">
                 ${state.people
                   .map((person) => {
@@ -780,7 +780,7 @@
                   .join("")}
               </div>
             </td>
-            <td>
+            <td class="ticket-remove-cell">
               <button type="button" class="danger-button text-button delete-ticket-item-btn" data-item-index="${index}" aria-label="Quitar producto">&times;</button>
             </td>
           </tr>
@@ -1553,48 +1553,7 @@
   }
 
   function calculateSettlements() {
-    const balances = new Map(state.people.map((person) => [person.id, 0]));
-    const guestIds = new Set(state.people.filter((person) => person.isGuest).map((person) => person.id));
-
-    for (const expense of state.expenses) {
-      const validSplit = expense.splitWith.filter((id) => balances.has(id));
-      if (!balances.has(expense.paidBy) || !validSplit.length) continue;
-      balances.set(expense.paidBy, balances.get(expense.paidBy) + expense.amountCents);
-      const payingSplit = validSplit.filter((id) => !guestIds.has(id));
-      const effectiveSplit = payingSplit.length ? payingSplit : validSplit;
-      const baseShare = Math.floor(expense.amountCents / effectiveSplit.length);
-      let remainder = expense.amountCents - baseShare * effectiveSplit.length;
-      for (const personId of effectiveSplit) {
-        const extra = remainder > 0 ? 1 : 0;
-        remainder -= extra;
-        balances.set(personId, balances.get(personId) - baseShare - extra);
-      }
-    }
-
-    const debtors = [];
-    const creditors = [];
-    for (const [id, amount] of balances.entries()) {
-      if (amount < 0) debtors.push({ id, amount: -amount });
-      if (amount > 0) creditors.push({ id, amount });
-    }
-
-    const settlements = [];
-    let debtIndex = 0;
-    let creditIndex = 0;
-    while (debtIndex < debtors.length && creditIndex < creditors.length) {
-      const debtor = debtors[debtIndex];
-      const creditor = creditors[creditIndex];
-      const amount = Math.min(debtor.amount, creditor.amount);
-      if (amount > 0) {
-        settlements.push({ from: debtor.id, to: creditor.id, amountCents: amount });
-      }
-      debtor.amount -= amount;
-      creditor.amount -= amount;
-      if (debtor.amount === 0) debtIndex += 1;
-      if (creditor.amount === 0) creditIndex += 1;
-    }
-
-    return { balances, settlements };
+    return window.ClaraCore.calculateSettlements(state);
   }
 
   async function generateAndCopyShare(asMessage) {

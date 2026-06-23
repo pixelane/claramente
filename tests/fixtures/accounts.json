@@ -1,0 +1,72 @@
+{
+  "nobodyPaid": {
+    "state": {
+      "version": 1,
+      "groupName": "Cena sin pagar",
+      "currency": "MXN",
+      "people": [
+        { "id": "p_ana", "name": "Ana", "reminder": "", "isGuest": false },
+        { "id": "p_luis", "name": "Luis", "reminder": "", "isGuest": false },
+        { "id": "p_maria", "name": "Maria", "reminder": "", "isGuest": false }
+      ],
+      "expenses": [
+        { "id": "e_ana", "description": "Cena: tacos", "amountCents": 10000, "paidBy": "p_ana", "splitWith": ["p_ana"], "createdAt": 1, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 10000, "restaurantName": "Cena" },
+        { "id": "e_luis", "description": "Cena: pizza", "amountCents": 12000, "paidBy": "p_luis", "splitWith": ["p_luis"], "createdAt": 2, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 12000, "restaurantName": "Cena" },
+        { "id": "e_maria", "description": "Cena: agua", "amountCents": 8000, "paidBy": "p_maria", "splitWith": ["p_maria"], "createdAt": 3, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 8000, "restaurantName": "Cena" }
+      ],
+      "tableClose": {},
+      "updatedAt": 1
+    },
+    "expected": {
+      "missingTotal": "Falta $300.00",
+      "contributions": [
+        { "person": "Ana", "amount": "$100.00" },
+        { "person": "Luis", "amount": "$120.00" },
+        { "person": "Maria", "amount": "$80.00" }
+      ]
+    }
+  },
+  "guestConsumes": {
+    "state": {
+      "version": 1,
+      "groupName": "Cumple de Maria",
+      "currency": "MXN",
+      "people": [
+        { "id": "p_ana", "name": "Ana", "reminder": "", "isGuest": false },
+        { "id": "p_luis", "name": "Luis", "reminder": "", "isGuest": false },
+        { "id": "p_maria", "name": "Maria", "reminder": "", "isGuest": true }
+      ],
+      "expenses": [
+        { "id": "e_cena", "description": "Cena compartida", "amountCents": 30000, "paidBy": "p_ana", "splitWith": ["p_ana", "p_luis", "p_maria"], "createdAt": 1 }
+      ],
+      "tableClose": {},
+      "updatedAt": 1
+    },
+    "expected": {
+      "settlement": "Luis paga a Ana",
+      "amount": "$150.00",
+      "guestBalance": "en cero $0.00"
+    }
+  },
+  "crossViewport": {
+    "state": {
+      "version": 1,
+      "groupName": "Cuenta adaptable",
+      "currency": "MXN",
+      "people": [
+        { "id": "p_ana", "name": "Ana", "reminder": "", "isGuest": false },
+        { "id": "p_luis", "name": "Luis", "reminder": "", "isGuest": false },
+        { "id": "p_maria", "name": "Maria", "reminder": "", "isGuest": false }
+      ],
+      "expenses": [
+        { "id": "e_cena", "description": "Cena compartida", "amountCents": 30000, "paidBy": "p_ana", "splitWith": ["p_ana", "p_luis", "p_maria"], "createdAt": 1 }
+      ],
+      "tableClose": {},
+      "updatedAt": 1
+    },
+    "expected": {
+      "settlements": ["Luis paga a Ana", "Maria paga a Ana"],
+      "amount": "$100.00"
+    }
+  }
+}

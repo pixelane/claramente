@@ -1,8 +1,12 @@
-const CACHE_NAME = "clara-cache-v23";
+const CACHE_NAME = "clara-cache-v31";
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
+  "./claramente.html",
+  "./claramente.css",
+  "./shell-router.js",
+  "./clara-core.js",
   "./app.js",
   "./manifest.json",
   "./icon-192.png",
@@ -35,16 +39,18 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
+    const url = new URL(event.request.url);
+    const fallbackAsset = url.pathname.endsWith("/claramente.html") ? "./claramente.html" : "./index.html";
     event.respondWith(
       fetch(event.request)
         .then((response) => {
           const responseCopy = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put("./index.html", responseCopy);
+            cache.put(fallbackAsset, responseCopy);
           });
           return response;
         })
-        .catch(() => caches.match("./index.html"))
+        .catch(() => caches.match(fallbackAsset))
     );
     return;
   }

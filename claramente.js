@@ -98,10 +98,10 @@
 
   function renderStart() {
     return `
-      ${renderHeader("Vamos a dividir la cuenta", "No necesitas registrarte. Todo queda en este celular.")}
-      <div class="welcome-mark" aria-hidden="true">${icon("coin")}</div>
+      ${renderHeader("Vamos a dividir la cuenta", "Empieza agregando personas. Despues pones productos, quien comio y quien pago.")}
       <div class="panel">
-        <button class="primary-button" type="button" data-go="people">${icon("plus")}<span>Empezar</span></button>
+        <p class="panel-note">Todo queda en este celular y puedes compartir el resumen al final.</p>
+        <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
         <button class="secondary-button" type="button" data-toast="Abrir cuenta guardada queda para una siguiente prueba.">Abrir cuenta guardada</button>
       </div>
     `;
@@ -113,7 +113,7 @@
       ? "Agrega al menos a dos personas"
       : payers().length === 0
         ? "Al menos una persona debe pagar"
-        : "Ya estan todos";
+        : "Ir a productos";
 
     return `
       ${renderHeader("Quienes estan en la mesa?", "Agrega una persona a la vez. Marca invitado o cumpleanero si esa persona no va a pagar.")}
@@ -129,7 +129,7 @@
         ${state.people.length ? state.people.map(renderPersonCard).join("") : `<div class="empty-state">Agrega a quienes estan en la mesa.</div>`}
       </div>
       <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="type" ${canContinue ? "" : "disabled"}>${message}</button>
+        <button class="primary-button" type="button" data-go="items" ${canContinue ? "" : "disabled"}>${message}</button>
       </div>
     `;
   }
@@ -154,11 +154,10 @@
 
   function renderType() {
     return `
-      ${renderHeader("Que van a dividir?", "Elige el tipo de cosa que vas a agregar ahora. Puedes volver aqui para mezclar productos y gastos.")}
+      ${renderHeader("Agregar productos y cargos", "Usa Producto para comida o bebidas. Usa Para todos para propina, taxi o cargos compartidos.")}
       <div class="list">
         ${renderTypeChoice("product", "Productos de la cuenta", "Tacos, pizza, refrescos", "plate")}
         ${renderTypeChoice("shared", "Gasto para todos", "Propina, taxi, botella", "group")}
-        ${renderTypeChoice("single", "Gasto de una persona", "Un extra que solo es de alguien", "person")}
       </div>
       ${state.items.length ? `
         <div class="panel compact-panel">
@@ -183,15 +182,14 @@
     const canContinue = itemsReady() && payers().length > 0;
     return `
       ${renderHeader(itemQuestion(), itemHelp())}
-      ${renderItemForm()}
-      <section class="list" aria-label="Cuenta agregada">
-        ${state.items.length ? state.items.map(renderItemCard).join("") : `<div class="empty-state">Agrega lo primero de la cuenta.</div>`}
-      </section>
-      <div class="quick-row" aria-label="Agregar otro tipo">
+      <div class="quick-row" aria-label="Tipo de cargo">
         <button class="quick-button ${state.itemMode === "product" ? "active" : ""}" type="button" data-item-mode="product">Producto</button>
         <button class="quick-button ${state.itemMode === "shared" ? "active" : ""}" type="button" data-item-mode="shared">Para todos</button>
-        <button class="quick-button ${state.itemMode === "single" ? "active" : ""}" type="button" data-item-mode="single">De alguien</button>
       </div>
+      ${renderItemForm()}
+      <section class="list" aria-label="Cuenta agregada">
+        ${state.items.length ? displayItems().map(renderItemCard).join("") : `<div class="empty-state">Agrega lo primero de la cuenta.</div>`}
+      </section>
       <div class="sticky-actions">
         <button class="primary-button" type="button" data-go="paid" ${canContinue ? "" : "disabled"}>${canContinue ? "Ya termine la cuenta" : continueMessage()}</button>
       </div>
@@ -199,15 +197,15 @@
   }
 
   function itemQuestion() {
-    if (state.itemMode === "shared") return "Que gasto se reparte entre todos?";
-    if (state.itemMode === "single") return "Este gasto es solo de alguien?";
-    return "Que producto aparece en la cuenta?";
+    if (state.itemMode === "shared") return "Agregar cargo para todos";
+    if (state.itemMode === "single") return "Agregar cargo de una persona";
+    return "Agregar productos y cargos";
   }
 
   function itemHelp() {
-    if (state.itemMode === "shared") return "Clara divide este monto entre las personas que si pagan.";
-    if (state.itemMode === "single") return "Ejemplo: si Ana pidio un cafe y Luis lo pago, el cafe es de Ana y lo pago Luis.";
-    return "Agrega el producto, luego toca quien lo consumio.";
+    if (state.itemMode === "shared") return "Usa esto para propina, taxi o algo que se reparte entre quienes si pagan.";
+    if (state.itemMode === "single") return "Usa esto para algo que solo consumio una persona. Aqui tambien marcas quien lo pago.";
+    return "Pon nombre y precio. Si solo una persona lo consumio, marca solo su nombre en el producto.";
   }
 
   function renderItemForm() {
@@ -273,6 +271,10 @@
     if (item.type === "shared") return renderSharedCard(item);
     if (item.type === "single") return renderSingleCard(item);
     return renderProductCard(item);
+  }
+
+  function displayItems() {
+    return state.items.slice().reverse();
   }
 
   function renderProductCard(item) {
@@ -353,19 +355,26 @@
 
   function renderPaid() {
     const canContinue = paidReady();
+    const action = state.paidMode
+      ? `<div class="sticky-actions">
+          <button class="primary-button" type="button" data-go="result" ${canContinue ? "" : "disabled"}>${canContinue ? "Calcular cuenta" : paidMessage()}</button>
+        </div>`
+      : "";
     return `
-      ${renderHeader("Alguien ya pago la cuenta?", "Si varias personas pagaron cosas distintas, elige esa opcion y marca quien pago cada cosa.")}
-      <div class="list">
-        ${renderPaidMode("none", "Todavia nadie pago", "Clara dira cuanto aporta cada persona.", "coin")}
-        ${renderPaidMode("single", "Una persona pago todo", "Elige quien pago para calcular quien le devuelve.", "user")}
-        ${renderPaidMode("multiple", "Varias personas pagaron", "Marca quien pago cada producto o gasto.", "users")}
+      ${renderHeader("Como se pago?", "Primero confirma si la cuenta ya se pago. Si falta un producto, vuelve a editar la cuenta.")}
+      <div class="panel paid-summary">
+        <p class="panel-note">${state.items.length} ${state.items.length === 1 ? "cargo agregado" : "cargos agregados"}.</p>
+        <button class="secondary-button" type="button" data-go="items">Editar cuenta antes de calcular</button>
+      </div>
+      <div class="list paid-mode-list" aria-label="Forma de pago">
+        ${renderPaidMode("none", "Nadie ha pagado todavia", "Clara dice cuanto aporta cada persona antes de pagar.", "coin")}
+        ${renderPaidMode("single", "Una persona pago toda la cuenta", "Elige a esa persona y Clara calcula cuanto le devuelven.", "user")}
+        ${renderPaidMode("multiple", "Pagos separados por producto", "Usa esto si cada producto o cargo lo pago alguien distinto.", "users")}
       </div>
       ${state.paidMode === "single" ? renderPaidPeople() : ""}
       ${state.paidMode === "multiple" ? renderMultiplePaid() : ""}
       <p class="error-text" id="paidError"></p>
-      <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="result" ${canContinue ? "" : "disabled"}>${canContinue ? "Calcular cuenta" : paidMessage()}</button>
-      </div>
+      ${action}
     `;
   }
 
@@ -381,7 +390,8 @@
 
   function renderPaidPeople() {
     return `
-      <section class="list" aria-label="Quien pago">
+      <section class="list payer-list" aria-label="Quien pago toda la cuenta">
+        <div class="section-note">Toca a la persona que puso el dinero por toda la cuenta.</div>
         ${state.people.map((person) => `
           <button class="payer-card ${state.paidById === person.id ? "active" : ""}" type="button" data-paid-by="${person.id}">
             <span class="choice-icon">${icon(person.isGuest ? "gift" : "user")}</span>
@@ -396,10 +406,11 @@
   function renderMultiplePaid() {
     return `
       <section class="list paid-list" aria-label="Quien pago cada cosa">
-        ${state.items.map((item) => `
+        <div class="section-note">Marca quien pago cada producto. Si una persona pago todo, usa la opcion anterior.</div>
+        ${displayItems().map((item) => `
           <article class="product-card paid-item">
             <h2 class="card-title">${escapeHtml(item.name)}</h2>
-            <p class="card-meta">${itemLabel(item)} · ${formatMoney(item.amountCents)}</p>
+            <p class="card-meta">${itemLabel(item)} - ${formatMoney(item.amountCents)}</p>
             <div class="person-picker">
               ${state.people.map((person) => renderPickButton(person, [item.paidById].filter(Boolean), `data-item-paid="${item.id}:${person.id}"`)).join("")}
             </div>
@@ -860,7 +871,7 @@
 
   function calculateResult() {
     if (state.paidMode === "none") {
-      const contributions = calculateContributions();
+      const contributions = window.ClaraCore.calculateClaramenteContributions(state);
       const cards = state.people
         .map((person) => {
           const amount = contributions.get(person.id) || 0;
@@ -875,11 +886,10 @@
       };
     }
 
-    const balances = calculateBalances();
-    const settlements = settleBalances(balances);
+    const settlements = window.ClaraCore.calculateClaramenteSettlements(state);
     const cards = settlements.map((payment) => ({
       kind: "owe",
-      text: `${personName(payment.from)} le paga ${formatMoney(payment.amount)} a ${personName(payment.to)}`
+      text: `${personName(payment.from)} le paga ${formatMoney(payment.amountCents)} a ${personName(payment.to)}`
     }));
 
     return {

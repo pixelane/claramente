@@ -13,3 +13,5 @@ HANDOFF_ANTY_CLARA.md
 stitch_export/
 .DS_Store
 Thumbs.db
+test-results/
+playwright-report/
