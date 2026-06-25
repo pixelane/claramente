@@ -38,6 +38,24 @@ test("elige la shell correcta por dispositivo", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Claramente" })).toBeVisible();
 });
 
+
+test("no abre el teclado al cambiar de pantalla en movil", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/claramente.html");
+  await page.getByRole("button", { name: "Agregar personas" }).click();
+  await expect(page.getByRole("heading", { name: "Quienes estan en la mesa?" })).toBeVisible();
+  await expect(page.locator("input:focus")).toHaveCount(0);
+});
+
+test("el boton atras del navegador vuelve dentro del flujo movil", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/claramente.html");
+  await page.getByRole("button", { name: "Agregar personas" }).click();
+  await expect(page.getByRole("heading", { name: "Quienes estan en la mesa?" })).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/claramente\.html$/);
+  await expect(page.getByRole("heading", { name: "Vamos a dividir la cuenta" })).toBeVisible();
+});
 test("muestra aportaciones cuando todavia nadie pago", async ({ page }) => {
   const fixture = accounts.nobodyPaid;
   await openFixture(page, fixture);
