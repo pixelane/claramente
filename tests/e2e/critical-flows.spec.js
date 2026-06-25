@@ -8,6 +8,7 @@ async function openFixture(page, fixture, viewport) {
   }, fixture.state);
   await page.goto("/index.html?shell=claramente-full");
   await page.waitForLoadState("domcontentloaded");
+  await page.waitForLoadState("load");
   await expect(page.locator("#tab-settlements")).toBeAttached();
   if (viewport && viewport.width < 720) {
     await page.evaluate(() => {
@@ -89,10 +90,11 @@ test("conserva el mismo resultado en movil tableta y PC", async ({ page }) => {
   for (const viewport of viewports) {
     await test.step(viewport.name, async () => {
       await openFixture(page, fixture, viewport);
+      const paymentsPanel = page.locator("#tab-settlements");
       for (const settlement of fixture.expected.settlements) {
-        await expect(page.getByText(settlement, { exact: true })).toBeVisible();
+        await expect(paymentsPanel.getByText(settlement, { exact: true })).toBeVisible();
       }
-      await expect(page.getByText(fixture.expected.amount, { exact: true })).toHaveCount(2);
+      await expect(paymentsPanel.getByText(fixture.expected.amount, { exact: true })).toHaveCount(2);
     });
   }
 });

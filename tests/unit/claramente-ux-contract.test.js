@@ -10,6 +10,7 @@ function run() {
   assert.match(claramenteCss, /\.back-button\[hidden\]/, "start screen back button must stay hidden even with custom button display styles");
   assert.doesNotMatch(claramenteJs, /<div class="welcome-mark"/, "start screen should not show a confusing decorative plus or coin mark");
   assert.match(claramenteJs, /Empieza agregando personas/, "start screen should explain the first real task");
+  assert.doesNotMatch(claramenteJs, /siguiente prueba/, "start screen should not expose prototype placeholder copy");
   assert.match(claramenteJs, /displayItems\(\)/, "Claramente should render the account through a dedicated display order");
   assert.match(claramenteJs, /\.slice\(\)\.reverse\(\)/, "newly added account items should appear first without changing calculation order");
   assert.match(claramenteJs, /Agregar productos y cargos/, "item screen title should explain that the screen accepts products and shared charges");
