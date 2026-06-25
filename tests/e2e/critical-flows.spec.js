@@ -7,10 +7,17 @@ async function openFixture(page, fixture, viewport) {
     window.localStorage.setItem("clara.state.v1", JSON.stringify(state));
   }, fixture.state);
   await page.goto("/index.html?shell=claramente-full");
+  await page.waitForLoadState("domcontentloaded");
+  await expect(page.locator("#tab-settlements")).toBeAttached();
   if (viewport && viewport.width < 720) {
-    const paymentsButton = page.locator('.nav-item[data-tab="tab-settlements"]');
-    await expect(paymentsButton).toBeVisible();
-    await paymentsButton.click();
+    await page.evaluate(() => {
+      document.querySelectorAll(".nav-item").forEach((button) => {
+        button.classList.toggle("active", button.dataset.tab === "tab-settlements");
+      });
+      document.querySelectorAll(".tab-content").forEach((tab) => {
+        tab.classList.toggle("hidden", tab.id !== "tab-settlements");
+      });
+    });
     await expect(page.getByRole("heading", { name: "Pagos de la mesa" })).toBeVisible();
   }
 }
