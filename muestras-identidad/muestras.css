@@ -1,0 +1,468 @@
+:root {
+  color-scheme: light;
+  --paper: #f7efe1;
+  --paper-soft: #fffaf1;
+  --ink: #2a2118;
+  --muted: #6b5e4f;
+  --line: #dec9a8;
+  --marker: #eea83a;
+  --marker-deep: #b96a16;
+  --pen: #245f8f;
+  --paid: #2f9a5f;
+  --owe: #c87922;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.artboard {
+  position: relative;
+  width: min(1120px, calc(100vw - 32px));
+  min-height: 720px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, #7b6040);
+  border-radius: 28px;
+  padding: 44px;
+  box-shadow: 0 24px 80px rgba(42, 33, 24, 0.18);
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+}
+
+.mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 2px solid currentColor;
+}
+
+.hero-copy {
+  max-width: 610px;
+  margin-top: 70px;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--marker-deep);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+h1 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(3.2rem, 6.8vw, 5.7rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+}
+
+.hero-copy p:last-child {
+  max-width: 480px;
+  color: var(--muted);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+
+.theme-receipt {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(238, 168, 58, 0.22), transparent 28%),
+    var(--paper);
+}
+
+.receipt-board {
+  background:
+    linear-gradient(90deg, rgba(42, 33, 24, 0.04) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(var(--paper-soft), #f4e5cf);
+}
+
+.receipt-mark {
+  border-radius: 50% 50% 50% 12%;
+  color: var(--marker-deep);
+  transform: rotate(-4deg);
+}
+
+.receipt-slip {
+  position: absolute;
+  right: 72px;
+  top: 96px;
+  width: 330px;
+  padding: 28px 26px 34px;
+  background: #fffdf6;
+  border: 1px solid var(--line);
+  box-shadow: 12px 16px 0 rgba(185, 106, 22, 0.16);
+  transform: rotate(1.3deg);
+}
+
+.tear {
+  position: absolute;
+  inset: -12px 0 auto;
+  height: 18px;
+  background: repeating-linear-gradient(135deg, transparent 0 12px, #fffdf6 12px 24px);
+}
+
+.slip-title,
+.paper-title {
+  margin: 0 0 18px;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.slip-line,
+.slip-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 1.18rem;
+}
+
+.slip-line.muted {
+  color: var(--pen);
+  font-style: italic;
+}
+
+.slip-total {
+  margin-top: 12px;
+  border-bottom: 0;
+  font-size: 1.45rem;
+}
+
+.human-note {
+  position: absolute;
+  left: 76px;
+  bottom: 116px;
+  max-width: 360px;
+  padding: 22px 24px;
+  background: #ffe1a8;
+  border: 1px solid #d79022;
+  transform: rotate(-1.4deg);
+}
+
+.human-note p {
+  margin: 0 0 6px;
+  color: #7d4a0f;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+}
+
+.pin {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 12px;
+  right: 18px;
+  border-radius: 50%;
+  background: var(--marker-deep);
+}
+
+.step-strip {
+  position: absolute;
+  right: 56px;
+  bottom: 48px;
+  display: flex;
+  gap: 8px;
+  transform: rotate(0.4deg);
+}
+
+.step-strip span {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #fffaf1;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.theme-notebook {
+  background: #e9dcc9;
+}
+
+.notebook-board {
+  background:
+    repeating-linear-gradient(#fffaf1 0 37px, #ead8bc 38px 39px),
+    #fffaf1;
+}
+
+.notebook-board::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 116px;
+  width: 2px;
+  background: rgba(185, 106, 22, 0.38);
+}
+
+.scribble-brand {
+  color: var(--pen);
+  transform: rotate(-0.7deg);
+}
+
+.notebook-mark {
+  border-radius: 14px 18px 12px 16px;
+  font-family: ui-serif, Georgia, serif;
+  font-style: italic;
+}
+
+.notebook-paper {
+  position: absolute;
+  right: 70px;
+  top: 154px;
+  width: 420px;
+  padding: 30px;
+  border: 2px solid var(--pen);
+  background: rgba(255, 250, 241, 0.82);
+  transform: rotate(-1.2deg);
+}
+
+.sketch-row {
+  display: grid;
+  grid-template-columns: 82px 1fr auto;
+  align-items: center;
+  gap: 18px;
+  margin: 18px 0;
+  font-size: 1.25rem;
+}
+
+.arrow {
+  height: 2px;
+  background: var(--pen);
+  position: relative;
+}
+
+.arrow::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--pen);
+  border-top: 2px solid var(--pen);
+  transform: rotate(45deg);
+}
+
+.side-note {
+  margin: 26px 0 0;
+  padding: 12px 14px;
+  background: #ffe2a4;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  transform: rotate(0.8deg);
+}
+
+.sticky-stack {
+  position: absolute;
+  left: 92px;
+  bottom: 72px;
+  display: grid;
+  gap: 14px;
+}
+
+.sticky-stack article {
+  width: 210px;
+  padding: 18px 20px;
+  background: #f9d16f;
+  border: 1px solid #b96a16;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 900;
+}
+
+.sticky-stack article:nth-child(2) {
+  margin-left: 28px;
+  transform: rotate(1.8deg);
+  background: #d9edc8;
+}
+
+.sticky-stack article:nth-child(3) {
+  margin-left: 8px;
+  transform: rotate(-1deg);
+  background: #d8eafb;
+}
+
+.theme-solar {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(238, 168, 58, 0.24), transparent 34%),
+    #f5ecd9;
+}
+
+.solar-board {
+  background:
+    radial-gradient(circle at 70% 42%, rgba(238, 168, 58, 0.2), transparent 32%),
+    linear-gradient(135deg, #fff9ec, #f1debd);
+}
+
+.solar-mark {
+  border-radius: 50%;
+  color: var(--marker-deep);
+  position: relative;
+}
+
+.solar-mark::before,
+.solar-mark::after {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-top: 3px solid currentColor;
+  transform: rotate(22deg);
+}
+
+.solar-mark::after {
+  transform: rotate(112deg);
+}
+
+.table-diagram {
+  position: absolute;
+  right: 90px;
+  top: 106px;
+  width: 430px;
+  height: 430px;
+}
+
+.plate {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  width: 136px;
+  height: 136px;
+  border-radius: 50%;
+  border: 2px solid var(--marker-deep);
+  background: #fffaf1;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-weight: 800;
+  box-shadow: 0 12px 0 rgba(185, 106, 22, 0.14);
+}
+
+.plate strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--marker-deep);
+}
+
+.plate.center {
+  left: 147px;
+  top: 147px;
+  width: 150px;
+  height: 150px;
+  background: var(--marker);
+  color: #291706;
+  z-index: 3;
+}
+
+.plate.center strong {
+  color: #291706;
+}
+
+.p1 {
+  left: 20px;
+  top: 44px;
+}
+
+.p2 {
+  right: 6px;
+  top: 108px;
+  border-color: var(--pen);
+}
+
+.p2 strong {
+  color: var(--pen);
+}
+
+.p3 {
+  left: 70px;
+  bottom: 12px;
+}
+
+.orbit {
+  position: absolute;
+  border: 2px dashed rgba(185, 106, 22, 0.42);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.orbit-one {
+  inset: 62px;
+  transform: rotate(-8deg);
+}
+
+.orbit-two {
+  inset: 28px;
+  transform: rotate(16deg);
+}
+
+.solar-result {
+  position: absolute;
+  left: 72px;
+  bottom: 82px;
+  display: grid;
+  gap: 8px;
+  padding: 24px 28px;
+  background: #2a2118;
+  color: #fffaf1;
+  border-radius: 999px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  transform: rotate(-0.7deg);
+}
+
+.solar-result span {
+  color: #f7c56b;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .artboard {
+    width: min(420px, calc(100vw - 24px));
+    min-height: 860px;
+    padding: 28px;
+    border-radius: 22px;
+  }
+
+  h1 {
+    font-size: 3rem;
+  }
+
+  .hero-copy {
+    margin-top: 38px;
+  }
+
+  .receipt-slip,
+  .notebook-paper,
+  .table-diagram {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    margin-top: 28px;
+  }
+
+  .human-note,
+  .sticky-stack,
+  .solar-result,
+  .step-strip {
+    position: relative;
+    inset: auto;
+    margin-top: 24px;
+  }
+}

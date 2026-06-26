@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Revision interna: tarjeta</title>
+    <link rel="icon" href="icon-192.png">
+    <link rel="stylesheet" href="claramente.css">
+  </head>
+  <body>
+    <main class="claramente-shell">
+      <header class="flow-topbar" aria-label="Revision interna">
+        <span class="progress-label">Revision interna</span>
+      </header>
+
+      <section class="flow-card">
+        <div class="screen-head">
+          <p class="screen-kicker">claramente</p>
+          <h1 class="screen-title">Caso tarjeta precargado</h1>
+          <p class="screen-help">Jimmy y Cash aportan su parte. Tarjeta no aporta, pero pone la tarjeta.</p>
+        </div>
+
+        <section class="panel">
+          <p class="panel-note">Cuenta total: $5,200.00. Lo comieron Jimmy y Cash. Tarjeta esta marcado como invitado/no paga.</p>
+        </section>
+
+        <section class="list" aria-labelledby="cashTitle">
+          <h2 class="payment-section-title" id="cashTitle">Si pagan en efectivo</h2>
+          <div id="cashResult"></div>
+        </section>
+
+        <section class="list" aria-labelledby="cardTitle">
+          <h2 class="payment-section-title" id="cardTitle">Si paga Tarjeta con tarjeta</h2>
+          <div id="cardResult"></div>
+        </section>
+
+        <section class="panel">
+          <h2 class="payment-section-title">Texto para WhatsApp</h2>
+          <pre class="error-console-box" id="summaryText"></pre>
+          <button class="primary-button" type="button" id="copySummaryBtn">Copiar resumen</button>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="clara-core.js" defer></script>
+    <script src="revision-interna-tarjeta.js" defer></script>
+  </body>
+</html>

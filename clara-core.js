@@ -1,4 +1,4 @@
-﻿(function(root, factory) {
+(function(root, factory) {
   const api = factory();
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
@@ -215,12 +215,83 @@
     return settlements;
   }
 
+  function claraToClaramenteState(claraState) {
+    if (!claraState || typeof claraState !== "object") return null;
+
+    const people = Array.isArray(claraState.people)
+      ? claraState.people.map(p => ({
+          id: p.id,
+          name: p.name,
+          isGuest: Boolean(p.isGuest)
+        }))
+      : [];
+
+    const expenses = Array.isArray(claraState.expenses) ? claraState.expenses : [];
+    const items = [];
+    let paidMode = "";
+    let paymentMethod = "";
+    let cardPayerId = "";
+    let paidById = "";
+    const payerIds = people.filter(p => !p.isGuest).map(p => p.id);
+
+    expenses.forEach((expense, index) => {
+      const item = {
+        id: expense.id || `item-${index}`,
+        name: expense.description || "Gasto",
+        amountCents: expense.amountCents,
+        paidById: expense.paidBy
+      };
+
+      if (expense.restaurantId === "claramente-none") {
+        item.type = "single";
+        item.ownerId = expense.splitWith[0] || expense.paidBy;
+      } else {
+        const isShared = payerIds.length > 0 && expense.splitWith.length >= payerIds.length && payerIds.every(id => expense.splitWith.includes(id));
+        const isSingle = expense.splitWith.length === 1 && expense.splitWith[0] === expense.paidBy;
+
+        if (isSingle) {
+          item.type = "single";
+          item.ownerId = expense.splitWith[0];
+        } else if (isShared) {
+          item.type = "shared";
+          item.splitWith = expense.splitWith;
+        } else {
+          item.type = "product";
+          item.eatenBy = expense.splitWith;
+        }
+      }
+      items.push(item);
+    });
+
+    const uniquePayers = new Set(items.map(i => i.paidById).filter(Boolean));
+    if (uniquePayers.size === 1) {
+      paidMode = "single";
+      paidById = Array.from(uniquePayers)[0];
+      paymentMethod = "cash";
+    } else if (uniquePayers.size > 1) {
+      paidMode = "multiple";
+    }
+
+    return {
+      screen: items.length > 0 ? "result" : "start",
+      itemMode: "product",
+      people,
+      items,
+      paidMode,
+      paymentMethod,
+      cardPayerId,
+      paidById,
+      editing: null
+    };
+  }
+
   return {
     calculateClaramenteContributions,
     calculateClaramenteSettlements,
     calculateClaramenteCardSettlements,
     calculateSettlements,
     claramenteToClaraState,
+    claraToClaramenteState,
     distribute,
     settleBalances
   };

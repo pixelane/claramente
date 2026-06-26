@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v37";
+  const CACHE_NAME = "clara-cache-v38";
   const MAX_HASH_LENGTH = 180000;
   const MAX_BACKUP_BYTES = 350000;
   const MAX_PEOPLE = 80;
@@ -176,6 +176,23 @@
     bindEvents();
     render();
     await restoreFromHash();
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed && typeof parsed === "object") {
+            if (parsed.updatedAt && parsed.updatedAt <= (state.updatedAt || 0)) {
+              return;
+            }
+            state = normalizeState(parsed);
+            render();
+          }
+        } catch (err) {
+          console.error("Error sincronizando storage en Clara:", err);
+        }
+      }
+    });
 
     // Auto-collapse group config details if there is already a group name set
     if (state.groupName) {

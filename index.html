@@ -148,6 +148,13 @@
                 <p>Guia rapida y herramientas locales para revisar Claramente.</p>
               </div>
             </div>
+            <div class="diagnostic-box" style="margin-bottom: 20px; background: var(--surface-soft); border: 1px dashed var(--primary);">
+              <p style="margin-bottom: 12px; font-weight: 750;">¿Necesitas ayuda paso a paso?</p>
+              <p style="margin-bottom: 16px; font-size: 0.92rem; color: var(--muted);">Tenemos una guía interactiva y documentación detallada fuera de conexión para resolver tus dudas de inmediato.</p>
+              <div class="diagnostic-actions">
+                <a href="ayuda.html" class="primary-button" style="display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid var(--primary); border-radius: var(--control-radius); font-weight: 750; padding: 8px 16px; text-decoration: none; color: #271706;" target="_blank">Ver manual de ayuda completo</a>
+              </div>
+            </div>
             <div class="accordion-group">
               <details class="support-accordion"><summary>Como empezar a dividir gastos</summary><div class="accordion-content"><p>Agrega participantes, registra platillos o gastos, y revisa Pagos para saber cuanto falta juntar.</p></div></details>
               <details class="support-accordion"><summary>Como funciona cumpleanero o invitado</summary><div class="accordion-content"><p>Marca a quien no va a pagar desde Grupo. Su parte baja a $0 y se reparte entre quienes si pagan.</p></div></details>
@@ -167,7 +174,7 @@
           </section>
           <section class="panel support-dev-panel" aria-labelledby="devTitle">
             <div class="section-header"><div><h2 id="devTitle">Diagnostico y errores</h2><p>Herramientas tecnicas para resolver fallos y reportar problemas.</p></div></div>
-            <div class="diagnostic-box"><p><strong>Version de cache:</strong> <code id="cacheVersionLabel">clara-cache-v37</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualizacion</button></div></div>
+            <div class="diagnostic-box"><p><strong>Version de cache:</strong> <code id="cacheVersionLabel">clara-cache-v38</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualizacion</button></div></div>
             <div class="error-console-panel"><h3>Consola de errores</h3><div id="errorConsoleBox" class="error-console-box no-errors">No se han detectado errores de ejecucion. Todo funciona bien.</div><button type="button" class="primary-button hidden full-action compact-action" id="copyErrorLogBtn">Copiar reporte de errores</button></div>
           </section>
         </div>

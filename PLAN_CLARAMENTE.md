@@ -339,6 +339,29 @@ Recomendacion: empezar con `claramente.html` si queremos comparar rapido sin arr
 - `webapp-testing`: pruebas de tareas.
 - `lint-and-validate`: validacion despues de cambios.
 
+## Herramientas y permisos antes de implementar
+
+Antes de hacer cambios visuales grandes o fases que requieran validar en navegador, revisar si Playwright esta disponible en el entorno local.
+
+Si Playwright no esta completo o no tiene permisos suficientes, parar antes de implementar y pedir:
+
+- permiso para instalar o completar Playwright,
+- permiso para usar el navegador local o el navegador de pruebas,
+- permiso para levantar servidor local temporal,
+- alcance de las pruebas visuales: movil, escritorio o ambos.
+
+Validaciones esperadas con Playwright cuando este disponible:
+
+- abrir `claramente.html` en viewport movil,
+- completar el flujo principal de punta a punta,
+- probar invitado o cumpleanero que no paga,
+- probar gasto para todos,
+- probar gasto de una persona,
+- probar varias personas pagando,
+- capturar screenshot final para revisar tamanos, solapes y jerarquia visual.
+
+Si Playwright no esta disponible y no se aprueba instalarlo, solo se permite cerrar con validaciones parciales: `node --check`, carga HTTP local, revision estatica y prueba manual pendiente.
+
 ## Pruebas con personas
 
 Tareas de prueba:

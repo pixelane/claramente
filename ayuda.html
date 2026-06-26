@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f2a93b">
+    <meta name="description" content="Claramente te ayuda a dividir una cuenta de mesa, saber quien paga y copiar el resumen sin hacer cuentas raras.">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Claramente: divide la cuenta sin calculadora</title>
+    <link rel="icon" href="icon-192.png">
+    <link rel="stylesheet" href="ayuda.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+    <header class="site-header" aria-label="Encabezado">
+      <a class="brand-lockup" href="index.html" aria-label="Abrir Claramente">
+        <span class="brand-mark" aria-hidden="true">C</span>
+        <span>Claramente</span>
+      </a>
+      <nav class="top-nav" aria-label="Secciones de ayuda">
+        <a href="#como-funciona">Pasos</a>
+        <a href="#casos">Casos reales</a>
+        <a href="#privacidad">Privacidad</a>
+      </nav>
+    </header>
+
+    <main id="contenido">
+      <section class="hero-section" aria-labelledby="heroTitle">
+        <div class="hero-copy">
+          <p class="eyebrow">recibo de mesa</p>
+          <h1 id="heroTitle">La cuenta llego. Que nadie saque la calculadora.</h1>
+          <p class="hero-text">Anota quien fue, que pidieron y quien va a poner la tarjeta. Claramente arma el mensaje para el grupo.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="index.html">Dividir mi cuenta</a>
+            <a class="secondary-link" href="#ejemplo">Ver ejemplo</a>
+          </div>
+        </div>
+
+        <aside class="receipt-demo" id="ejemplo" aria-labelledby="receiptTitle">
+          <div class="tear-strip" aria-hidden="true"></div>
+          <p class="receipt-kicker">mesa de ejemplo</p>
+          <h2 id="receiptTitle">Cuenta: $5,200</h2>
+          <dl class="receipt-lines">
+            <div>
+              <dt>Jimmy</dt>
+              <dd>$2,600</dd>
+            </div>
+            <div class="pen-line">
+              <dt>Marta</dt>
+              <dd>pone tarjeta</dd>
+            </div>
+            <div>
+              <dt>Luis</dt>
+              <dd>$2,600</dd>
+            </div>
+          </dl>
+          <div class="receipt-result">
+            <span>sale para mandar</span>
+            <p>Jimmy y Luis le pagan a Marta.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="explainer-section" aria-labelledby="explainerTitle">
+        <div class="section-heading">
+          <span class="section-stamp">ej</span>
+          <h2 id="explainerTitle">Primero se ve quien paga. Luego quien le debe.</h2>
+        </div>
+        <div class="explain-board">
+          <article class="split-table-card" aria-labelledby="tableTitle">
+            <p class="case-label">ejemplo simple</p>
+            <h3 id="tableTitle">Mesa de $5,200</h3>
+            <table>
+              <caption>Ejemplo de pago con tarjeta</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Persona</th>
+                  <th scope="col">Que paso</th>
+                  <th scope="col">Resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Jimmy</th>
+                  <td>Le toca $2,600</td>
+                  <td>Le paga a Marta</td>
+                </tr>
+                <tr>
+                  <th scope="row">Luis</th>
+                  <td>Le toca $2,600</td>
+                  <td>Le paga a Marta</td>
+                </tr>
+                <tr>
+                  <th scope="row">Marta</th>
+                  <td>Pone la tarjeta</td>
+                  <td>Recibe de Jimmy y Luis</td>
+                </tr>
+              </tbody>
+            </table>
+          </article>
+
+          <article class="payment-map" aria-labelledby="mapTitle">
+            <p class="case-label">quien le pasa a quien</p>
+            <h3 id="mapTitle">Las flechas son el resumen.</h3>
+            <svg viewBox="0 0 560 260" role="img" aria-labelledby="mapSvgTitle mapSvgDesc">
+              <title id="mapSvgTitle">Jimmy y Luis le pagan a Marta</title>
+              <desc id="mapSvgDesc">Jimmy y Luis deben pasar su parte a Marta, que pone la tarjeta.</desc>
+              <defs>
+                <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 z"></path>
+                </marker>
+              </defs>
+              <g class="payer-node" transform="translate(22 30)">
+                <rect width="150" height="66" rx="8"></rect>
+                <text x="18" y="28">Jimmy</text>
+                <text x="18" y="50">$2,600</text>
+              </g>
+              <g class="payer-node" transform="translate(22 164)">
+                <rect width="150" height="66" rx="8"></rect>
+                <text x="18" y="28">Luis</text>
+                <text x="18" y="50">$2,600</text>
+              </g>
+              <g class="card-node" transform="translate(366 96)">
+                <rect width="160" height="74" rx="8"></rect>
+                <text x="20" y="31">Marta</text>
+                <text x="20" y="54">paga la cuenta</text>
+              </g>
+              <path class="pay-arrow" d="M 178 64 C 250 64 278 112 360 124"></path>
+              <path class="pay-arrow" d="M 178 198 C 250 198 278 150 360 138"></path>
+              <text class="arrow-note" x="226" y="105">le paga</text>
+              <text class="arrow-note" x="226" y="182">le paga</text>
+            </svg>
+            <div class="message-preview">
+              <span>mensaje listo</span>
+              <p>Jimmy le paga $2,600 a Marta. Luis le paga $2,600 a Marta.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="steps-section" id="como-funciona" aria-labelledby="stepsTitle">
+        <div class="section-heading">
+          <span class="section-stamp">01</span>
+          <h2 id="stepsTitle">Se llena como se platica en la mesa.</h2>
+        </div>
+        <ol class="step-list">
+          <li>
+            <span class="step-number">1</span>
+            <h3>Quienes estan</h3>
+            <p>Agrega a la mesa. Si hoy alguien va invitado, marcalo como no paga.</p>
+          </li>
+          <li>
+            <span class="step-number">2</span>
+            <h3>Que pidieron</h3>
+            <p>Pizza, tacos, refrescos, propina. Marca quien comio cada cosa.</p>
+          </li>
+          <li>
+            <span class="step-number">3</span>
+            <h3>Quien paga</h3>
+            <p>Efectivo, tarjeta, alguien ya pago o cada quien pago algo.</p>
+          </li>
+          <li>
+            <span class="step-number">4</span>
+            <h3>Que se manda</h3>
+            <p>Copia el texto y mandalo al grupo. Sin explicar cuentas.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="cases-section" id="casos" aria-labelledby="casesTitle">
+        <div class="section-heading">
+          <span class="section-stamp">02</span>
+          <h2 id="casesTitle">Para esas cuentas que nunca salen limpias.</h2>
+        </div>
+        <div class="comic-strip">
+          <article class="comic-panel comic-panel-wide">
+            <div class="scene-top">
+              <span class="scene-icon scene-people" aria-hidden="true"></span>
+              <p class="case-label">escena 1</p>
+            </div>
+            <h3>"Cada quien pone lo suyo"</h3>
+            <p class="dialogue-line">Todavia nadie pago. Solo quieren saber cuanto junta cada quien.</p>
+            <p class="outcome-line">Claramente muestra: Jimmy aporta $260. Luis aporta $260.</p>
+          </article>
+          <article class="comic-panel comic-card-panel">
+            <div class="scene-top">
+              <span class="scene-icon scene-card" aria-hidden="true"></span>
+              <p class="case-label">escena 2</p>
+            </div>
+            <h3>"Yo la pongo con mi tarjeta"</h3>
+            <p class="dialogue-line">Marta paga toda la cuenta para no hacer esperar al mesero.</p>
+            <p class="outcome-line">Claramente muestra: Jimmy y Luis le pagan a Marta.</p>
+          </article>
+          <article class="comic-panel">
+            <div class="scene-top">
+              <span class="scene-icon scene-receipt" aria-hidden="true"></span>
+              <p class="case-label">escena 3</p>
+            </div>
+            <h3>"Ana ya pago todo"</h3>
+            <p class="dialogue-line">Alguien se adelanto y luego todos preguntan cuanto deben.</p>
+            <p class="outcome-line">Claramente muestra: quienes le devuelven a Ana y cuanto.</p>
+          </article>
+          <article class="comic-panel comic-guest-panel">
+            <div class="scene-top">
+              <span class="scene-icon scene-guest" aria-hidden="true"></span>
+              <p class="case-label">escena 4</p>
+            </div>
+            <h3>"Hoy va invitado"</h3>
+            <p class="dialogue-line">La persona aparece en la comida, pero no va a pagar.</p>
+            <p class="outcome-line">Claramente reparte esa parte entre quienes si pagan.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="table-note" aria-labelledby="noteTitle">
+        <div>
+          <span class="table-note-stamp">la regla</span>
+          <h2 id="noteTitle">La cuenta no deberia volverse tema de sobremesa.</h2>
+        </div>
+        <p>Si el resultado se puede leer en voz alta y todos lo entienden, ya sirve.</p>
+      </section>
+
+      <section class="privacy-section" id="privacidad" aria-labelledby="privacyTitle">
+        <div class="section-heading">
+          <span class="section-stamp">03</span>
+          <h2 id="privacyTitle">La cuenta se queda en tu telefono.</h2>
+        </div>
+        <div class="privacy-grid">
+          <article>
+            <span class="privacy-icon privacy-no-account" aria-hidden="true"></span>
+            <h3>Sin registro</h3>
+            <p>No tienes que crear una cuenta para dividir una cuenta.</p>
+          </article>
+          <article>
+            <span class="privacy-icon privacy-phone" aria-hidden="true"></span>
+            <h3>Sin subir la cuenta</h3>
+            <p>Los datos viven en tu navegador mientras usas Claramente.</p>
+          </article>
+          <article>
+            <span class="privacy-icon privacy-link" aria-hidden="true"></span>
+            <h3>Comparte con cuidado</h3>
+            <p>Si mandas un link, puede llevar datos de la cuenta. Mandalo solo a tu grupo.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="faq-section" aria-labelledby="faqTitle">
+        <div class="section-heading">
+          <span class="section-stamp">04</span>
+          <h2 id="faqTitle">Dudas que salen justo cuando todos sacan el celular.</h2>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>Que pasa si no todos comieron lo mismo?</summary>
+            <p>Agrega el producto y marca solo a quienes lo comieron. A quien no lo comio, no se lo cobra.</p>
+          </details>
+          <details>
+            <summary>Y si alguien no va a pagar?</summary>
+            <p>Marcalo como invitado o cumpleanero. Puede comer, pero no aparece como alguien que aporta.</p>
+          </details>
+          <details>
+            <summary>Funciona si van a pagar con tarjeta?</summary>
+            <p>Si alguien dice "yo la pongo", Claramente dice cuanto le pasan los demas.</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Claramente: para pagar la cuenta sin hacer una junta.</p>
+      <a class="primary-link compact" href="index.html">Dividir mi cuenta</a>
+    </footer>
+  </body>
+</html>

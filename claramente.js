@@ -55,6 +55,17 @@
     coin: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 7v10"/>',
     copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
     send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>',
+    back: '<path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    user: '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>',
+    users: '<path d="M16 21a6 6 0 0 0-12 0"/><circle cx="10" cy="8" r="4"/><path d="M22 21a5 5 0 0 0-5-5"/><path d="M16 3.2a4 4 0 0 1 0 7.6"/>',
+    plate: '<circle cx="12" cy="12" r="7"/><path d="M5 3v6"/><path d="M3 3v6"/><path d="M7 3v6"/><path d="M19 3v18"/>',
+    group: '<path d="M4 8h16"/><path d="M4 16h16"/><path d="M8 4v16"/><path d="M16 4v16"/>',
+    person: '<circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>',
+    gift: '<path d="M20 12v8H4v-8"/><path d="M2 7h20v5H2z"/><path d="M12 7v13"/><path d="M12 7H8.5A2.5 2.5 0 1 1 11 4.5L12 7Z"/><path d="M12 7h3.5A2.5 2.5 0 1 0 13 4.5L12 7Z"/>',
+    coin: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path d="M12 7v10"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/>',
     close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     plus: '<path d="M12 5v14"/><path d="M5 12h14"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
@@ -63,9 +74,81 @@
 
   document.addEventListener("DOMContentLoaded", init);
 
+  function loadState() {
+    try {
+      const localClaramente = localStorage.getItem("clara.state.claramente");
+      if (localClaramente) {
+        const parsed = JSON.parse(localClaramente);
+        if (parsed && typeof parsed === "object" && Array.isArray(parsed.people) && Array.isArray(parsed.items)) {
+          Object.assign(state, {
+            screen: parsed.screen || "start",
+            itemMode: parsed.itemMode || "product",
+            people: parsed.people,
+            items: parsed.items,
+            paidMode: parsed.paidMode || "",
+            paymentMethod: parsed.paymentMethod || "",
+            cardPayerId: parsed.cardPayerId || "",
+            paidById: parsed.paidById || "",
+            editing: null,
+            updatedAt: Number(parsed.updatedAt) || 0
+          });
+          return;
+        }
+      }
+      
+      const localClara = localStorage.getItem("clara.state.v1");
+      if (localClara) {
+        const canonical = JSON.parse(localClara);
+        if (canonical && typeof canonical === "object") {
+          const mappedState = window.ClaraCore.claraToClaramenteState(canonical);
+          if (mappedState && Array.isArray(mappedState.people) && Array.isArray(mappedState.items)) {
+            Object.assign(state, mappedState, { updatedAt: Number(canonical.updatedAt) || 0 });
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error cargando estado:", e);
+      localStorage.removeItem("clara.state.claramente");
+    }
+  }
+
+  function saveState() {
+    try {
+      state.updatedAt = Date.now();
+      localStorage.setItem("clara.state.claramente", JSON.stringify(state));
+      const canonicalState = window.ClaraCore.claramenteToClaraState(state);
+      canonicalState.updatedAt = state.updatedAt;
+      localStorage.setItem("clara.state.v1", JSON.stringify(canonicalState));
+    } catch (e) {
+      console.error("Error guardando estado:", e);
+    }
+  }
+
   function init() {
+    loadState();
     window.history.replaceState({ claramenteScreen: state.screen }, "", window.location.href);
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "clara.state.v1" && e.newValue) {
+        try {
+          const canonical = JSON.parse(e.newValue);
+          if (canonical && typeof canonical === "object") {
+            if (canonical.updatedAt && canonical.updatedAt <= (state.updatedAt || 0)) {
+              return;
+            }
+            const mappedState = window.ClaraCore.claraToClaramenteState(canonical);
+            if (mappedState && Array.isArray(mappedState.people) && Array.isArray(mappedState.items)) {
+              Object.assign(state, mappedState, { updatedAt: Number(canonical.updatedAt) || Date.now() });
+              localStorage.setItem("clara.state.claramente", JSON.stringify(state));
+              render();
+            }
+          }
+        } catch (err) {
+          console.error("Error sincronizando storage en Claramente:", err);
+        }
+      }
+    });
     els.backBtn.addEventListener("click", goBack);
     els.closeSheetBtn.addEventListener("click", closeSheet);
     els.editForm.addEventListener("submit", saveEdit);
@@ -75,6 +158,7 @@
   }
 
   function render() {
+    saveState();
     els.progressLabel.textContent = progress[state.screen];
     els.backBtn.hidden = state.screen === "start";
     els.backBtn.innerHTML = `${icon("back")}<span>Atras</span>`;
@@ -90,7 +174,6 @@
 
     els.root.innerHTML = renderer();
   }
-
   function renderHeader(title, help = "", kicker = "claramente") {
     return `
       <div class="screen-head">
@@ -106,7 +189,8 @@
       ${renderHeader("Vamos a dividir la cuenta", "Empieza agregando personas. Despues pones productos, quien comio y quien pago.")}
       <div class="panel">
         <p class="panel-note">Todo queda en este celular y puedes compartir el resumen al final.</p>
-        <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
+        <button class="primary-button" type="button" data-go="people" style="margin-bottom: 12px;"><span>Agregar personas</span></button>
+        <a href="ayuda.html" class="secondary-button" style="display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1px solid var(--line); border-radius: var(--control-radius); font-weight: 750; text-decoration: none; color: var(--action); background: #ffffff;" target="_blank">Ver manual de ayuda</a>
       </div>
     `;
   }
