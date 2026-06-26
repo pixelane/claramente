@@ -50,6 +50,17 @@ function run() {
     p_luis: 21500,
     p_maria: 0
   });
+
+  const cardSettlements = calculateClaramenteSettlements({
+    ...mobileState,
+    paidMode: "none",
+    paidById: "",
+    paymentMethod: "card",
+    cardPayerId: "p_ana"
+  });
+  assert.deepEqual(cardSettlements, [
+    { from: "p_luis", to: "p_ana", amountCents: 21500 }
+  ]);
 }
 
 run();

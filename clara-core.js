@@ -98,7 +98,25 @@
   }
 
   function calculateClaramenteSettlements(state) {
+    if (state && state.paidMode === "none" && state.paymentMethod === "card" && state.cardPayerId) {
+      return calculateClaramenteCardSettlements(state);
+    }
     return calculateSettlements(claramenteToClaraState(state)).settlements;
+  }
+
+  function calculateClaramenteCardSettlements(state) {
+    const people = Array.isArray(state && state.people) ? state.people : [];
+    const peopleIds = new Set(people.map((person) => person.id));
+    if (!peopleIds.has(state.cardPayerId)) return [];
+    const contributions = calculateClaramenteContributions(state);
+    return people
+      .filter((person) => person.id !== state.cardPayerId && !person.isGuest)
+      .map((person) => ({
+        from: person.id,
+        to: state.cardPayerId,
+        amountCents: contributions.get(person.id) || 0
+      }))
+      .filter((payment) => payment.amountCents > 0);
   }
 
   function claramenteChargedPeopleFor(state, item) {
@@ -200,6 +218,7 @@
   return {
     calculateClaramenteContributions,
     calculateClaramenteSettlements,
+    calculateClaramenteCardSettlements,
     calculateSettlements,
     claramenteToClaraState,
     distribute,

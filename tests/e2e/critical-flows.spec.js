@@ -11,14 +11,7 @@ async function openFixture(page, fixture, viewport) {
   await page.waitForLoadState("load");
   await expect(page.locator("#tab-settlements")).toBeAttached();
   if (viewport && viewport.width < 720) {
-    await page.evaluate(() => {
-      document.querySelectorAll(".nav-item").forEach((button) => {
-        button.classList.toggle("active", button.dataset.tab === "tab-settlements");
-      });
-      document.querySelectorAll(".tab-content").forEach((tab) => {
-        tab.classList.toggle("hidden", tab.id !== "tab-settlements");
-      });
-    });
+    await page.getByRole("button", { name: "Pagos" }).click();
     await expect(page.getByRole("heading", { name: "Pagos de la mesa" })).toBeVisible();
   }
 }
@@ -67,6 +60,34 @@ test("muestra aportaciones cuando todavia nadie pago", async ({ page }) => {
     const row = page.locator(".close-row").filter({ hasText: contribution.person });
     await expect(row).toContainText(contribution.amount);
   }
+});
+
+test("muestra pagos hacia la tarjeta cuando todavia nadie pago", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/claramente.html");
+
+  await page.getByRole("button", { name: "Agregar personas" }).click();
+  for (const name of ["Jimmy", "Tarjeta", "Cash"]) {
+    await page.getByLabel("Nombre").fill(name);
+    await page.getByRole("button", { name: "Agregar persona" }).click();
+  }
+  await page.locator(".person-card").filter({ hasText: "Tarjeta" }).getByRole("button", { name: "No paga" }).click();
+  await page.getByRole("button", { name: "Ir a productos" }).click();
+
+  await page.getByRole("button", { name: /Lo comieron todos/ }).click();
+  await page.getByLabel("Producto o cargo").fill("Cuenta");
+  await page.getByLabel("Monto").fill("5200");
+  await page.getByRole("button", { name: "Agregar para todos" }).click();
+  await page.getByRole("button", { name: "Ya termine la cuenta" }).click();
+
+  await page.getByRole("button", { name: /Todavia no se ha pagado/ }).click();
+  await page.getByRole("button", { name: /^Tarjeta$/ }).click();
+  await page.getByRole("button", { name: /^Tarjeta Usa tarjeta/ }).click();
+  await page.getByRole("button", { name: "Calcular cuenta" }).click();
+
+  await expect(page.getByText("Jimmy le paga $2,600.00 a Tarjeta", { exact: true })).toBeVisible();
+  await expect(page.getByText("Cash le paga $2,600.00 a Tarjeta", { exact: true })).toBeVisible();
+  await expect(page.getByText("Jimmy aporta $2,600.00", { exact: true })).toHaveCount(0);
 });
 
 test("excluye del pago a un invitado que consumio", async ({ page }) => {

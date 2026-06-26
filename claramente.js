@@ -973,6 +973,19 @@
 
   function calculateResult() {
     if (state.paidMode === "none") {
+      if (state.paymentMethod === "card" && state.cardPayerId) {
+        const settlements = window.ClaraCore.calculateClaramenteSettlements(state);
+        const cards = settlements.map((payment) => ({
+          kind: "owe",
+          text: `${personName(payment.from)} le paga ${formatMoney(payment.amountCents)} a ${personName(payment.to)}`
+        }));
+
+        return {
+          help: `${personName(state.cardPayerId)} pondra la tarjeta. Los demas le pagan su parte.`,
+          cards: cards.length ? cards : [{ kind: "neutral", text: "No hay pagos pendientes." }]
+        };
+      }
+
       const contributions = window.ClaraCore.calculateClaramenteContributions(state);
       const cards = state.people
         .map((person) => {
