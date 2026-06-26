@@ -154,6 +154,18 @@
     els.editForm.addEventListener("submit", saveEdit);
     els.root.addEventListener("click", handleRootClick);
     els.root.addEventListener("submit", handleRootSubmit);
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (sessionStorage.getItem("clara.swReloaded") === "clara-cache-v38") return;
+        sessionStorage.setItem("clara.swReloaded", "clara-cache-v38");
+        window.location.reload();
+      });
+      navigator.serviceWorker.register("sw.js").catch((err) => {
+        console.warn("Service worker registration failed", err);
+      });
+    }
+
     render();
   }
 
