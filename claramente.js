@@ -579,6 +579,11 @@
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
+      ${result.cards.some(c => c.kind === "owe") ? `
+        <p style="background: none; text-align: center; font-size: 0.82rem; font-weight: normal; margin: -8px 0 16px; color: var(--muted); padding: 0 16px; line-height: 1.35;">
+          * Se aplicó un ajuste de redondeo de centavos para cuadrar el total exacto.
+        </p>
+      ` : ""}
       <div class="panel">
         <button class="primary-button" type="button" data-share-whatsapp>${icon("send")}<span>Enviar por WhatsApp</span></button>
         <button class="secondary-button" type="button" data-copy-summary>${icon("copy")}<span>Copiar resumen</span></button>
