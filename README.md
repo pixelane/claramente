@@ -58,6 +58,7 @@ Para GitHub Pages:
 ## No incluido en v1
 
 - IA.
+- OCR o foto de ticket.
 - Login o sincronizacion.
 - Pagos reales.
 - Backend.

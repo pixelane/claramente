@@ -121,7 +121,10 @@ Decision propuesta:
 
 - `nobodyPaid`: aportaciones antes de pagar.
 - `guestConsumes`: invitado que consume y no paga.
+- `cardPayerPending`: alguien pone tarjeta aunque la mesa todavia no se haya pagado.
 - `crossViewport`: mismo resultado en movil, tableta y PC.
+- `tipAndTaxRounding`: propina y cargos con redondeo deterministico.
+- `multiPayer`: varias personas pagaron gastos distintos.
 
 Cada cambio al modelo debe mantener estos fixtures o incluir una migracion versionada y nuevos resultados esperados.
 

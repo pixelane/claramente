@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v38";
+const CACHE_NAME = "clara-cache-v42";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,10 +9,6 @@ const ASSETS = [
   "./shell-router.js",
   "./clara-core.js",
   "./app.js",
-  "./tesseract.min.js",
-  "./worker.min.js",
-  "./tesseract-core-simd.wasm.js",
-  "./spa.traineddata.gz",
   "./ayuda.html",
   "./ayuda.css",
   "./manifest.json",
@@ -47,14 +43,21 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     const url = new URL(event.request.url);
-    const fallbackAsset = url.pathname.endsWith("/claramente.html") ? "./claramente.html" : "./index.html";
+    let fallbackAsset = "./index.html";
+    if (url.pathname.endsWith("/claramente.html")) {
+      fallbackAsset = "./claramente.html";
+    } else if (url.pathname.endsWith("/ayuda.html")) {
+      fallbackAsset = "./ayuda.html";
+    }
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const responseCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(fallbackAsset, responseCopy);
-          });
+          if (response.ok) {
+            const responseCopy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(fallbackAsset, responseCopy);
+            });
+          }
           return response;
         })
         .catch(() => caches.match(fallbackAsset))

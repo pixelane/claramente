@@ -202,7 +202,7 @@
       <div class="panel">
         <p class="panel-note">Todo queda en este celular y puedes compartir el resumen al final.</p>
         <button class="primary-button" type="button" data-go="people" style="margin-bottom: 12px;"><span>Agregar personas</span></button>
-        <a href="ayuda.html" class="secondary-button" style="display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1px solid var(--line); border-radius: var(--control-radius); font-weight: 750; text-decoration: none; color: var(--action); background: #ffffff;" target="_blank">Ver manual de ayuda</a>
+        <a href="ayuda.html" class="secondary-button manual-button" target="_blank">Ver manual de ayuda</a>
       </div>
     `;
   }
@@ -282,7 +282,7 @@
     const canContinue = itemsReady() && payers().length > 0;
     return `
       ${renderHeader(itemQuestion(), itemHelp())}
-      <p class="section-note item-decision-note">¿Quien lo consumio?</p>
+      <p class="section-note item-decision-note">¿Quién lo consumió?</p>
       <div class="quick-row" aria-label="Tipo de cargo">
         <button class="quick-button ${state.itemMode === "shared" ? "active" : ""}" type="button" data-item-mode="shared">
           <strong>Lo comieron todos</strong>
@@ -468,7 +468,7 @@
         </div>`
       : "";
     return `
-      ${renderHeader("¿La cuenta ya se pago?", "Elige la situacion de la mesa. Despues te pedimos solo lo necesario.")}
+      ${renderHeader("¿La cuenta ya se pagó?", "Elige la situación de la mesa. Después te pedimos solo lo necesario.")}
       <div class="panel paid-summary">
         <p class="panel-note">${state.items.length} ${state.items.length === 1 ? "cargo agregado" : "cargos agregados"}.</p>
         <button class="secondary-button" type="button" data-go="items">Editar cuenta antes de calcular</button>
@@ -481,7 +481,7 @@
         </div>
       </section>
       ${state.paidMode === "none" ? renderUnpaidMethod() : ""}
-      ${state.paidMode === "single" ? renderPaidPeople() + renderPaidMethod("¿Como pago?", "Esto solo ayuda a entender el caso; el calculo depende de quien pago.") : ""}
+      ${state.paidMode === "single" ? renderPaidPeople() + renderPaidMethod("¿Cómo pagó?", "Esto solo ayuda a entender el caso; el cálculo depende de quién pagó.") : ""}
       <section class="payment-section special-payment-section" aria-labelledby="specialPaymentTitle">
         <h2 class="payment-section-title" id="specialPaymentTitle">Caso especial</h2>
         <div class="list paid-mode-list" aria-label="Caso especial de pago">
@@ -506,8 +506,8 @@
 
   function renderPaidPeople() {
     return `
-      <section class="list payer-list" aria-label="Quien pago toda la cuenta">
-        <div class="section-note">¿Quien pago la cuenta?</div>
+      <section class="list payer-list" aria-label="Quién pagó toda la cuenta">
+        <div class="section-note">¿Quién pagó la cuenta?</div>
         ${state.people.map((person) => `
           <button class="payer-card ${state.paidById === person.id ? "active" : ""}" type="button" data-paid-by="${person.id}">
             <span class="choice-icon">${icon(person.isGuest ? "gift" : "user")}</span>
@@ -521,7 +521,7 @@
 
   function renderUnpaidMethod() {
     return `
-      ${renderPaidMethod("¿Como van a pagar?", "Si van a usar una tarjeta, dinos quien la pondra.")}
+      ${renderPaidMethod("¿Cómo van a pagar?", "Si van a usar una tarjeta, dinos quién la pondrá.")}
       ${state.paymentMethod === "card" ? renderCardPayer() : ""}
     `;
   }
@@ -541,8 +541,8 @@
 
   function renderCardPayer() {
     return `
-      <section class="list payer-list" aria-label="Quien pondra la tarjeta">
-        <div class="section-note">¿Quien pondra la tarjeta?</div>
+      <section class="list payer-list" aria-label="Quién pondrá la tarjeta">
+        <div class="section-note">¿Quién pondrá la tarjeta?</div>
         <p class="section-note">Esa persona recibe el dinero de los demas antes o despues de pagar.</p>
         ${state.people.map((person) => `
           <button class="payer-card ${state.cardPayerId === person.id ? "active" : ""}" type="button" data-card-payer="${person.id}">

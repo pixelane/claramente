@@ -15,3 +15,4 @@ stitch_export/
 Thumbs.db
 test-results/
 playwright-report/
+.deploy-claramente-live/

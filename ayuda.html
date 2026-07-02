@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f2a93b">
-    <meta name="description" content="Claramente te ayuda a dividir una cuenta de mesa, saber quien paga y copiar el resumen sin hacer cuentas raras.">
+    <meta name="description" content="Manual de ayuda de Claramente para dividir una cuenta, entender quien paga y compartir el resumen.">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-    <title>Claramente: divide la cuenta sin calculadora</title>
+    <title>Manual de ayuda de Claramente</title>
     <link rel="icon" href="icon-192.png">
     <link rel="stylesheet" href="ayuda.css">
   </head>
@@ -22,18 +22,20 @@
         <a href="#como-funciona">Pasos</a>
         <a href="#casos">Casos reales</a>
         <a href="#privacidad">Privacidad</a>
+        <a href="index.html">Abrir app</a>
       </nav>
     </header>
 
     <main id="contenido">
       <section class="hero-section" aria-labelledby="heroTitle">
         <div class="hero-copy">
-          <p class="eyebrow">recibo de mesa</p>
-          <h1 id="heroTitle">La cuenta llego. Que nadie saque la calculadora.</h1>
-          <p class="hero-text">Anota quien fue, que pidieron y quien va a poner la tarjeta. Claramente arma el mensaje para el grupo.</p>
+          <p class="eyebrow">manual de ayuda</p>
+          <h1 id="heroTitle">Como leer y compartir una cuenta en Claramente.</h1>
+          <p class="hero-text">Usa esta pagina para entender los pasos, los casos comunes y que datos viajan cuando compartes un link.</p>
           <div class="hero-actions">
-            <a class="primary-link" href="index.html">Dividir mi cuenta</a>
-            <a class="secondary-link" href="#ejemplo">Ver ejemplo</a>
+            <a class="primary-link" href="index.html">Abrir Claramente</a>
+            <a class="secondary-link" href="#ejemplo">Probar con ejemplo</a>
+            <a class="secondary-link" href="index.html">Dividir una cuenta ahora</a>
           </div>
         </div>
 
@@ -101,36 +103,27 @@
           </article>
 
           <article class="payment-map" aria-labelledby="mapTitle">
-            <p class="case-label">quien le pasa a quien</p>
-            <h3 id="mapTitle">Las flechas son el resumen.</h3>
-            <svg viewBox="0 0 560 260" role="img" aria-labelledby="mapSvgTitle mapSvgDesc">
-              <title id="mapSvgTitle">Jimmy y Luis le pagan a Marta</title>
-              <desc id="mapSvgDesc">Jimmy y Luis deben pasar su parte a Marta, que pone la tarjeta.</desc>
-              <defs>
-                <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-                  <path d="M 0 0 L 10 5 L 0 10 z"></path>
-                </marker>
-              </defs>
-              <g class="payer-node" transform="translate(22 30)">
-                <rect width="150" height="66" rx="8"></rect>
-                <text x="18" y="28">Jimmy</text>
-                <text x="18" y="50">$2,600</text>
-              </g>
-              <g class="payer-node" transform="translate(22 164)">
-                <rect width="150" height="66" rx="8"></rect>
-                <text x="18" y="28">Luis</text>
-                <text x="18" y="50">$2,600</text>
-              </g>
-              <g class="card-node" transform="translate(366 96)">
-                <rect width="160" height="74" rx="8"></rect>
-                <text x="20" y="31">Marta</text>
-                <text x="20" y="54">paga la cuenta</text>
-              </g>
-              <path class="pay-arrow" d="M 178 64 C 250 64 278 112 360 124"></path>
-              <path class="pay-arrow" d="M 178 198 C 250 198 278 150 360 138"></path>
-              <text class="arrow-note" x="226" y="105">le paga</text>
-              <text class="arrow-note" x="226" y="182">le paga</text>
-            </svg>
+            <p class="case-label">quien cobra</p>
+            <h3 id="mapTitle">Resumen para pasar el dinero.</h3>
+            <div class="payment-ledger" role="list" aria-label="Pagos del ejemplo">
+              <div class="ledger-payee" role="listitem">
+                <span>cobra</span>
+                <strong>Marta</strong>
+                <small>puso la tarjeta</small>
+              </div>
+              <div class="ledger-lines">
+                <div class="ledger-row" role="listitem">
+                  <span class="ledger-person">Jimmy</span>
+                  <span class="ledger-note">pasa a Marta</span>
+                  <strong>$2,600</strong>
+                </div>
+                <div class="ledger-row" role="listitem">
+                  <span class="ledger-person">Luis</span>
+                  <span class="ledger-note">pasa a Marta</span>
+                  <strong>$2,600</strong>
+                </div>
+              </div>
+            </div>
             <div class="message-preview">
               <span>mensaje listo</span>
               <p>Jimmy le paga $2,600 a Marta. Luis le paga $2,600 a Marta.</p>
@@ -221,6 +214,14 @@
         <p>Si el resultado se puede leer en voz alta y todos lo entienden, ya sirve.</p>
       </section>
 
+      <section class="table-note" aria-labelledby="shareCopyTitle">
+        <div>
+          <span class="table-note-stamp">para mandar</span>
+          <h2 id="shareCopyTitle">Usa Claramente para dividir la cuenta sin instalar nada.</h2>
+        </div>
+        <p>Abres, agregas quienes estan, marcas que comio cada quien y mandas el resumen por WhatsApp.</p>
+      </section>
+
       <section class="privacy-section" id="privacidad" aria-labelledby="privacyTitle">
         <div class="section-heading">
           <span class="section-stamp">03</span>
@@ -268,8 +269,8 @@
     </main>
 
     <footer class="site-footer">
-      <p>Claramente: para pagar la cuenta sin hacer una junta.</p>
-      <a class="primary-link compact" href="index.html">Dividir mi cuenta</a>
+      <p>Claramente: ayuda para entender la cuenta sin hacer una junta.</p>
+      <a class="primary-link compact" href="index.html">Volver a Claramente</a>
     </footer>
   </body>
 </html>

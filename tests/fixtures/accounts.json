@@ -11,8 +11,8 @@
       ],
       "expenses": [
         { "id": "e_ana", "description": "Cena: tacos", "amountCents": 10000, "paidBy": "p_ana", "splitWith": ["p_ana"], "createdAt": 1, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 10000, "restaurantName": "Cena" },
-        { "id": "e_luis", "description": "Cena: pizza", "amountCents": 12000, "paidBy": "p_luis", "splitWith": ["p_luis"], "createdAt": 2, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 12000, "restaurantName": "Cena" },
-        { "id": "e_maria", "description": "Cena: agua", "amountCents": 8000, "paidBy": "p_maria", "splitWith": ["p_maria"], "createdAt": 3, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 8000, "restaurantName": "Cena" }
+        { "id": "e_luis", "description": "Cena: pizza", "amountCents": 10000, "paidBy": "p_luis", "splitWith": ["p_luis"], "createdAt": 2, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 10000, "restaurantName": "Cena" },
+        { "id": "e_maria", "description": "Cena: agua", "amountCents": 10000, "paidBy": "p_maria", "splitWith": ["p_maria"], "createdAt": 3, "source": "restaurant", "restaurantId": "r_cena", "restaurantPaidBy": "__self__", "payerShareCents": 10000, "restaurantName": "Cena" }
       ],
       "tableClose": {},
       "updatedAt": 1
@@ -21,8 +21,8 @@
       "missingTotal": "Falta $300.00",
       "contributions": [
         { "person": "Ana", "amount": "$100.00" },
-        { "person": "Luis", "amount": "$120.00" },
-        { "person": "Maria", "amount": "$80.00" }
+        { "person": "Luis", "amount": "$100.00" },
+        { "person": "Maria", "amount": "$100.00" }
       ]
     }
   },
@@ -48,6 +48,38 @@
       "guestBalance": "en cero $0.00"
     }
   },
+  "cardPayerPending": {
+    "state": {
+      "screen": "paid",
+      "itemMode": "shared",
+      "people": [
+        { "id": "p_jimmy", "name": "Jimmy", "isGuest": false },
+        { "id": "p_marta", "name": "Marta", "isGuest": true },
+        { "id": "p_cash", "name": "Cash", "isGuest": false }
+      ],
+      "items": [
+        {
+          "id": "shared_cuenta",
+          "type": "shared",
+          "name": "Cuenta",
+          "amountCents": 520000,
+          "splitWith": ["p_jimmy", "p_cash"]
+        }
+      ],
+      "paidMode": "",
+      "paymentMethod": "",
+      "cardPayerId": "",
+      "paidById": "",
+      "updatedAt": 1
+    },
+    "expected": {
+      "payments": [
+        "Jimmy le paga $2,600.00 a Marta",
+        "Cash le paga $2,600.00 a Marta"
+      ],
+      "hiddenContribution": "Jimmy aporta $2,600.00"
+    }
+  },
   "crossViewport": {
     "state": {
       "version": 1,
@@ -67,6 +99,63 @@
     "expected": {
       "settlements": ["Luis paga a Ana", "Maria paga a Ana"],
       "amount": "$100.00"
+    }
+  },
+  "tipAndTaxRounding": {
+    "state": {
+      "version": 1,
+      "groupName": "Redondeo de mesa",
+      "currency": "MXN",
+      "people": [
+        { "id": "p_ana", "name": "Ana", "reminder": "", "isGuest": false },
+        { "id": "p_luis", "name": "Luis", "reminder": "", "isGuest": false },
+        { "id": "p_maria", "name": "Maria", "reminder": "", "isGuest": false }
+      ],
+      "expenses": [
+        { "id": "e_propina", "description": "Propina y cargos", "amountCents": 10001, "paidBy": "p_ana", "splitWith": ["p_ana", "p_luis", "p_maria"], "createdAt": 1 }
+      ],
+      "tableClose": {},
+      "updatedAt": 1
+    },
+    "expected": {
+      "balances": {
+        "p_ana": 6667,
+        "p_luis": -3334,
+        "p_maria": -3333
+      },
+      "settlements": [
+        { "from": "p_luis", "to": "p_ana", "amountCents": 3334 },
+        { "from": "p_maria", "to": "p_ana", "amountCents": 3333 }
+      ]
+    }
+  },
+  "multiPayer": {
+    "state": {
+      "version": 1,
+      "groupName": "Varios pagaron",
+      "currency": "MXN",
+      "people": [
+        { "id": "p_ana", "name": "Ana", "reminder": "", "isGuest": false },
+        { "id": "p_luis", "name": "Luis", "reminder": "", "isGuest": false },
+        { "id": "p_maria", "name": "Maria", "reminder": "", "isGuest": false }
+      ],
+      "expenses": [
+        { "id": "e_ana", "description": "Cena", "amountCents": 24000, "paidBy": "p_ana", "splitWith": ["p_ana", "p_luis", "p_maria"], "createdAt": 1 },
+        { "id": "e_luis", "description": "Taxi", "amountCents": 9000, "paidBy": "p_luis", "splitWith": ["p_ana", "p_luis", "p_maria"], "createdAt": 2 }
+      ],
+      "tableClose": {},
+      "updatedAt": 1
+    },
+    "expected": {
+      "balances": {
+        "p_ana": 13000,
+        "p_luis": -2000,
+        "p_maria": -11000
+      },
+      "settlements": [
+        { "from": "p_luis", "to": "p_ana", "amountCents": 2000 },
+        { "from": "p_maria", "to": "p_ana", "amountCents": 11000 }
+      ]
     }
   }
 }

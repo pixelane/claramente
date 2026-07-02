@@ -32,6 +32,13 @@ function run() {
     ]
   });
   assert.deepEqual(ignoredInvalidExpense.settlements, viewportResult.settlements);
+  const roundingResult = calculateSettlements(accounts.tipAndTaxRounding.state);
+  assert.deepEqual(balanceObject(roundingResult.balances), accounts.tipAndTaxRounding.expected.balances);
+  assert.deepEqual(roundingResult.settlements, accounts.tipAndTaxRounding.expected.settlements);
+
+  const multiPayerResult = calculateSettlements(accounts.multiPayer.state);
+  assert.deepEqual(balanceObject(multiPayerResult.balances), accounts.multiPayer.expected.balances);
+  assert.deepEqual(multiPayerResult.settlements, accounts.multiPayer.expected.settlements);
 }
 
 run();

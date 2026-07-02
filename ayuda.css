@@ -516,61 +516,71 @@ h1 {
   border-bottom: 0;
 }
 
-.payment-map svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
+.payment-ledger {
+  display: grid;
+  grid-template-columns: minmax(128px, 0.58fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
 }
 
-.payment-map rect {
-  stroke-width: 2;
+.ledger-payee,
+.ledger-row {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--paper-soft);
 }
 
-.payment-map text {
-  fill: var(--ink);
-  font-family: "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+.ledger-payee {
+  display: grid;
+  align-content: center;
+  min-height: 148px;
+  padding: 18px;
+  border-color: #d79022;
+  background:
+    linear-gradient(180deg, rgba(255, 225, 168, 0.96), rgba(255, 238, 197, 0.86));
+}
+
+.ledger-payee span,
+.ledger-payee small,
+.ledger-note {
+  color: var(--muted);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.74rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ledger-payee strong {
+  margin-block: 8px 2px;
+  color: var(--ink);
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+  line-height: 0.95;
+}
+
+.ledger-lines {
+  display: grid;
+  gap: 10px;
+}
+
+.ledger-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.7fr) minmax(94px, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 68px;
+  padding: 14px 16px;
+}
+
+.ledger-person,
+.ledger-row strong {
+  color: var(--ink);
   font-weight: 950;
 }
 
-.payer-node rect {
-  fill: var(--paper-soft);
-  stroke: var(--line);
-}
-
-.payer-node text + text {
-  fill: var(--muted);
-  font-size: 0.9rem;
-}
-
-.card-node rect {
-  fill: #ffe1a8;
-  stroke: #d79022;
-}
-
-.card-node text + text {
-  fill: #7d4a0f;
-  font-size: 0.9rem;
-}
-
-.pay-arrow {
-  fill: none;
-  stroke: var(--pen);
-  stroke-width: 4;
-  stroke-linecap: round;
-  marker-end: url("#arrowHead");
-}
-
-#arrowHead path {
-  fill: var(--pen);
-}
-
-.arrow-note {
-  fill: var(--pen);
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.ledger-row strong {
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .message-preview {
@@ -960,6 +970,19 @@ h1 {
 
   .split-table-card {
     overflow-x: auto;
+  }
+
+  .payment-ledger,
+  .ledger-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ledger-payee {
+    min-height: auto;
+  }
+
+  .ledger-row strong {
+    justify-self: start;
   }
 
   .split-table-card th,

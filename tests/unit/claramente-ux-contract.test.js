@@ -10,6 +10,8 @@ function run() {
   assert.match(claramenteCss, /\.back-button\[hidden\]/, "start screen back button must stay hidden even with custom button display styles");
   assert.doesNotMatch(claramenteJs, /<div class="welcome-mark"/, "start screen should not show a confusing decorative plus or coin mark");
   assert.match(claramenteJs, /Empieza agregando personas/, "start screen should explain the first real task");
+  assert.match(claramenteJs, /manual-button/, "start screen should link to the help manual through a styled class");
+  assert.doesNotMatch(claramenteJs, /Ver manual de ayuda[^<]*style=/, "start screen manual link should not use inline styles");
   assert.doesNotMatch(claramenteJs, /siguiente prueba/, "start screen should not expose prototype placeholder copy");
   assert.match(claramenteJs, /displayItems\(\)/, "Claramente should render the account through a dedicated display order");
   assert.match(claramenteJs, /\.slice\(\)\.reverse\(\)/, "newly added account items should appear first without changing calculation order");
@@ -19,12 +21,12 @@ function run() {
   assert.match(claramenteCss, /grid-template-columns:\s*repeat\(2,\s*1fr\)/, "item mode tabs should be balanced for two visible choices");
   assert.match(claramenteJs, /Lo comieron todos/, "item screen should expose a clear all-consumers action");
   assert.match(claramenteJs, /No todos lo comieron/, "item screen should expose a clear partial-consumers action");
-  assert.match(claramenteJs, /¿La cuenta ya se pago\?/, "payment screen should start with the real payment situation question");
-  assert.match(claramenteJs, /Todavia no se ha pagado/, "payment mode copy should name the unpaid case clearly");
-  assert.match(claramenteJs, /Alguien ya pago/, "payment mode copy should name the reimbursement case clearly");
-  assert.match(claramenteJs, /Cada producto lo pago alguien distinto/, "payment mode copy should move split payments into a clear special case");
-  assert.match(claramenteJs, /¿Como van a pagar\?/, "unpaid flow should ask for payment method only after the main choice");
-  assert.match(claramenteJs, /¿Quien pondra la tarjeta\?/, "card flow should ask who will use the card");
+  assert.match(claramenteJs, /¿La cuenta ya se pag[oó]\?/, "payment screen should start with the real payment situation question");
+  assert.match(claramenteJs, /Todav[ií]a no se ha pagado/, "payment mode copy should name the unpaid case clearly");
+  assert.match(claramenteJs, /Alguien ya pag[oó]/, "payment mode copy should name the reimbursement case clearly");
+  assert.match(claramenteJs, /Cada producto lo pag[oó] alguien distinto/, "payment mode copy should move split payments into a clear special case");
+  assert.match(claramenteJs, /¿C[oó]mo van a pagar\?/, "unpaid flow should ask for payment method only after the main choice");
+  assert.match(claramenteJs, /¿Qui[eé]n pondr[aá] la tarjeta\?/, "card flow should ask who will use the card");
   assert.match(claramenteJs, /Editar cuenta antes de calcular/, "payment screen should give a clear way back to products");
   assert.match(claramenteCss, /\.paid-summary/, "payment screen should include a styled account summary before payment choices");
   assert.match(claramenteCss, /\.payment-section-title/, "payment screen should include section titles for the decision groups");

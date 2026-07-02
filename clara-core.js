@@ -65,6 +65,12 @@
           restaurantName: "Claramente"
         });
       });
+      if (state.paymentMethod === "card" && state.cardPayerId) {
+        canonicalState.tableClose[`restaurant-payer:cardPayerId:${state.cardPayerId}`] = {
+          paidCents: 0,
+          isGuest: false
+        };
+      }
       return canonicalState;
     }
 
@@ -263,13 +269,26 @@
       items.push(item);
     });
 
-    const uniquePayers = new Set(items.map(i => i.paidById).filter(Boolean));
-    if (uniquePayers.size === 1) {
-      paidMode = "single";
-      paidById = Array.from(uniquePayers)[0];
+    const hasUnpaid = expenses.some(e => e.restaurantPaidBy === "__self__");
+    if (hasUnpaid) {
+      paidMode = "none";
       paymentMethod = "cash";
-    } else if (uniquePayers.size > 1) {
-      paidMode = "multiple";
+      if (claraState.tableClose) {
+        const cardKey = Object.keys(claraState.tableClose).find(k => k.startsWith("restaurant-payer:cardPayerId:"));
+        if (cardKey) {
+          cardPayerId = cardKey.split(":")[2];
+          paymentMethod = "card";
+        }
+      }
+    } else {
+      const uniquePayers = new Set(items.map(i => i.paidById).filter(Boolean));
+      if (uniquePayers.size === 1) {
+        paidMode = "single";
+        paidById = Array.from(uniquePayers)[0];
+        paymentMethod = "cash";
+      } else if (uniquePayers.size > 1) {
+        paidMode = "multiple";
+      }
     }
 
     return {

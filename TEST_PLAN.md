@@ -70,7 +70,7 @@
 3. Confirmar que los chips de productos son tocables.
 4. Confirmar que no hay errores persistentes en consola.
 5. Confirmar que `app.js` y `sw.js` pasan `node --check`.
-6. En Ayuda, confirmar que la version de cache visible es `clara-cache-v22`.
+6. En Ayuda, confirmar que la version de cache visible coincide con la version vigente en `index.html`, `app.js`, `claramente.js` y `sw.js`.
 7. Abrir la app una segunda vez y confirmar que no aparece una version vieja antes de recargar.
 
 ## Seguridad estatica

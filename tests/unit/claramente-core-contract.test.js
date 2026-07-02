@@ -2,7 +2,8 @@ const assert = require("node:assert/strict");
 const {
   calculateClaramenteContributions,
   calculateClaramenteSettlements,
-  claramenteToClaraState
+  claramenteToClaraState,
+  claraToClaramenteState
 } = require("../../clara-core.js");
 
 const mobileState = {
@@ -61,6 +62,20 @@ function run() {
   assert.deepEqual(cardSettlements, [
     { from: "p_luis", to: "p_ana", amountCents: 21500 }
   ]);
+
+  // Test round-trip for paidMode === "none" and paymentMethod === "card"
+  const stateNoneCard = {
+    ...mobileState,
+    paidMode: "none",
+    paidById: "",
+    paymentMethod: "card",
+    cardPayerId: "p_ana"
+  };
+  const canonicalNoneCard = claramenteToClaraState(stateNoneCard);
+  const roundTripNoneCard = claraToClaramenteState(canonicalNoneCard);
+  assert.equal(roundTripNoneCard.paidMode, "none");
+  assert.equal(roundTripNoneCard.paymentMethod, "card");
+  assert.equal(roundTripNoneCard.cardPayerId, "p_ana");
 }
 
 run();

@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v38";
+  const CACHE_NAME = "clara-cache-v42";
   const MAX_HASH_LENGTH = 180000;
   const MAX_BACKUP_BYTES = 350000;
   const MAX_PEOPLE = 80;
@@ -132,6 +132,7 @@
     ticketNameInput: document.getElementById("ticketNameInput"),
     ticketSubtotalLabel: document.getElementById("ticketSubtotalLabel"),
     ticketTotalLabel: document.getElementById("ticketTotalLabel"),
+    ticketStatusLine: document.getElementById("ticketStatusLine"),
     saveRestaurantBtn: document.getElementById("saveRestaurantBtn"),
     
     reminderDialog: document.getElementById("reminderDialog"),
@@ -695,7 +696,7 @@
   // Restaurant Mode Logic
   function openRestaurantWizard() {
     if (!state.people.length) {
-      alert("Para dividir por platillo, primero agrega al menos un participante en Grupo.");
+      setStatus("Para dividir por platillo, primero agrega al menos un participante en Grupo.");
       const groupTabBtn = document.querySelector('.nav-item[data-tab="tab-group"]');
       if (groupTabBtn) {
         groupTabBtn.click();
@@ -707,6 +708,7 @@
       return;
     }
     
+    setTicketStatus("");
     // Pre-populate paid by select, default to "Nadie" for pay-at-the-moment scenarios
     els.ticketPaidBySelect.innerHTML = `<option value="" selected>Nadie (pago al momento)</option>` +
       state.people
@@ -723,10 +725,10 @@
   function handleParseTicket() {
     if (!els.ticketRawInput) return;
     const text = els.ticketRawInput.value.trim();
-    if (!text) return alert("Pega algun texto primero.");
+    if (!text) return setTicketStatus("Pega algun texto primero.");
     const parsed = parseTicketText(text);
     if (!parsed.length) {
-      alert("No encontramos precios claros en el texto. Puedes agregarlos a mano en la tabla.");
+      setTicketStatus("No encontramos precios claros en el texto. Puedes agregarlos a mano en la tabla.");
       return;
     }
     
@@ -746,7 +748,7 @@
     renderTicketItems();
     updateTicketTotals();
     
-    setStatus("Texto procesado y agregado a la tabla.");
+    setTicketStatus("Texto procesado y agregado a la tabla.");
   }
 
   function addEmptyTicketItem(focusField = "name") {
@@ -874,6 +876,7 @@
 
     els.ticketSubtotalLabel.textContent = formatMoney(Math.round(subtotal * 100));
     els.ticketTotalLabel.textContent = formatMoney(Math.round(total * 100));
+    setTicketStatus("");
   }
 
   function selectedTipPercent() {
@@ -882,21 +885,21 @@
   }
 
   function saveRestaurantTicket() {
-    if (!ticketItems.length) return alert("Agrega al menos un producto.");
+    if (!ticketItems.length) return setTicketStatus("Agrega al menos un producto.");
     const paidBy = els.ticketPaidBySelect.value; // "" means nobody paid (pay at the moment)
     const ticketName = sanitizeText(els.ticketNameInput.value, 80) || "Restaurante";
 
     for (let i = 0; i < ticketItems.length; i++) {
       const item = ticketItems[i];
-      if (item.price <= 0) return alert(`El precio del producto "${item.name || i+1}" debe ser mayor a 0.`);
-      if (!item.splitWith.length) return alert(`Asigna al menos a un comensal para el producto "${item.name || i+1}".`);
+      if (item.price <= 0) return setTicketStatus(`El precio del producto "${item.name || i + 1}" debe ser mayor a 0.`);
+      if (!item.splitWith.length) return setTicketStatus(`Asigna al menos a un comensal para el producto "${item.name || i + 1}".`);
     }
 
     let subtotal = 0;
     for (const item of ticketItems) {
       subtotal += item.price;
     }
-    if (subtotal <= 0) return alert("El subtotal debe ser mayor a 0.");
+    if (subtotal <= 0) return setTicketStatus("El subtotal debe ser mayor a 0.");
 
     const tipPercent = selectedTipPercent();
     const taxFixed = parseFloat(els.ticketTaxFixed.value) || 0;
@@ -1878,6 +1881,13 @@
       els.statusLine.textContent = message;
     }
     showToast(message);
+  }
+
+  function setTicketStatus(message) {
+    if (els.ticketStatusLine) {
+      els.ticketStatusLine.textContent = message;
+    }
+    if (message) showToast(message);
   }
 
   function exportBackup() {

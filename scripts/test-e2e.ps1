@@ -11,18 +11,41 @@ $nodePath = if ($node) {
 } else {
   Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
 }
-$playwrightHome = Join-Path $env:USERPROFILE ".codex\skills\playwright-skill\node_modules"
-$playwrightCli = Join-Path $playwrightHome "playwright\cli.js"
+function Resolve-Playwright {
+  $runtimeNodeModules = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules"
+  $pnpmPlaywright = Get-ChildItem -LiteralPath (Join-Path $runtimeNodeModules ".pnpm") -Directory -Filter "playwright@*" -ErrorAction SilentlyContinue |
+    ForEach-Object { Join-Path $_.FullName "node_modules" } |
+    Select-Object -First 1
+  $candidates = @(
+    (Join-Path $env:USERPROFILE ".codex\skills\playwright-skill\node_modules"),
+    (Join-Path $env:USERPROFILE ".codex\skills\playwright-cli\node_modules"),
+    $runtimeNodeModules,
+    $pnpmPlaywright
+  )
+
+  foreach ($candidate in $candidates) {
+    $cli = Join-Path $candidate "playwright\cli.js"
+    if (Test-Path -LiteralPath $cli -PathType Leaf) {
+      return @{
+        Home = $candidate
+        Cli = $cli
+      }
+    }
+  }
+
+  throw "Playwright was not found in local Codex skills or bundled runtime."
+}
 
 if (-not (Test-Path -LiteralPath $nodePath -PathType Leaf)) {
   throw "Node.js was not found: $nodePath"
 }
-if (-not (Test-Path -LiteralPath $playwrightCli -PathType Leaf)) {
-  throw "Playwright was not found: $playwrightCli"
-}
+$playwright = Resolve-Playwright
+$playwrightHome = $playwright.Home
+$playwrightCli = $playwright.Cli
 
 $previousNodePath = $env:NODE_PATH
-$env:NODE_PATH = $playwrightHome
+$runtimePnpmModules = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\.pnpm\node_modules"
+$env:NODE_PATH = (@($playwrightHome, $runtimePnpmModules, $previousNodePath) | Where-Object { $_ }) -join [System.IO.Path]::PathSeparator
 $configPath = Join-Path $repoRoot "playwright.config.js"
 $serverPath = Join-Path $repoRoot "tests\e2e\server.js"
 $arguments = @($playwrightCli, "test", "--config", $configPath, "--reporter=line")

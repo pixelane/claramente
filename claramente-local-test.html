@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f2a93b">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>Claramente - pruebas locales</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f7efe1;
+        --panel: #fffaf1;
+        --ink: #2a2118;
+        --muted: #6b5e4f;
+        --line: #dec9a8;
+        --accent: #eea83a;
+        --accent-dark: #b96a16;
+        --ok: #2f9a5f;
+        --warn: #8f5a17;
+        --danger: #8f3f22;
+        --blue: #245f8f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background:
+          linear-gradient(90deg, rgba(42, 33, 24, 0.03) 1px, transparent 1px) 0 0 / 34px 34px,
+          var(--paper);
+        color: var(--ink);
+        font-family: "Trebuchet MS", ui-sans-serif, system-ui, sans-serif;
+        line-height: 1.5;
+      }
+
+      header,
+      main {
+        width: min(1180px, calc(100% - 32px));
+        margin-inline: auto;
+      }
+
+      header {
+        display: grid;
+        gap: 14px;
+        padding: 28px 0 18px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 760px;
+        margin-bottom: 0;
+        font-family: ui-serif, Georgia, "Times New Roman", serif;
+        font-size: clamp(2.45rem, 6vw, 5rem);
+        line-height: 0.95;
+      }
+
+      .intro {
+        max-width: 760px;
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.08rem;
+      }
+
+      .toolbar,
+      .panel,
+      .preview-card,
+      .status-box {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: rgba(255, 250, 241, 0.88);
+        box-shadow: 0 5px 0 rgba(42, 33, 24, 0.045);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        padding: 12px;
+      }
+
+      button,
+      a.button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fffdf6;
+        color: var(--ink);
+        padding: 9px 14px;
+        font: inherit;
+        font-weight: 850;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      button.primary,
+      a.button.primary {
+        border-color: var(--accent-dark);
+        background: var(--accent);
+        color: #291706;
+      }
+
+      button.danger {
+        border-color: #e0a58e;
+        color: var(--danger);
+      }
+
+      main {
+        display: grid;
+        gap: 18px;
+        padding-bottom: 34px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .panel h2 {
+        margin-bottom: 8px;
+        font-family: ui-serif, Georgia, "Times New Roman", serif;
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .panel p {
+        color: var(--muted);
+      }
+
+      .fixture-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .fixture-card {
+        display: grid;
+        gap: 8px;
+        border: 1px dashed var(--line);
+        border-radius: 6px;
+        background: #fffdf6;
+        padding: 12px;
+      }
+
+      .fixture-card strong {
+        font-size: 1rem;
+      }
+
+      .fixture-actions,
+      .quick-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .status-box {
+        min-height: 54px;
+        padding: 14px 16px;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      .status-box.ok {
+        border-color: rgba(47, 154, 95, 0.35);
+        color: var(--ok);
+      }
+
+      .status-box.warn {
+        border-color: rgba(143, 90, 23, 0.35);
+        color: var(--warn);
+      }
+
+      .preview-grid {
+        display: grid;
+        grid-template-columns: 390px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .preview-card {
+        overflow: hidden;
+      }
+
+      .preview-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        padding: 10px 12px;
+        background: #fffdf6;
+        font-weight: 950;
+      }
+
+      iframe {
+        display: block;
+        width: 100%;
+        border: 0;
+        background: white;
+      }
+
+      .mobile-frame iframe {
+        height: 680px;
+      }
+
+      .desktop-frame iframe {
+        height: 680px;
+      }
+
+      code {
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: #fffdf6;
+        padding: 2px 5px;
+      }
+
+      .checklist {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding-left: 20px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 980px) {
+        .grid,
+        .preview-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .mobile-frame {
+          width: min(100%, 430px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Banco local de pruebas para Claramente.</h1>
+      <p class="intro">Abre esta pagina junto a `index.html`, `claramente.html` y `ayuda.html` para sembrar casos reales, comparar shells y revisar la PWA sin publicar.</p>
+      <nav class="toolbar" aria-label="Acciones principales">
+        <a class="button primary" href="index.html?shell=claramente-full" target="_blank">Abrir Clara completa</a>
+        <a class="button" href="claramente.html" target="_blank">Abrir Claramente movil</a>
+        <a class="button" href="ayuda.html" target="_blank">Abrir manual</a>
+        <button type="button" id="clearStateBtn" class="danger">Limpiar estado local</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="status-box" id="statusLine" aria-live="polite">Listo para probar. Elige un caso y abre una vista.</section>
+
+      <div class="grid">
+        <section class="panel" aria-labelledby="fixturesTitle">
+          <h2 id="fixturesTitle">Casos para sembrar</h2>
+          <p>Estos botones escriben en `localStorage` y luego puedes abrir cualquier shell. Usa una ventana nueva si quieres ver el resultado limpio.</p>
+          <div class="fixture-list" id="fixtureList"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="manualTitle">
+          <h2 id="manualTitle">Checklist rapido</h2>
+          <ol class="checklist">
+            <li>Sembrar `nobodyPaid` y revisar `Pagos`: debe mostrar aportaciones y faltante.</li>
+            <li>Sembrar `guestConsumes`: Maria debe quedar en cero y Luis debe pagar a Ana.</li>
+            <li>Sembrar `crossViewport`: movil, tableta y PC deben mostrar el mismo pago.</li>
+            <li>Abrir `ayuda.html`: la seccion de resumen debe verse como recibo, sin flechas superpuestas.</li>
+            <li>En soporte, confirmar cache visible y usar `Forzar actualizacion` si el navegador muestra una version anterior.</li>
+          </ol>
+          <div class="quick-links" style="margin-top: 16px;">
+            <button type="button" id="openAllBtn">Abrir vistas con el caso actual</button>
+            <button type="button" id="copyStateBtn">Copiar estado actual</button>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel" aria-labelledby="previewTitle">
+        <h2 id="previewTitle">Previews embebidos</h2>
+        <p>Sirven para una revision visual rapida. Para pruebas completas, usa los botones de abrir en pestana nueva.</p>
+        <div class="preview-grid">
+          <article class="preview-card mobile-frame">
+            <div class="preview-head">
+              <span>Movil guiado</span>
+              <a href="claramente.html" target="_blank">abrir</a>
+            </div>
+            <iframe src="claramente.html" title="Preview movil de Claramente"></iframe>
+          </article>
+          <article class="preview-card desktop-frame">
+            <div class="preview-head">
+              <span>Clara completa</span>
+              <a href="index.html?shell=claramente-full" target="_blank">abrir</a>
+            </div>
+            <iframe src="index.html?shell=claramente-full" title="Preview completa de Clara"></iframe>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const STORAGE_KEY = "clara.state.v1";
+      const MOBILE_STORAGE_KEY = "clara.state.claramente";
+      
+      const defaultFixtures = {
+        nobodyPaid: {
+          label: "Nadie ha pagado (Local)",
+          description: "Aportaciones antes de pagar. Cada persona aporta $100.00 para una cuenta total de $300.00.",
+          target: "both",
+          state: {
+            version: 1,
+            groupName: "Cena sin pagar",
+            currency: "MXN",
+            people: [
+              { id: "p_ana", name: "Ana", reminder: "", isGuest: false },
+              { id: "p_luis", name: "Luis", reminder: "", isGuest: false },
+              { id: "p_maria", name: "Maria", reminder: "", isGuest: false }
+            ],
+            expenses: [
+              { id: "e_ana", description: "Cena: tacos", amountCents: 10000, paidBy: "p_ana", splitWith: ["p_ana"], createdAt: 1, source: "restaurant", restaurantId: "r_cena", restaurantPaidBy: "__self__", payerShareCents: 10000, restaurantName: "Cena" },
+              { id: "e_luis", description: "Cena: pizza", amountCents: 10000, paidBy: "p_luis", splitWith: ["p_luis"], createdAt: 2, source: "restaurant", restaurantId: "r_cena", restaurantPaidBy: "__self__", payerShareCents: 10000, restaurantName: "Cena" },
+              { id: "e_maria", description: "Cena: agua", amountCents: 10000, paidBy: "p_maria", splitWith: ["p_maria"], createdAt: 3, source: "restaurant", restaurantId: "r_cena", restaurantPaidBy: "__self__", payerShareCents: 10000, restaurantName: "Cena" }
+            ],
+            tableClose: {},
+            updatedAt: 1
+          }
+        },
+        guestConsumes: {
+          label: "Invitado consume (Local)",
+          description: "María consume pero es invitada (isGuest: true). Su parte ($150.00) se reparte entre Ana y Luis.",
+          target: "both",
+          state: {
+            version: 1,
+            groupName: "Cumple de Maria",
+            currency: "MXN",
+            people: [
+              { id: "p_ana", name: "Ana", reminder: "", isGuest: false },
+              { id: "p_luis", name: "Luis", reminder: "", isGuest: false },
+              { id: "p_maria", name: "Maria", reminder: "", isGuest: true }
+            ],
+            expenses: [
+              { id: "e_cena", description: "Cena compartida", amountCents: 30000, paidBy: "p_ana", splitWith: ["p_ana", "p_luis", "p_maria"], createdAt: 1 }
+            ],
+            tableClose: {},
+            updatedAt: 1
+          }
+        },
+        cardPayerPending: {
+          label: "Tarjeta pendiente (Local)",
+          description: "Marta es invitada pero pondrá la tarjeta. Los demás le pagan a Marta.",
+          target: "mobile",
+          state: {
+            screen: "paid",
+            itemMode: "shared",
+            people: [
+              { id: "p_jimmy", name: "Jimmy", isGuest: false },
+              { id: "p_marta", name: "Marta", isGuest: true },
+              { id: "p_cash", name: "Cash", isGuest: false }
+            ],
+            items: [
+              { id: "shared_cuenta", type: "shared", name: "Cuenta", amountCents: 520000, splitWith: ["p_jimmy", "p_cash"] }
+            ],
+            paidMode: "",
+            paymentMethod: "",
+            cardPayerId: "",
+            paidById: "",
+            updatedAt: 1
+          }
+        },
+        crossViewport: {
+          label: "Mismo resultado viewport (Local)",
+          description: "Cuenta adaptable compartida por igual ($300.00 entre 3 personas).",
+          target: "both",
+          state: {
+            version: 1,
+            groupName: "Cuenta adaptable",
+            currency: "MXN",
+            people: [
+              { id: "p_ana", name: "Ana", reminder: "", isGuest: false },
+              { id: "p_luis", name: "Luis", reminder: "", isGuest: false },
+              { id: "p_maria", name: "Maria", reminder: "", isGuest: false }
+            ],
+            expenses: [
+              { id: "e_cena", description: "Cena compartida", amountCents: 30000, paidBy: "p_ana", splitWith: ["p_ana", "p_luis", "p_maria"], createdAt: 1 }
+            ],
+            tableClose: {},
+            updatedAt: 1
+          }
+        }
+      };
+
+      let activeFixtures = { ...defaultFixtures };
+      let currentFixture = "";
+
+      function setStatus(message, kind = "") {
+        const status = document.getElementById("statusLine");
+        status.textContent = message;
+        status.className = `status-box ${kind}`.trim();
+      }
+
+      function writeFixture(id) {
+        const fixture = activeFixtures[id];
+        if (!fixture) return;
+        currentFixture = id;
+
+        // Clean both states first
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(MOBILE_STORAGE_KEY);
+
+        // If target is mobile-specific or has items instead of expenses
+        const stateToSave = fixture.state;
+        const isMobileSpecific = fixture.target === "mobile" || (stateToSave && Array.isArray(stateToSave.items));
+        
+        if (isMobileSpecific) {
+          localStorage.setItem(MOBILE_STORAGE_KEY, JSON.stringify(stateToSave));
+        } else {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+        }
+
+        // Reload previews iframes to reflect new state
+        document.querySelectorAll("iframe").forEach(iframe => {
+          iframe.src = iframe.src;
+        });
+
+        setStatus(`Caso cargado: ${fixture.label}. Previsualizaciones refrescadas.`, "ok");
+      }
+
+      function clearState() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(MOBILE_STORAGE_KEY);
+        currentFixture = "";
+        
+        // Reload previews
+        document.querySelectorAll("iframe").forEach(iframe => {
+          iframe.src = iframe.src;
+        });
+
+        setStatus("Estado local limpiado para este origen y previsualizaciones reiniciadas.", "warn");
+      }
+
+      function openViews() {
+        window.open("index.html?shell=claramente-full", "_blank");
+        window.open("claramente.html", "_blank");
+        window.open("ayuda.html", "_blank");
+      }
+
+      async function copyCurrentState() {
+        const full = localStorage.getItem(STORAGE_KEY);
+        const mobile = localStorage.getItem(MOBILE_STORAGE_KEY);
+        const payload = full || mobile || "";
+        if (!payload) {
+          setStatus("No hay estado local que copiar.", "warn");
+          return;
+        }
+        await navigator.clipboard.writeText(payload);
+        setStatus("Estado copiado al portapapeles.", "ok");
+      }
+
+      function renderFixtures() {
+        const list = document.getElementById("fixtureList");
+        list.innerHTML = Object.entries(activeFixtures).map(([id, fixture]) => `
+          <article class="fixture-card">
+            <strong>${fixture.label}</strong>
+            <span>${fixture.description}</span>
+            <div class="fixture-actions">
+              <button type="button" data-fixture="${id}" class="primary">Cargar caso</button>
+              <a class="button" href="${fixture.target === "mobile" ? "claramente.html" : "index.html?shell=claramente-full"}" target="_blank">Abrir vista</a>
+            </div>
+          </article>
+        `).join("");
+      }
+
+      async function loadExternalFixtures() {
+        try {
+          const response = await fetch("tests/fixtures/accounts.json");
+          if (!response.ok) throw new Error("Fetch failed");
+          const data = await response.json();
+          if (data && typeof data === "object") {
+            const mapped = {};
+            Object.entries(data).forEach(([key, value]) => {
+              let label = key;
+              let description = "Cargado dinámicamente desde accounts.json";
+              let target = "both";
+
+              if (key === "nobodyPaid") {
+                label = "Nadie ha pagado";
+                description = "Aportaciones antes de pagar. Cada persona aporta su parte de forma equitativa.";
+              } else if (key === "guestConsumes") {
+                label = "Invitado consume";
+                description = "Invitado que consume pero no paga. Su parte se distribuye.";
+              } else if (key === "cardPayerPending") {
+                label = "Tarjeta pendiente";
+                description = "Marta pone la tarjeta y los demás le pagan.";
+                target = "mobile";
+              } else if (key === "crossViewport") {
+                label = "Mismo resultado viewport";
+                description = "Compara resultados entre móvil, tableta y PC.";
+              } else if (key === "tipAndTaxRounding") {
+                label = "Redondeo de propina";
+                description = "Prueba de redondeo determinístico con propinas y cargos.";
+              } else if (key === "multiPayer") {
+                label = "Varios pagadores";
+                description = "Múltiples personas pagaron diferentes gastos.";
+              }
+              
+              mapped[key] = {
+                label,
+                description,
+                target,
+                state: value.state
+              };
+            });
+            activeFixtures = mapped;
+            renderFixtures();
+            setStatus("Fixtures cargados dinámicamente desde tests/fixtures/accounts.json", "ok");
+          }
+        } catch (e) {
+          console.log("Usando fixtures locales por defecto:", e);
+          activeFixtures = { ...defaultFixtures };
+          renderFixtures();
+        }
+      }
+
+      document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-fixture]");
+        if (button) writeFixture(button.dataset.fixture);
+      });
+
+      document.getElementById("clearStateBtn").addEventListener("click", clearState);
+      document.getElementById("openAllBtn").addEventListener("click", openViews);
+      document.getElementById("copyStateBtn").addEventListener("click", copyCurrentState);
+      
+      // Init
+      loadExternalFixtures();
+    </script>
+  </body>
+</html>
