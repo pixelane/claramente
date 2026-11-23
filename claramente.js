@@ -13,7 +13,8 @@
     type: "2 de 5",
     items: "3 de 5",
     paid: "4 de 5",
-    result: "5 de 5"
+    result: "5 de 5",
+    guest: "Tu parte"
   };
 
   // Domain is the only state that may be persisted or mapped.
@@ -25,13 +26,18 @@
     paymentMethod: "",
     cardPayerId: "",
     paidById: "",
+    billId: "",
+    claims: {},
     updatedAt: 0
   };
 
   const ui = {
     screen: "start",
     itemMode: "product",
-    editing: null
+    editing: null,
+    guestList: null,
+    guestPersonId: "",
+    guestAte: []
   };
 
   const state = {
@@ -54,7 +60,11 @@
     get paidById() { return domain.paidById; },
     set paidById(value) { domain.paidById = value; },
     get updatedAt() { return domain.updatedAt; },
-    set updatedAt(value) { domain.updatedAt = value; }
+    set updatedAt(value) { domain.updatedAt = value; },
+    get billId() { return domain.billId; },
+    set billId(value) { domain.billId = value; },
+    get claims() { return domain.claims; },
+    set claims(value) { domain.claims = value; }
   };
 
   const els = {
@@ -96,13 +106,15 @@
 
   document.addEventListener("DOMContentLoaded", init);
 
-  function init() {
+  async function init() {
     if (window.ClaraStore) {
       savedGuided = window.ClaraStore.loadGuided(window.localStorage);
       savedCanonical = window.ClaraStore.loadCanonicalAsGuided(window.localStorage);
       syncChoice = window.ClaraStore.syncDecision(window.localStorage, savedGuided || { updatedAt: 0 });
     }
-    window.history.replaceState({ claramenteScreen: state.screen }, "", window.location.href);
+    await openIncoming();
+    const nextUrl = state.screen === "guest" ? window.location.href : window.location.pathname + window.location.search;
+    window.history.replaceState({ claramenteScreen: state.screen }, "", nextUrl);
     window.addEventListener("popstate", handlePopState);
     els.backBtn.addEventListener("click", goBack);
     els.closeSheetBtn.addEventListener("click", closeSheet);
@@ -114,7 +126,7 @@
 
   function render() {
     els.progressLabel.textContent = progress[state.screen];
-    els.backBtn.hidden = state.screen === "start";
+    els.backBtn.hidden = state.screen === "start" || state.screen === "guest";
     els.backBtn.innerHTML = `${icon("back")}<span>Atras</span>`;
 
     const renderer = {
@@ -123,7 +135,8 @@
       type: renderType,
       items: renderItems,
       paid: renderPaid,
-      result: renderResult
+      result: renderResult,
+      guest: renderGuest
     }[state.screen];
 
     els.root.innerHTML = renderer();
@@ -526,7 +539,16 @@
       <div class="panel">
         <button class="primary-button" type="button" data-share-whatsapp>${icon("send")}<span>Enviar por WhatsApp</span></button>
         <button class="secondary-button" type="button" data-copy-summary>${icon("copy")}<span>Copiar resumen</span></button>
+        <button class="secondary-button" type="button" data-share-list>${icon("send")}<span>Compartir lista</span></button>
       </div>
+      ${renderRectification()}
+      <form class="panel form-grid" id="partForm">
+        <label class="field">
+          <span>Parte recibida</span>
+          <textarea id="partCode" name="partCode" rows="3" placeholder="Pega el enlace o el codigo"></textarea>
+        </label>
+        <button class="primary-button" type="submit">Leer parte</button>
+      </form>
       <div class="panel edit-shortcuts">
         <button class="secondary-button" type="button" data-go="people">Editar personas</button>
         <button class="secondary-button" type="button" data-go="items">Editar cuenta</button>
@@ -544,12 +566,139 @@
     `;
   }
 
+  function renderRectification() {
+    if (!window.ClaraExchange || !state.billId) return "";
+    const lines = window.ClaraExchange.rectify(domainSnapshot()).map((issue) => {
+      if (issue.type === "missing") return `Falta la parte de ${personName(issue.personId)}`;
+      if (issue.type === "unclaimed") return `Nadie marco ${itemName(issue.itemId)}`;
+      if (issue.type === "two-owners") return `Dos personas reclaman ${itemName(issue.itemId)}`;
+      if (issue.type === "released") return `${personName(issue.personId)} ya no reclama ${itemName(issue.itemId)}`;
+      return "";
+    }).filter(Boolean);
+    if (!lines.length) return "";
+    return `<section class="list">${lines.map((line) => `<article class="result-card neutral"><strong>${escapeHtml(line)}</strong></article>`).join("")}</section>`;
+  }
+
+  function renderGuest() {
+    const list = ui.guestList;
+    if (!list) return "";
+    return `
+      ${renderHeader("Que es tuyo?", "Los precios los puso el anfitrion. Marca solo lo que comiste.")}
+      <div class="person-picker" aria-label="Quien eres">
+        ${list.people.map((person) => `<button class="pick-button ${ui.guestPersonId === person.id ? "active" : ""}" type="button" data-guest-person="${escapeAttr(person.id)}"><span>${escapeHtml(person.name)}</span></button>`).join("")}
+      </div>
+      <div class="list">
+        ${list.items.map((item) => {
+          if (item.type === "shared") {
+            return `<article class="product-card"><h2 class="card-title">${escapeHtml(item.name)}</h2><p class="money">${formatMoney(item.amountCents)}</p><p class="card-meta">Se reparte entre todos</p></article>`;
+          }
+          const active = ui.guestAte.includes(item.id);
+          return `<article class="product-card"><h2 class="card-title">${escapeHtml(item.name)}</h2><p class="money">${formatMoney(item.amountCents)}</p><button class="pick-button ${active ? "active" : ""}" type="button" data-guest-ate="${escapeAttr(item.id)}"><span>${active ? "Es mio" : "Esto es mio"}</span></button></article>`;
+        }).join("")}
+      </div>
+      <div class="panel">
+        <button class="primary-button" type="button" data-share-part>${icon("send")}<span>Enviar parte por WhatsApp</span></button>
+        <button class="secondary-button" type="button" data-copy-part>${icon("copy")}<span>Copiar parte</span></button>
+      </div>
+    `;
+  }
+
+  function toggleGuestAte(itemId) {
+    ui.guestAte = ui.guestAte.includes(itemId)
+      ? ui.guestAte.filter((id) => id !== itemId)
+      : ui.guestAte.concat(itemId);
+    render();
+  }
+
+  async function openIncoming() {
+    const raw = window.location.hash.replace(/^#/, "");
+    if (!raw || !window.ClaraExchange) return;
+    if (!raw.startsWith("list1:") && !raw.startsWith("part1:")) return;
+    try {
+      const message = await window.ClaraExchange.openCode(decodeURIComponent(raw));
+      if (message.kind === "list") {
+        ui.screen = "guest";
+        ui.guestList = message;
+        ui.guestPersonId = message.people[0] ? message.people[0].id : "";
+        ui.guestAte = [];
+        return;
+      }
+      if (!savedGuided || savedGuided.billId !== message.billId) {
+        showToast("Esta parte no es de la cuenta de este celular");
+        return;
+      }
+      const applied = window.ClaraExchange.applyPart(savedGuided, message);
+      if (!applied.ok) {
+        showToast("No pude aplicar esa parte");
+        return;
+      }
+      beginSession(applied.state);
+      state.screen = "result";
+    } catch (error) {
+      showToast("No pude abrir este codigo");
+    }
+  }
+
+  async function shareList() {
+    if (!window.ClaraExchange) return;
+    if (!state.people.length || !state.items.length) return showToast("Primero arma la cuenta");
+    if (!state.billId) state.billId = createId("mesa");
+    const code = await window.ClaraExchange.seal("list1", window.ClaraExchange.toList(domainSnapshot()));
+    await copyText(codeUrl(code));
+    showToast("Lista copiada");
+    render();
+  }
+
+  async function sharePart(toWhatsApp) {
+    if (!window.ClaraExchange || !ui.guestList || !ui.guestPersonId) return;
+    const code = await window.ClaraExchange.seal("part1", {
+      kind: "part",
+      billId: ui.guestList.billId,
+      personId: ui.guestPersonId,
+      ate: ui.guestAte.slice()
+    });
+    const url = codeUrl(code);
+    if (toWhatsApp) {
+      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
+      return;
+    }
+    await copyText(url);
+    showToast("Parte copiada");
+  }
+
+  async function readPastedPart(form) {
+    const raw = form.elements.partCode.value.trim();
+    const code = raw.includes("#") ? raw.slice(raw.lastIndexOf("#") + 1) : raw;
+    try {
+      const message = await window.ClaraExchange.openCode(decodeURIComponent(code));
+      if (message.kind !== "part") return showToast("Esto es una lista, no una parte");
+      if (!state.billId) return showToast("Primero comparte la lista de esta cuenta");
+      const applied = window.ClaraExchange.applyPart(domainSnapshot(), message);
+      if (!applied.ok) return showToast("Esta parte no es de esta cuenta");
+      applyDomain(applied.state);
+      persistDomain.last = null;
+      render();
+      showToast("Parte aplicada");
+    } catch (error) {
+      showToast("No pude leer esa parte");
+    }
+  }
+
+  function codeUrl(code) {
+    return `${window.location.origin}${window.location.pathname}#${code}`;
+  }
+
+  function itemName(itemId) {
+    return findItem(itemId)?.name || "Producto";
+  }
+
   function handleRootSubmit(event) {
     event.preventDefault();
     if (event.target.id === "personForm") addPerson(event.target);
     if (event.target.id === "productForm") addProduct(event.target);
     if (event.target.id === "sharedForm") addShared(event.target);
     if (event.target.id === "singleForm") addSingle(event.target);
+    if (event.target.id === "partForm") return readPastedPart(event.target);
   }
 
   function handleRootClick(event) {
@@ -582,6 +731,14 @@
     }
     if (button.hasAttribute("data-share-whatsapp")) return shareWhatsApp();
     if (button.hasAttribute("data-copy-summary")) return copySummary();
+    if (button.hasAttribute("data-share-list")) return shareList();
+    if (button.dataset.guestPerson) {
+      ui.guestPersonId = button.dataset.guestPerson;
+      return render();
+    }
+    if (button.dataset.guestAte) return toggleGuestAte(button.dataset.guestAte);
+    if (button.hasAttribute("data-copy-part")) return sharePart(false);
+    if (button.hasAttribute("data-share-part")) return sharePart(true);
   }
 
   function addPerson(form) {
@@ -1097,6 +1254,8 @@
       paymentMethod: domain.paymentMethod,
       cardPayerId: domain.cardPayerId,
       paidById: domain.paidById,
+      billId: domain.billId,
+      claims: domain.claims,
       updatedAt: domain.updatedAt
     };
   }
@@ -1109,7 +1268,9 @@
       paidMode: value.paidMode,
       paymentMethod: value.paymentMethod,
       cardPayerId: value.cardPayerId,
-      paidById: value.paidById
+      paidById: value.paidById,
+      billId: value.billId,
+      claims: value.claims
     });
     return rest(left) === rest(right);
   }
@@ -1121,6 +1282,8 @@
     domain.paymentMethod = next.paymentMethod;
     domain.cardPayerId = next.cardPayerId;
     domain.paidById = next.paidById;
+    domain.billId = next.billId || "";
+    domain.claims = next.claims || {};
     domain.updatedAt = Number.isInteger(next.updatedAt) ? next.updatedAt : 0;
   }
 
@@ -1131,7 +1294,7 @@
   }
 
   function persistDomain() {
-    if (!persistEnabled || !window.ClaraStore) return;
+    if (state.screen === "guest" || !persistEnabled || !window.ClaraStore) return;
     const snapshot = domainSnapshot();
     if (!sameBill(persistDomain.last, snapshot)) snapshot.updatedAt = Date.now();
     else snapshot.updatedAt = persistDomain.last ? persistDomain.last.updatedAt : snapshot.updatedAt;

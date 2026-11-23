@@ -363,6 +363,20 @@
     };
   }
 
+  function normalizeBillId(value) {
+    return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 40);
+  }
+
+  function normalizeClaims(raw, peopleIds, itemIds) {
+    const claims = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return claims;
+    Object.keys(raw).forEach((personId) => {
+      if (!peopleIds.has(personId)) return;
+      claims[personId] = uniqueStrings(raw[personId]).filter((id) => itemIds.has(id));
+    });
+    return claims;
+  }
+
   function normalizeClaramenteState(raw) {
     const source = raw && typeof raw === "object" ? raw : {};
     const people = normalizePeople(source.people).map((person) => ({
@@ -388,6 +402,8 @@
       paymentMethod: PAYMENT_METHODS.has(source.paymentMethod) ? source.paymentMethod : "",
       cardPayerId: peopleIds.has(source.cardPayerId) ? source.cardPayerId : "",
       paidById: peopleIds.has(source.paidById) ? source.paidById : "",
+      billId: normalizeBillId(source.billId),
+      claims: normalizeClaims(source.claims, peopleIds, seenIds),
       updatedAt: nonNegativeInteger(source.updatedAt, 0)
     };
   }
