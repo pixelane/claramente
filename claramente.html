@@ -37,6 +37,18 @@
       </form>
     </dialog>
 
+    <dialog class="sheet" id="scanDialog">
+      <div class="sheet-panel">
+        <div class="sheet-header">
+          <h2>Escanear codigo</h2>
+          <button class="icon-button" id="closeScanBtn" type="button" aria-label="Cerrar escanner">&times;</button>
+        </div>
+        <video id="scanVideo" playsinline autoplay muted></video>
+        <p class="panel-note">Apunta al codigo de la otra pantalla.</p>
+      </div>
+    </dialog>
+    <input id="qrPhoto" type="file" accept="image/*" capture="environment" hidden>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script src="clara-sw-register.js" defer></script>
@@ -44,6 +56,9 @@
     <script src="clara-core.js" defer></script>
     <script src="clara-store.js" defer></script>
     <script src="clara-exchange.js" defer></script>
+    <script src="vendor/qrcode-generator.js" defer></script>
+    <script src="vendor/jsQR.js" defer></script>
+    <script src="clara-qr.js" defer></script>
     <script src="claramente.js" defer></script>
   </body>
 </html>

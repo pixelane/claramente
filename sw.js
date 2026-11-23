@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v43";
+const CACHE_NAME = "clara-cache-v44";
 const RUNTIME_CACHE = "clara-runtime";
 const MAX_RUNTIME_BYTES = 150 * 1024;
 const ASSETS = [
@@ -12,6 +12,9 @@ const ASSETS = [
   "./clara-core.js",
   "./clara-store.js",
   "./clara-exchange.js",
+  "./clara-qr.js",
+  "./vendor/qrcode-generator.js",
+  "./vendor/jsQR.js",
   "./clara-sw-register.js",
   "./app.js",
   "./manifest.json",

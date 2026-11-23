@@ -81,11 +81,19 @@
     sheetBody: document.getElementById("sheetBody"),
     sheetActions: document.getElementById("sheetActions"),
     closeSheetBtn: document.getElementById("closeSheetBtn"),
-    toast: document.getElementById("toast")
+    toast: document.getElementById("toast"),
+    scanDialog: document.getElementById("scanDialog"),
+    scanVideo: document.getElementById("scanVideo"),
+    qrPhoto: document.getElementById("qrPhoto"),
+    closeScanBtn: document.getElementById("closeScanBtn")
   };
 
   let restoringHistory = false;
   let persistEnabled = false;
+  let scanStream = null;
+  let scanTimer = 0;
+  let scanCanvas = null;
+  let scanDetector = null;
   let savedGuided = null;
   let savedCanonical = null;
   let syncChoice = { action: "write", reason: "missing" };
@@ -125,6 +133,8 @@
     els.editForm.addEventListener("submit", saveEdit);
     els.root.addEventListener("click", handleRootClick);
     els.root.addEventListener("submit", handleRootSubmit);
+    if (els.qrPhoto) els.qrPhoto.addEventListener("change", readQrPhoto);
+    if (els.closeScanBtn) els.closeScanBtn.addEventListener("click", stopScan);
     render();
   }
 
@@ -172,6 +182,8 @@
         </label>
         ${ui.qrProgress ? `<p class="section-note">Van ${ui.qrProgress.have} de ${ui.qrProgress.total}</p>` : ""}
         <button class="secondary-button" type="submit">Leer codigo</button>
+        <button class="secondary-button" type="button" data-scan-photo>Leer foto</button>
+        <button class="secondary-button" type="button" data-scan-live>Escanear</button>
       </form>
     `;
   }
@@ -561,6 +573,8 @@
           <textarea id="partCode" name="partCode" rows="3" placeholder="Pega el enlace o los codigos"></textarea>
         </label>
         <button class="primary-button" type="submit">Leer parte</button>
+        <button class="secondary-button" type="button" data-scan-photo>Leer foto</button>
+        <button class="secondary-button" type="button" data-scan-live>Escanear</button>
       </form>
       <div class="panel edit-shortcuts">
         <button class="secondary-button" type="button" data-go="people">Editar personas</button>
@@ -631,24 +645,7 @@
     try {
       const message = await readExchange(decodeURIComponent(raw));
       if (!message) return;
-      if (message.kind === "list") {
-        ui.screen = "guest";
-        ui.guestList = message;
-        ui.guestPersonId = message.people[0] ? message.people[0].id : "";
-        ui.guestAte = [];
-        return;
-      }
-      if (!savedGuided || savedGuided.billId !== message.billId) {
-        showToast("Esta parte no es de la cuenta de este celular");
-        return;
-      }
-      const applied = window.ClaraExchange.applyPart(savedGuided, message);
-      if (!applied.ok) {
-        showToast("No pude aplicar esa parte");
-        return;
-      }
-      beginSession(applied.state);
-      state.screen = "result";
+      await deliverMessage(message);
     } catch (error) {
       showToast("No pude abrir este codigo");
     }
@@ -662,8 +659,8 @@
     const chunks = window.ClaraExchange.splitQr(code);
     ui.qrChunks = chunks;
     ui.qrIndex = 0;
-    if (chunks.length === 1) await copyText(codeUrl(code));
-    showToast(chunks.length === 1 ? "Lista copiada" : `Lista en ${chunks.length} codigos`);
+    if (chunks.length === 1) await shareOrCopy(codeUrl(code));
+    showToast(chunks.length === 1 ? "Lista lista para compartir" : `Lista en ${chunks.length} codigos`);
     render();
   }
 
@@ -684,8 +681,8 @@
         window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
         return;
       }
-      await copyText(url);
-      showToast("Parte copiada");
+      await shareOrCopy(url);
+      showToast("Parte lista para compartir");
       return;
     }
     showToast(`Parte en ${chunks.length} codigos`);
@@ -694,17 +691,7 @@
 
   async function readPastedCode(form) {
     try {
-      const message = await readExchange(form.elements.codeInput.value.trim());
-      if (!message) return;
-      if (message.kind === "list") {
-        ui.screen = "guest";
-        ui.guestList = message;
-        ui.guestPersonId = message.people[0] ? message.people[0].id : "";
-        ui.guestAte = [];
-        render();
-        return;
-      }
-      showToast("Esa parte es para quien tiene la cuenta");
+      await deliverMessage(await readExchange(form.elements.codeInput.value.trim()));
     } catch (error) {
       showToast("No pude abrir este codigo");
     }
@@ -714,16 +701,7 @@
     const raw = form.elements.partCode.value.trim();
     const code = raw.includes("#") ? raw.slice(raw.lastIndexOf("#") + 1) : raw;
     try {
-      const message = await readExchange(code);
-      if (!message) return;
-      if (message.kind !== "part") return showToast("Esto es una lista, no una parte");
-      if (!state.billId) return showToast("Primero comparte la lista de esta cuenta");
-      const applied = window.ClaraExchange.applyPart(domainSnapshot(), message);
-      if (!applied.ok) return showToast("Esta parte no es de esta cuenta");
-      applyDomain(applied.state);
-      persistDomain.last = null;
-      render();
-      showToast("Parte aplicada");
+      await deliverMessage(await readExchange(code));
     } catch (error) {
       showToast("No pude leer esa parte");
     }
@@ -736,12 +714,14 @@
     return `
       <section class="panel">
         <p class="section-note">${many ? `Codigo ${ui.qrIndex + 1} de ${ui.qrChunks.length}. Muestralos en orden.` : "Codigo para la otra pantalla"}</p>
+        ${window.ClaraQr ? window.ClaraQr.toSvg(current) : ""}
         <textarea readonly rows="4">${escapeHtml(current)}</textarea>
         ${many ? `<div class="form-actions">
           <button class="secondary-button" type="button" data-qr-prev>Anterior</button>
           <button class="secondary-button" type="button" data-qr-next>Siguiente</button>
         </div>` : ""}
         <button class="secondary-button" type="button" data-qr-copy>${icon("copy")}<span>Copiar este codigo</span></button>
+        <button class="secondary-button" type="button" data-share-code>${icon("send")}<span>Compartir</span></button>
         ${ui.qrProgress ? `<p class="section-note">Van ${ui.qrProgress.have} de ${ui.qrProgress.total}</p>` : ""}
       </section>
     `;
@@ -751,6 +731,130 @@
     if (!ui.qrChunks || !ui.qrChunks.length) return;
     ui.qrIndex = (ui.qrIndex + delta + ui.qrChunks.length) % ui.qrChunks.length;
     render();
+  }
+
+  async function shareOrCopy(text) {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Claramente", text });
+        return;
+      } catch (error) {
+        if (error && error.name === "AbortError") return;
+      }
+    }
+    await copyText(text);
+    showToast("Codigo copiado");
+  }
+
+  async function shareQrChunk() {
+    const chunk = ui.qrChunks && ui.qrChunks[ui.qrIndex];
+    if (!chunk) return;
+    await shareOrCopy(ui.qrChunks.length === 1 && !chunk.startsWith("qr1:") ? codeUrl(chunk) : chunk);
+  }
+
+  async function deliverMessage(message) {
+    if (!message) return;
+    if (message.kind === "list") {
+      ui.screen = "guest";
+      ui.guestList = message;
+      ui.guestPersonId = message.people[0] ? message.people[0].id : "";
+      ui.guestAte = [];
+      render();
+      showToast("Lista recibida");
+      return;
+    }
+    const base = persistEnabled ? domainSnapshot() : savedGuided;
+    if (!base || base.billId !== message.billId) {
+      showToast("Esta parte no es de la cuenta de este celular");
+      return;
+    }
+    const applied = window.ClaraExchange.applyPart(base, message);
+    if (!applied.ok) {
+      showToast("No pude aplicar esa parte");
+      return;
+    }
+    if (persistEnabled) applyDomain(applied.state);
+    else beginSession(applied.state);
+    state.screen = "result";
+    persistDomain.last = null;
+    render();
+    showToast("Parte aplicada");
+  }
+
+  async function readQrPhoto() {
+    const file = els.qrPhoto && els.qrPhoto.files && els.qrPhoto.files[0];
+    if (els.qrPhoto) els.qrPhoto.value = "";
+    if (!file || !window.ClaraQr) return;
+    try {
+      const text = await window.ClaraQr.readFile(file);
+      if (!text) return showToast("No vi un codigo en esa foto");
+      await deliverMessage(await readExchange(text));
+    } catch (error) {
+      showToast("No pude leer esa foto");
+    }
+  }
+
+  async function startScan() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !els.scanDialog || !els.scanVideo) {
+      if (els.qrPhoto) els.qrPhoto.click();
+      return;
+    }
+    try {
+      scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+    } catch (error) {
+      if (els.qrPhoto) els.qrPhoto.click();
+      return;
+    }
+    els.scanVideo.srcObject = scanStream;
+    await els.scanVideo.play();
+    els.scanDialog.showModal();
+    scanFrame();
+  }
+
+  async function scanFrame() {
+    if (!scanStream || !els.scanVideo || els.scanVideo.readyState < 2) {
+      if (scanStream) scanTimer = requestAnimationFrame(scanFrame);
+      return;
+    }
+    const canvas = scanCanvas || document.createElement("canvas");
+    scanCanvas = canvas;
+    canvas.width = els.scanVideo.videoWidth;
+    canvas.height = els.scanVideo.videoHeight;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(els.scanVideo, 0, 0);
+    let text = "";
+    if (typeof BarcodeDetector === "function") {
+      try {
+        const detector = scanDetector || new BarcodeDetector({ formats: ["qr_code"] });
+        scanDetector = detector;
+        const codes = await detector.detect(canvas);
+        text = codes[0] && codes[0].rawValue || "";
+      } catch (error) {
+        scanDetector = null;
+      }
+    }
+    if (!text && window.ClaraQr) {
+      text = window.ClaraQr.readPixels(context.getImageData(0, 0, canvas.width, canvas.height));
+    }
+    if (text) {
+      stopScan();
+      try {
+        await deliverMessage(await readExchange(text));
+      } catch (error) {
+        showToast("No pude abrir este codigo");
+      }
+      return;
+    }
+    scanTimer = requestAnimationFrame(scanFrame);
+  }
+
+  function stopScan() {
+    if (scanTimer) cancelAnimationFrame(scanTimer);
+    scanTimer = 0;
+    if (scanStream) scanStream.getTracks().forEach((track) => track.stop());
+    scanStream = null;
+    if (els.scanVideo) els.scanVideo.srcObject = null;
+    if (els.scanDialog && els.scanDialog.open) els.scanDialog.close();
   }
 
   async function copyQrChunk() {
@@ -850,6 +954,12 @@
     if (button.hasAttribute("data-qr-prev")) return stepQr(-1);
     if (button.hasAttribute("data-qr-next")) return stepQr(1);
     if (button.hasAttribute("data-qr-copy")) return copyQrChunk();
+    if (button.hasAttribute("data-share-code")) return shareQrChunk();
+    if (button.hasAttribute("data-scan-photo")) {
+      if (els.qrPhoto) els.qrPhoto.click();
+      return;
+    }
+    if (button.hasAttribute("data-scan-live")) return startScan();
   }
 
   function addPerson(form) {

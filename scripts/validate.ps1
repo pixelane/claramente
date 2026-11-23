@@ -86,6 +86,9 @@ try {
     "claramente.js",
     "clara-store.js",
     "clara-exchange.js",
+    "clara-qr.js",
+    "vendor/qrcode-generator.js",
+    "vendor/jsQR.js",
     "clara-sw-register.js",
     "AGENTS.md",
     "docs/CANONICAL_MODEL.md",
@@ -95,6 +98,7 @@ try {
     "tests/unit/claramente-core-contract.test.js",
     "tests/unit/clara-store-contract.test.js",
     "tests/unit/clara-exchange-contract.test.js",
+    "tests/unit/clara-qr-contract.test.js",
     "tests/unit/offline-contract.test.js",
     "tests/unit/shell-router-contract.test.js",
     "tests/unit/ux-style-contract.test.js",
@@ -112,11 +116,11 @@ try {
 
   $node = Resolve-Node
   Write-Pass "Node.js: $node"
-  foreach ($script in @("shell-router.js", "clara-core.js", "clara-store.js", "clara-exchange.js", "clara-sw-register.js", "app.js", "sw.js", "claramente.js", "playwright.config.js", "tests/e2e/server.js", "tests/e2e/critical-flows.spec.js", "tests/unit/core-contract.test.js", "tests/unit/claramente-core-contract.test.js", "tests/unit/clara-store-contract.test.js", "tests/unit/clara-exchange-contract.test.js", "tests/unit/offline-contract.test.js", "tests/unit/shell-router-contract.test.js", "tests/unit/ux-style-contract.test.js", "tests/unit/claramente-ux-contract.test.js")) {
+  foreach ($script in @("shell-router.js", "clara-core.js", "clara-store.js", "clara-exchange.js", "clara-qr.js", "vendor/qrcode-generator.js", "vendor/jsQR.js", "clara-sw-register.js", "app.js", "sw.js", "claramente.js", "playwright.config.js", "tests/e2e/server.js", "tests/e2e/critical-flows.spec.js", "tests/unit/core-contract.test.js", "tests/unit/claramente-core-contract.test.js", "tests/unit/clara-store-contract.test.js", "tests/unit/clara-exchange-contract.test.js", "tests/unit/clara-qr-contract.test.js", "tests/unit/offline-contract.test.js", "tests/unit/shell-router-contract.test.js", "tests/unit/ux-style-contract.test.js", "tests/unit/claramente-ux-contract.test.js")) {
     Test-JavaScriptSyntax $node $script
   }
 
-  foreach ($unitTest in @("tests\unit\core-contract.test.js", "tests\unit\claramente-core-contract.test.js", "tests\unit\clara-store-contract.test.js", "tests\unit\clara-exchange-contract.test.js", "tests\unit\offline-contract.test.js", "tests\unit\shell-router-contract.test.js", "tests\unit\ux-style-contract.test.js", "tests\unit\claramente-ux-contract.test.js")) {
+  foreach ($unitTest in @("tests\unit\core-contract.test.js", "tests\unit\claramente-core-contract.test.js", "tests\unit\clara-store-contract.test.js", "tests\unit\clara-exchange-contract.test.js", "tests\unit\clara-qr-contract.test.js", "tests\unit\offline-contract.test.js", "tests\unit\shell-router-contract.test.js", "tests\unit\ux-style-contract.test.js", "tests\unit\claramente-ux-contract.test.js")) {
     try {
       & $node (Join-Path $repoRoot $unitTest)
       if ($LASTEXITCODE -eq 0) {
