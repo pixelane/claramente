@@ -37,7 +37,11 @@
     editing: null,
     guestList: null,
     guestPersonId: "",
-    guestAte: []
+    guestAte: [],
+    qrChunks: null,
+    qrIndex: 0,
+    qrInbox: [],
+    qrProgress: null
   };
 
   const state = {
@@ -161,6 +165,14 @@
         <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
         ${savedAccountButton()}
       </div>
+      <form class="panel form-grid" id="codeForm">
+        <label class="field">
+          <span>Codigo recibido</span>
+          <textarea id="codeInput" name="codeInput" rows="3" placeholder="Pega uno o todos los codigos"></textarea>
+        </label>
+        ${ui.qrProgress ? `<p class="section-note">Van ${ui.qrProgress.have} de ${ui.qrProgress.total}</p>` : ""}
+        <button class="secondary-button" type="submit">Leer codigo</button>
+      </form>
     `;
   }
 
@@ -541,11 +553,12 @@
         <button class="secondary-button" type="button" data-copy-summary>${icon("copy")}<span>Copiar resumen</span></button>
         <button class="secondary-button" type="button" data-share-list>${icon("send")}<span>Compartir lista</span></button>
       </div>
+      ${renderQrPanel()}
       ${renderRectification()}
       <form class="panel form-grid" id="partForm">
         <label class="field">
           <span>Parte recibida</span>
-          <textarea id="partCode" name="partCode" rows="3" placeholder="Pega el enlace o el codigo"></textarea>
+          <textarea id="partCode" name="partCode" rows="3" placeholder="Pega el enlace o los codigos"></textarea>
         </label>
         <button class="primary-button" type="submit">Leer parte</button>
       </form>
@@ -600,6 +613,7 @@
         <button class="primary-button" type="button" data-share-part>${icon("send")}<span>Enviar parte por WhatsApp</span></button>
         <button class="secondary-button" type="button" data-copy-part>${icon("copy")}<span>Copiar parte</span></button>
       </div>
+      ${renderQrPanel()}
     `;
   }
 
@@ -613,9 +627,10 @@
   async function openIncoming() {
     const raw = window.location.hash.replace(/^#/, "");
     if (!raw || !window.ClaraExchange) return;
-    if (!raw.startsWith("list1:") && !raw.startsWith("part1:")) return;
+    if (!raw.startsWith("list1:") && !raw.startsWith("part1:") && !raw.startsWith("qr1:")) return;
     try {
-      const message = await window.ClaraExchange.openCode(decodeURIComponent(raw));
+      const message = await readExchange(decodeURIComponent(raw));
+      if (!message) return;
       if (message.kind === "list") {
         ui.screen = "guest";
         ui.guestList = message;
@@ -644,8 +659,11 @@
     if (!state.people.length || !state.items.length) return showToast("Primero arma la cuenta");
     if (!state.billId) state.billId = createId("mesa");
     const code = await window.ClaraExchange.seal("list1", window.ClaraExchange.toList(domainSnapshot()));
-    await copyText(codeUrl(code));
-    showToast("Lista copiada");
+    const chunks = window.ClaraExchange.splitQr(code);
+    ui.qrChunks = chunks;
+    ui.qrIndex = 0;
+    if (chunks.length === 1) await copyText(codeUrl(code));
+    showToast(chunks.length === 1 ? "Lista copiada" : `Lista en ${chunks.length} codigos`);
     render();
   }
 
@@ -657,20 +675,47 @@
       personId: ui.guestPersonId,
       ate: ui.guestAte.slice()
     });
-    const url = codeUrl(code);
-    if (toWhatsApp) {
-      window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
+    const chunks = window.ClaraExchange.splitQr(code);
+    ui.qrChunks = chunks;
+    ui.qrIndex = 0;
+    if (chunks.length === 1) {
+      const url = codeUrl(code);
+      if (toWhatsApp) {
+        window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
+        return;
+      }
+      await copyText(url);
+      showToast("Parte copiada");
       return;
     }
-    await copyText(url);
-    showToast("Parte copiada");
+    showToast(`Parte en ${chunks.length} codigos`);
+    render();
+  }
+
+  async function readPastedCode(form) {
+    try {
+      const message = await readExchange(form.elements.codeInput.value.trim());
+      if (!message) return;
+      if (message.kind === "list") {
+        ui.screen = "guest";
+        ui.guestList = message;
+        ui.guestPersonId = message.people[0] ? message.people[0].id : "";
+        ui.guestAte = [];
+        render();
+        return;
+      }
+      showToast("Esa parte es para quien tiene la cuenta");
+    } catch (error) {
+      showToast("No pude abrir este codigo");
+    }
   }
 
   async function readPastedPart(form) {
     const raw = form.elements.partCode.value.trim();
     const code = raw.includes("#") ? raw.slice(raw.lastIndexOf("#") + 1) : raw;
     try {
-      const message = await window.ClaraExchange.openCode(decodeURIComponent(code));
+      const message = await readExchange(code);
+      if (!message) return;
       if (message.kind !== "part") return showToast("Esto es una lista, no una parte");
       if (!state.billId) return showToast("Primero comparte la lista de esta cuenta");
       const applied = window.ClaraExchange.applyPart(domainSnapshot(), message);
@@ -681,6 +726,58 @@
       showToast("Parte aplicada");
     } catch (error) {
       showToast("No pude leer esa parte");
+    }
+  }
+
+  function renderQrPanel() {
+    if (!ui.qrChunks || !ui.qrChunks.length) return "";
+    const current = ui.qrChunks[ui.qrIndex] || "";
+    const many = ui.qrChunks.length > 1;
+    return `
+      <section class="panel">
+        <p class="section-note">${many ? `Codigo ${ui.qrIndex + 1} de ${ui.qrChunks.length}. Muestralos en orden.` : "Codigo para la otra pantalla"}</p>
+        <textarea readonly rows="4">${escapeHtml(current)}</textarea>
+        ${many ? `<div class="form-actions">
+          <button class="secondary-button" type="button" data-qr-prev>Anterior</button>
+          <button class="secondary-button" type="button" data-qr-next>Siguiente</button>
+        </div>` : ""}
+        <button class="secondary-button" type="button" data-qr-copy>${icon("copy")}<span>Copiar este codigo</span></button>
+        ${ui.qrProgress ? `<p class="section-note">Van ${ui.qrProgress.have} de ${ui.qrProgress.total}</p>` : ""}
+      </section>
+    `;
+  }
+
+  function stepQr(delta) {
+    if (!ui.qrChunks || !ui.qrChunks.length) return;
+    ui.qrIndex = (ui.qrIndex + delta + ui.qrChunks.length) % ui.qrChunks.length;
+    render();
+  }
+
+  async function copyQrChunk() {
+    const chunk = ui.qrChunks && ui.qrChunks[ui.qrIndex];
+    if (!chunk) return;
+    await copyText(chunk);
+    showToast("Codigo copiado");
+  }
+
+  async function readExchange(raw) {
+    const text = decodeURIComponent(String(raw || "").trim());
+    if (!text.includes("qr1:")) return window.ClaraExchange.openCode(text);
+    const incoming = text.split(/\s+/).filter((line) => line.startsWith("qr1:"));
+    ui.qrInbox = ui.qrInbox.concat(incoming);
+    try {
+      const code = window.ClaraExchange.joinQr(ui.qrInbox);
+      ui.qrInbox = [];
+      ui.qrProgress = null;
+      return window.ClaraExchange.openCode(code);
+    } catch (error) {
+      if (error.message === "QR_INCOMPLETE") {
+        ui.qrProgress = { have: error.have, total: error.total };
+        showToast(`Falta codigo. Van ${error.have} de ${error.total}`);
+        render();
+        return null;
+      }
+      throw error;
     }
   }
 
@@ -699,6 +796,7 @@
     if (event.target.id === "sharedForm") addShared(event.target);
     if (event.target.id === "singleForm") addSingle(event.target);
     if (event.target.id === "partForm") return readPastedPart(event.target);
+    if (event.target.id === "codeForm") return readPastedCode(event.target);
   }
 
   function handleRootClick(event) {
@@ -739,6 +837,9 @@
     if (button.dataset.guestAte) return toggleGuestAte(button.dataset.guestAte);
     if (button.hasAttribute("data-copy-part")) return sharePart(false);
     if (button.hasAttribute("data-share-part")) return sharePart(true);
+    if (button.hasAttribute("data-qr-prev")) return stepQr(-1);
+    if (button.hasAttribute("data-qr-next")) return stepQr(1);
+    if (button.hasAttribute("data-qr-copy")) return copyQrChunk();
   }
 
   function addPerson(form) {

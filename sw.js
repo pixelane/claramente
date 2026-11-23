@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v41";
+const CACHE_NAME = "clara-cache-v42";
 const RUNTIME_CACHE = "clara-runtime";
 const MAX_RUNTIME_BYTES = 150 * 1024;
 const ASSETS = [

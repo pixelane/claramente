@@ -96,6 +96,71 @@
     return payload;
   }
 
+  const QR_SINGLE = 280;
+  const QR_PIECE = 220;
+  const QR_MAX = 24;
+
+  function qrId() {
+    const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const bytes = crypto.getRandomValues(new Uint8Array(8));
+    return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+  }
+
+  function splitQr(code) {
+    const text = String(code || "");
+    if (!text) throw new Error("EMPTY_CODE");
+    if (text.length <= QR_SINGLE) return [text];
+    const id = qrId();
+    const pieces = [];
+    for (let index = 0; index < text.length; index += QR_PIECE) pieces.push(text.slice(index, index + QR_PIECE));
+    if (pieces.length > QR_MAX) throw new Error("QR_TOO_MANY");
+    return pieces.map((piece, index) => `qr1:${id}:${index + 1}:${pieces.length}:${piece}`);
+  }
+
+  function parseChunk(raw) {
+    const match = String(raw || "").trim().match(/^qr1:([a-zA-Z0-9_-]{4,16}):(\d+):(\d+):(.*)$/);
+    if (!match || !match[4]) return null;
+    return {
+      id: match[1],
+      index: Number(match[2]),
+      total: Number(match[3]),
+      data: match[4]
+    };
+  }
+
+  function joinQr(chunks) {
+    const lines = (Array.isArray(chunks) ? chunks : String(chunks || "").split(/\s+/))
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!lines.length) throw new Error("EMPTY_CODE");
+    if (!lines.some((line) => line.startsWith("qr1:"))) {
+      if (lines.length !== 1) throw new Error("QR_MIXED");
+      return lines[0];
+    }
+    const parsed = lines.map(parseChunk);
+    if (parsed.some((item) => !item)) throw new Error("QR_INVALID");
+    const id = parsed[0].id;
+    const total = parsed[0].total;
+    if (total < 2 || total > QR_MAX) throw new Error("QR_INVALID");
+    if (parsed.some((item) => item.id !== id || item.total !== total)) throw new Error("QR_MIXED");
+    const byIndex = new Map();
+    parsed.forEach((item) => {
+      if (!Number.isInteger(item.index) || item.index < 1 || item.index > total) throw new Error("QR_INVALID");
+      const previous = byIndex.get(item.index);
+      if (previous !== undefined && previous !== item.data) throw new Error("QR_CONFLICT");
+      byIndex.set(item.index, item.data);
+    });
+    if (byIndex.size !== total) {
+      const error = new Error("QR_INCOMPLETE");
+      error.have = byIndex.size;
+      error.total = total;
+      throw error;
+    }
+    let joined = "";
+    for (let index = 1; index <= total; index += 1) joined += byIndex.get(index);
+    return joined;
+  }
+
   function applyPart(state, part) {
     assertPart(part);
     if (!state || part.billId !== state.billId) return { ok: false, reason: "bill" };
@@ -147,5 +212,5 @@
     return issues;
   }
 
-  return { toList, seal, openCode, applyPart, rectify };
+  return { toList, seal, openCode, applyPart, rectify, splitQr, joinQr };
 });

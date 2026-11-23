@@ -55,6 +55,30 @@ async function run() {
     });
     await exchange.openCode(code);
   });
+
+  const short = await exchange.seal("part1", part);
+  assert.deepEqual(exchange.splitQr(short), [short]);
+
+  const long = await exchange.seal("list1", exchange.toList({
+    billId: "mesa-1",
+    people: Array.from({ length: 8 }, (_, index) => ({ id: `p_${index}`, name: `Persona ${index}` })),
+    items: Array.from({ length: 12 }, (_, index) => ({
+      id: `item_${index}`,
+      type: "product",
+      name: `Producto de la carta ${index}`,
+      amountCents: 1500 + index
+    })),
+    updatedAt: 4
+  }));
+  const chunks = exchange.splitQr(long);
+  assert.ok(chunks.length > 1);
+  chunks.forEach((chunk) => assert.ok(chunk.length <= 280));
+  assert.equal(exchange.joinQr(chunks.slice().reverse().join("\n")), long);
+  assert.equal((await exchange.openCode(exchange.joinQr(chunks))).kind, "list");
+  assert.throws(() => exchange.joinQr(chunks.slice(1)), /QR_INCOMPLETE/);
+  const flipped = chunks[0].replace(/.$/, (char) => (char === "a" ? "b" : "a"));
+  await assert.rejects(exchange.openCode(exchange.joinQr([flipped].concat(chunks.slice(1)))));
+  assert.throws(() => exchange.joinQr([chunks[0], chunks[0].replace(/:([^:]+)$/, ":otra")].concat(chunks.slice(1))), /QR_CONFLICT/);
 }
 
 run().catch((error) => {
