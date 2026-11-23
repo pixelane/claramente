@@ -766,7 +766,17 @@
     const incoming = text.split(/\s+/).filter((line) => line.startsWith("qr1:"));
     ui.qrInbox = ui.qrInbox.concat(incoming);
     try {
-      const code = window.ClaraExchange.joinQr(ui.qrInbox);
+      return await finishQr(ui.qrInbox);
+    } catch (error) {
+      if (error.message !== "QR_MIXED" && error.message !== "QR_CONFLICT" && error.message !== "QR_INVALID") throw error;
+      ui.qrInbox = incoming.slice();
+      return finishQr(ui.qrInbox);
+    }
+  }
+
+  async function finishQr(lines) {
+    try {
+      const code = window.ClaraExchange.joinQr(lines);
       ui.qrInbox = [];
       ui.qrProgress = null;
       return window.ClaraExchange.openCode(code);

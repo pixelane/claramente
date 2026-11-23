@@ -1,5 +1,5 @@
 (function () {
-  const CACHE_NAME = "clara-cache-v42";
+  const CACHE_NAME = "clara-cache-v43";
   if (!("serviceWorker" in navigator)) return;
 
   const hadController = Boolean(navigator.serviceWorker.controller);
