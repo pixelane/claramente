@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v52";
+const CACHE_NAME = "clara-cache-v53";
 const RUNTIME_CACHE = "clara-runtime";
 const MAX_RUNTIME_BYTES = 150 * 1024;
 const ASSETS = [
@@ -46,19 +46,21 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode === "navigate") {
-    const url = new URL(event.request.url);
+  const url = new URL(event.request.url);
+  const sameOrigin = url.origin === self.location.origin;
+  const fresh = event.request.mode === "navigate" || /\.(js|css|html)$/.test(url.pathname);
+  if (fresh && sameOrigin) {
     const fallbackAsset = url.pathname.endsWith("/claramente.html") ? "./claramente.html" : "./index.html";
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const responseCopy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(fallbackAsset, responseCopy);
-          });
+          if (event.request.mode === "navigate" && response.ok) {
+            const responseCopy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(fallbackAsset, responseCopy));
+          }
           return response;
         })
-        .catch(() => caches.match(fallbackAsset))
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match(fallbackAsset)))
     );
     return;
   }

@@ -154,11 +154,15 @@
       restoreResult();
     }
     const nextUrl = demoMode
-      ? `${window.location.pathname}${window.location.search}#${TRIAL_CODE}`
+      ? `${window.location.pathname}${window.location.search}`
       : state.screen === "guest"
         ? window.location.href
         : window.location.pathname + window.location.search;
-    window.history.replaceState({ claramenteScreen: state.screen }, "", nextUrl);
+    try {
+      window.history.replaceState({ claramenteScreen: state.screen }, "", nextUrl);
+    } catch (error) {
+      /* un celular viejo puede rechazar el enlace largo; la pantalla sigue */
+    }
     window.addEventListener("popstate", handlePopState);
     window.addEventListener("hashchange", () => { openIncoming(); });
     window.addEventListener("storage", refreshFromOtherScreen);

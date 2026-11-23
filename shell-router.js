@@ -20,11 +20,14 @@
     const params = new URLSearchParams(search.replace(/^\?/, ""));
     const forcedShell = params.get("shell");
 
+    const coarse = Boolean(locationLike.coarse);
     if (["claramente-full", "clara", "claramente"].includes(forcedShell)) return "";
     if (params.get("prueba") === "qr" || hash.startsWith("#list1:") || hash.startsWith("#part1:") || hash.startsWith("#qr1:")) {
       return page === "claramente.html" ? "" : "claramente.html";
     }
     if (hash && page === "index.html") return "";
+    if (coarse && page !== "claramente.html") return "claramente.html";
+    if (coarse) return "";
     if (page === "index.html" && width > 0 && width <= MOBILE_MAX_WIDTH) return "claramente.html";
     if (page === "claramente.html" && width > MOBILE_MAX_WIDTH) return "index.html";
     return "";
@@ -35,7 +38,8 @@
       pathname: targetWindow.location.pathname,
       search: targetWindow.location.search,
       hash: targetWindow.location.hash,
-      width: targetWindow.innerWidth
+      width: targetWindow.innerWidth,
+      coarse: Boolean(targetWindow.matchMedia && targetWindow.matchMedia("(pointer: coarse)").matches)
     });
     if (!destination) return;
     targetWindow.location.replace(destination + targetWindow.location.search + targetWindow.location.hash);
