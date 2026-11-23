@@ -331,13 +331,15 @@
     let id = typeof item.id === "string" && item.id ? item.id : `item-${index + 1}`;
     if (seenIds.has(id)) id = `${id}-${index + 1}`;
     const name = cleanText(item.name, 120) || "Gasto";
+    const paidById = peopleIds.has(item.paidById) ? item.paidById : "";
     if (item.type === "product") {
       return {
         id,
         type: "product",
         name,
         amountCents,
-        eatenBy: uniqueStrings(item.eatenBy).filter((personId) => peopleIds.has(personId))
+        eatenBy: uniqueStrings(item.eatenBy).filter((personId) => peopleIds.has(personId)),
+        paidById
       };
     }
     if (item.type === "shared") {
@@ -346,7 +348,8 @@
         type: "shared",
         name,
         amountCents,
-        splitWith: uniqueStrings(item.splitWith).filter((personId) => peopleIds.has(personId))
+        splitWith: uniqueStrings(item.splitWith).filter((personId) => peopleIds.has(personId)),
+        paidById
       };
     }
     if (!peopleIds.has(item.ownerId)) return null;
@@ -384,7 +387,8 @@
       paidMode: PAID_MODES.has(source.paidMode) ? source.paidMode : "",
       paymentMethod: PAYMENT_METHODS.has(source.paymentMethod) ? source.paymentMethod : "",
       cardPayerId: peopleIds.has(source.cardPayerId) ? source.cardPayerId : "",
-      paidById: peopleIds.has(source.paidById) ? source.paidById : ""
+      paidById: peopleIds.has(source.paidById) ? source.paidById : "",
+      updatedAt: nonNegativeInteger(source.updatedAt, 0)
     };
   }
 
@@ -504,9 +508,9 @@
         };
         if (item.type === "product") checkIds(item.eatenBy, "eatenBy");
         if (item.type === "shared") checkIds(item.splitWith, "splitWith");
+        if (item.paidById && !peopleIds.has(item.paidById)) errors.push(`${label} paidById no existe`);
         if (item.type === "single") {
           if (!peopleIds.has(item.ownerId)) errors.push(`${label} ownerId no existe`);
-          if (item.paidById && !peopleIds.has(item.paidById)) errors.push(`${label} paidById no existe`);
         }
       });
     }
@@ -514,6 +518,9 @@
     if (raw.paymentMethod !== undefined && !PAYMENT_METHODS.has(raw.paymentMethod)) errors.push("paymentMethod no es valido");
     if (raw.paidById && !peopleIds.has(raw.paidById)) errors.push("paidById no existe");
     if (raw.cardPayerId && !peopleIds.has(raw.cardPayerId)) errors.push("cardPayerId no existe");
+    if (raw.updatedAt !== undefined && (!Number.isInteger(raw.updatedAt) || raw.updatedAt < 0)) {
+      errors.push("updatedAt debe ser un entero positivo o cero");
+    }
     return errors;
   }
 
@@ -549,7 +556,8 @@
         paidMode: "none",
         paymentMethod: "",
         cardPayerId: "",
-        paidById: ""
+        paidById: "",
+        updatedAt: canonical.updatedAt
       };
     }
     const payers = Array.from(new Set(canonical.expenses.map((expense) => expense.paidBy)));
@@ -579,7 +587,8 @@
       paidMode,
       paymentMethod: paidMode === "single" || paidMode === "multiple" ? "cash" : "",
       cardPayerId: "",
-      paidById: paidMode === "single" ? payers[0] || "" : ""
+      paidById: paidMode === "single" ? payers[0] || "" : "",
+      updatedAt: canonical.updatedAt
     };
   }
 

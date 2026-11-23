@@ -29,6 +29,7 @@ function run() {
   assert.match(claramenteCss, /\.paid-summary/, "payment screen should include a styled account summary before payment choices");
   assert.match(claramenteCss, /\.payment-section-title/, "payment screen should include section titles for the decision groups");
   assert.match(claramenteJs, /Abrir cuenta guardada/, "a saved account should be recoverable from the start screen");
+  assert.match(claramenteJs, /Traer la cuenta de este celular/, "a richer account on this phone should be offered instead of overwritten");
   assert.match(claramenteJs, /recibe /, "a person who is owed money should see that they receive it");
   assert.match(claramenteJs, /ClaraStore\.saveGuided/, "the guided flow should persist only through the shared store");
   const claramenteHtml = fs.readFileSync(path.join(root, "claramente.html"), "utf8");

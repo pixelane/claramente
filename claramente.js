@@ -24,7 +24,8 @@
     paidMode: "",
     paymentMethod: "",
     cardPayerId: "",
-    paidById: ""
+    paidById: "",
+    updatedAt: 0
   };
 
   const ui = {
@@ -51,7 +52,9 @@
     get cardPayerId() { return domain.cardPayerId; },
     set cardPayerId(value) { domain.cardPayerId = value; },
     get paidById() { return domain.paidById; },
-    set paidById(value) { domain.paidById = value; }
+    set paidById(value) { domain.paidById = value; },
+    get updatedAt() { return domain.updatedAt; },
+    set updatedAt(value) { domain.updatedAt = value; }
   };
 
   const els = {
@@ -71,6 +74,7 @@
   let persistEnabled = false;
   let savedGuided = null;
   let savedCanonical = null;
+  let syncChoice = { action: "write", reason: "missing" };
 
   const iconPaths = {
     back: '<path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/>',
@@ -95,7 +99,8 @@
   function init() {
     if (window.ClaraStore) {
       savedGuided = window.ClaraStore.loadGuided(window.localStorage);
-      savedCanonical = savedGuided ? null : window.ClaraStore.loadCanonicalAsGuided(window.localStorage);
+      savedCanonical = window.ClaraStore.loadCanonicalAsGuided(window.localStorage);
+      syncChoice = window.ClaraStore.syncDecision(window.localStorage, savedGuided || { updatedAt: 0 });
     }
     window.history.replaceState({ claramenteScreen: state.screen }, "", window.location.href);
     window.addEventListener("popstate", handlePopState);
@@ -553,6 +558,7 @@
 
     if (button.dataset.go) return goTo(button.dataset.go);
     if (button.hasAttribute("data-open-saved")) return openSavedAccount();
+    if (button.hasAttribute("data-bring-canonical")) return bringCanonicalAccount();
     if (button.dataset.toast) return showToast(button.dataset.toast);
     if (button.dataset.itemMode) return chooseItemMode(button.dataset.itemMode);
     if (button.dataset.editPerson) return openPersonEdit(button.dataset.editPerson);
@@ -1072,8 +1078,15 @@
   }
 
   function savedAccountButton() {
-    if (persistEnabled || (!savedGuided && !savedCanonical)) return "";
-    return `<button class="secondary-button" type="button" data-open-saved>Abrir cuenta guardada</button>`;
+    if (persistEnabled) return "";
+    const buttons = [];
+    if (savedGuided || savedCanonical) {
+      buttons.push(`<button class="secondary-button" type="button" data-open-saved>Abrir cuenta guardada</button>`);
+    }
+    if (savedGuided && savedCanonical && syncChoice.action === "keep") {
+      buttons.push(`<button class="secondary-button" type="button" data-bring-canonical>Traer la cuenta de este celular</button>`);
+    }
+    return buttons.join("");
   }
 
   function domainSnapshot() {
@@ -1083,8 +1096,22 @@
       paidMode: domain.paidMode,
       paymentMethod: domain.paymentMethod,
       cardPayerId: domain.cardPayerId,
-      paidById: domain.paidById
+      paidById: domain.paidById,
+      updatedAt: domain.updatedAt
     };
+  }
+
+  function sameBill(left, right) {
+    if (!left || !right) return false;
+    const rest = (value) => JSON.stringify({
+      people: value.people,
+      items: value.items,
+      paidMode: value.paidMode,
+      paymentMethod: value.paymentMethod,
+      cardPayerId: value.cardPayerId,
+      paidById: value.paidById
+    });
+    return rest(left) === rest(right);
   }
 
   function applyDomain(next) {
@@ -1094,17 +1121,29 @@
     domain.paymentMethod = next.paymentMethod;
     domain.cardPayerId = next.cardPayerId;
     domain.paidById = next.paidById;
+    domain.updatedAt = Number.isInteger(next.updatedAt) ? next.updatedAt : 0;
   }
 
   function beginSession(next) {
     if (next) applyDomain(next);
     persistEnabled = true;
+    persistDomain.last = domainSnapshot();
   }
 
   function persistDomain() {
     if (!persistEnabled || !window.ClaraStore) return;
+    const snapshot = domainSnapshot();
+    if (!sameBill(persistDomain.last, snapshot)) snapshot.updatedAt = Date.now();
+    else snapshot.updatedAt = persistDomain.last ? persistDomain.last.updatedAt : snapshot.updatedAt;
+    domain.updatedAt = snapshot.updatedAt;
+    persistDomain.last = snapshot;
     try {
-      window.ClaraStore.saveGuided(window.localStorage, domainSnapshot());
+      window.ClaraStore.saveGuided(window.localStorage, snapshot);
+      const decision = window.ClaraStore.syncCanonicalFromGuided(window.localStorage, snapshot);
+      if (decision.action === "keep" && decision.reason !== "empty" && !persistDomain.told) {
+        persistDomain.told = true;
+        showToast("Deje la otra cuenta de este celular como estaba");
+      }
     } catch (error) {
       if (persistDomain.warned) return;
       persistDomain.warned = true;
@@ -1118,6 +1157,13 @@
     beginSession(next);
     goTo(domain.items.length ? "items" : "people");
     showToast("Listo, se abrio tu cuenta");
+  }
+
+  function bringCanonicalAccount() {
+    if (!savedCanonical) return;
+    beginSession(savedCanonical);
+    goTo(domain.items.length ? "items" : "people");
+    showToast("Listo, traje la cuenta de este celular");
   }
 
   function calculateContributions() {

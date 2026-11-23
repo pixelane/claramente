@@ -45,11 +45,51 @@
     return guided;
   }
 
+  function hasText(value) {
+    return typeof value === "string" && value.trim().length > 0;
+  }
+
+  function canonicalIsRich(canonical) {
+    if (!canonical || typeof canonical !== "object") return false;
+    const people = Array.isArray(canonical.people) ? canonical.people : [];
+    if (people.some((person) => person && hasText(person.reminder))) return true;
+    const tableClose = canonical.tableClose;
+    return Boolean(tableClose && typeof tableClose === "object" && !Array.isArray(tableClose) && Object.keys(tableClose).length);
+  }
+
+  function syncDecision(storage, guided) {
+    const existing = readJson(storage, CANONICAL_KEY);
+    const normalized = core.normalizeClaramenteState(guided || {});
+    if (!existing) return { action: "write", reason: "missing" };
+    if (!normalized.people.length && !normalized.items.length) return { action: "keep", reason: "empty" };
+    if (canonicalIsRich(existing)) return { action: "keep", reason: "rich" };
+    const canonicalAt = Number.isInteger(existing.updatedAt) ? existing.updatedAt : 0;
+    if (canonicalAt > normalized.updatedAt) return { action: "keep", reason: "newer" };
+    return { action: "write", reason: "guided" };
+  }
+
+  function syncCanonicalFromGuided(storage, guided) {
+    const decision = syncDecision(storage, guided);
+    if (decision.action !== "write") return decision;
+    const normalized = core.normalizeClaramenteState(guided);
+    const existing = readJson(storage, CANONICAL_KEY);
+    const projected = core.claramenteToClaraState(normalized);
+    if (existing && typeof existing === "object") {
+      if (typeof existing.groupName === "string") projected.groupName = existing.groupName;
+      if (typeof existing.currency === "string") projected.currency = existing.currency;
+    }
+    projected.updatedAt = normalized.updatedAt;
+    storage.setItem(CANONICAL_KEY, JSON.stringify(core.normalizeCanonicalState(projected)));
+    return decision;
+  }
+
   return {
     GUIDED_KEY,
     CANONICAL_KEY,
     saveGuided,
     loadGuided,
-    loadCanonicalAsGuided
+    loadCanonicalAsGuided,
+    syncDecision,
+    syncCanonicalFromGuided
   };
 });

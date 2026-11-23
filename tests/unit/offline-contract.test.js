@@ -20,7 +20,7 @@ function run() {
   const versionFiles = ["sw.js", "app.js", "index.html", "clara-sw-register.js"];
   const versions = versionFiles.map((file) => cacheVersions(file));
   versions.forEach((found, index) => {
-    assert.deepEqual(found, ["clara-cache-v39"], `${versionFiles[index]} should name only clara-cache-v39`);
+    assert.deepEqual(found, ["clara-cache-v40"], `${versionFiles[index]} should name only clara-cache-v40`);
   });
 
   for (const htmlFile of ["index.html", "claramente.html"]) {

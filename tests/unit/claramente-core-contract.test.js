@@ -121,10 +121,40 @@ function run() {
   };
   const roundingCanonical = claramenteToClaraState(rounding);
   assert.equal(roundingCanonical.expenses[0].amountCents, 100);
+  assert.deepEqual(calculateClaramenteSettlements(rounding), [
+    { from: "p_luis", to: "p_ana", amountCents: 33 },
+    { from: "p_maria", to: "p_ana", amountCents: 33 }
+  ]);
   assert.deepEqual(
     settlementSignature(calculateClaramenteSettlements(claraStateToClaramente(roundingCanonical))),
     settlementSignature(calculateSettlements(roundingCanonical).settlements)
   );
+
+  const multipleGuided = {
+    people: roundingPeople,
+    items: [
+      { id: "tacos", type: "product", name: "Tacos", amountCents: 10000, eatenBy: ["p_ana", "p_luis"], paidById: "p_ana" },
+      { id: "taxi", type: "shared", name: "Taxi", amountCents: 6000, splitWith: ["p_ana", "p_luis"], paidById: "p_luis" }
+    ],
+    paidMode: "multiple",
+    paymentMethod: "cash",
+    paidById: "",
+    updatedAt: 10
+  };
+  const normalizedMultiple = normalizeClaramenteState(multipleGuided);
+  assert.equal(normalizedMultiple.items[0].paidById, "p_ana");
+  assert.equal(normalizedMultiple.items[1].paidById, "p_luis");
+  assert.equal(normalizedMultiple.updatedAt, 10);
+  assert.deepEqual(
+    settlementSignature(calculateClaramenteSettlements(normalizeClaramenteState(normalizedMultiple))),
+    settlementSignature(calculateClaramenteSettlements(multipleGuided))
+  );
+  assert.equal(normalizeClaramenteState({
+    people: [{ id: "p_ana", name: "Ana", isGuest: false }],
+    items: [{ id: "pan", type: "product", name: "Pan", amountCents: 100, eatenBy: ["p_ana"], paidById: "missing" }],
+    updatedAt: -5
+  }).items[0].paidById, "");
+  assert.ok(validateClaramenteState({ ...multipleGuided, updatedAt: 1.5 }).some((error) => error.includes("updatedAt")));
 
   const dirty = normalizeCanonicalState({
     version: 9,
