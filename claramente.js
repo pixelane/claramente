@@ -131,9 +131,19 @@
     if (trial && window.ClaraExchange) {
       demoMode = true;
       beginSession(demoBill());
-      state.screen = "result";
-      ui.qrChunks = window.ClaraExchange.splitQr(TRIAL_CODE);
-      ui.qrIndex = 0;
+      const incoming = window.location.hash.replace(/^#/, "");
+      if (incoming.startsWith("part1:")) {
+        try {
+          await deliverMessage(await readExchange(incoming));
+        } catch (error) {
+          state.screen = "result";
+          showToast("No pude abrir esta parte");
+        }
+      } else {
+        state.screen = "result";
+        ui.qrChunks = [codeUrl(TRIAL_CODE)];
+        ui.qrIndex = 0;
+      }
     } else {
       await openIncoming();
     }
@@ -573,7 +583,7 @@
   function renderResult() {
     const result = calculateResult();
     return `
-      ${renderHeader(demoMode ? "Cuenta de prueba" : "Listo, asi queda la cuenta", demoMode ? "Este enlace ya trae la cuenta. El otro celular debe abrir el mismo enlace." : result.help)}
+      ${renderHeader(demoMode ? "Cuenta de prueba" : "Listo, asi queda la cuenta", demoMode ? "El otro celular escanea el codigo y abre esta misma cuenta." : result.help)}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
@@ -641,8 +651,7 @@
         }).join("")}
       </div>
       <div class="panel">
-        <button class="primary-button" type="button" data-share-part>${icon("send")}<span>Enviar parte por WhatsApp</span></button>
-        <button class="secondary-button" type="button" data-copy-part>${icon("copy")}<span>Copiar parte</span></button>
+        <button class="primary-button" type="button" data-share-part>${icon("send")}<span>Mostrar mi codigo</span></button>
       </div>
       ${renderQrPanel()}
     `;
@@ -652,6 +661,7 @@
     ui.guestAte = ui.guestAte.includes(itemId)
       ? ui.guestAte.filter((id) => id !== itemId)
       : ui.guestAte.concat(itemId);
+    ui.qrChunks = null;
     render();
   }
 
@@ -660,7 +670,7 @@
     if (!raw || !window.ClaraExchange) return;
     if (!raw.startsWith("list1:") && !raw.startsWith("part1:") && !raw.startsWith("qr1:")) return;
     try {
-      const message = await readExchange(decodeURIComponent(raw));
+      const message = await readExchange(raw);
       if (!message) return;
       await deliverMessage(message);
     } catch (error) {
@@ -681,33 +691,21 @@
   async function shareList() {
     const code = await prepareListCode();
     if (!code) return showToast("Primero arma la cuenta");
-    if (ui.qrChunks.length === 1) await shareOrCopy(codeUrl(code));
-    showToast(ui.qrChunks.length === 1 ? "Lista lista para compartir" : `Lista en ${ui.qrChunks.length} codigos`);
+    ui.qrChunks = [codeUrl(code)];
+    ui.qrIndex = 0;
     render();
   }
 
   async function sharePart(toWhatsApp) {
-    if (!window.ClaraExchange || !ui.guestList || !ui.guestPersonId) return;
+    if (!window.ClaraExchange || !ui.guestList || !ui.guestPersonId) return showToast("Elige quien eres");
     const code = await window.ClaraExchange.seal("part1", {
       kind: "part",
       billId: ui.guestList.billId,
       personId: ui.guestPersonId,
       ate: ui.guestAte.slice()
     });
-    const chunks = window.ClaraExchange.splitQr(code);
-    ui.qrChunks = chunks;
+    ui.qrChunks = [partUrl(code)];
     ui.qrIndex = 0;
-    if (chunks.length === 1) {
-      const url = codeUrl(code);
-      if (toWhatsApp) {
-        window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer");
-        return;
-      }
-      await shareOrCopy(url);
-      showToast("Parte lista para compartir");
-      return;
-    }
-    showToast(`Parte en ${chunks.length} codigos`);
     render();
   }
 
@@ -730,23 +728,25 @@
   }
 
   function renderQrPanel() {
-    if (!ui.qrChunks || !ui.qrChunks.length) return "";
+    if (!ui.qrChunks || !ui.qrChunks.length || !window.ClaraQr) return "";
     const current = ui.qrChunks[ui.qrIndex] || "";
-    const many = ui.qrChunks.length > 1;
+    const link = current.startsWith("http");
+    const note = !link
+      ? "Codigo para la otra pantalla"
+      : state.screen === "guest"
+        ? "Muestra este codigo al anfitrion. Al escanearlo, su cuenta se actualiza."
+        : "Un codigo. El otro celular lo escanea y abre esta cuenta en el navegador.";
     return `
       <section class="panel">
-        <p class="section-note">${many ? `Codigo ${ui.qrIndex + 1} de ${ui.qrChunks.length}. Muestralos en orden.` : "Codigo para la otra pantalla"}</p>
-        ${window.ClaraQr ? window.ClaraQr.toSvg(current) : ""}
-        <textarea readonly rows="4">${escapeHtml(current)}</textarea>
-        ${many ? `<div class="form-actions">
-          <button class="secondary-button" type="button" data-qr-prev>Anterior</button>
-          <button class="secondary-button" type="button" data-qr-next>Siguiente</button>
-        </div>` : ""}
-        <button class="secondary-button" type="button" data-qr-copy>${icon("copy")}<span>Copiar este codigo</span></button>
-        <button class="secondary-button" type="button" data-share-code>${icon("send")}<span>Compartir</span></button>
-        ${ui.qrProgress ? `<p class="section-note">Van ${ui.qrProgress.have} de ${ui.qrProgress.total}</p>` : ""}
+        <p class="section-note">${note}</p>
+        ${window.ClaraQr.toSvg(current)}
       </section>
     `;
+  }
+
+  function partUrl(code) {
+    const trial = ui.guestList && ui.guestList.billId === "mesa_prueba";
+    return `${window.location.origin}${window.location.pathname}${trial ? "?prueba=qr" : ""}#${code}`;
   }
 
   function stepQr(delta) {
@@ -887,7 +887,14 @@
   }
 
   async function readExchange(raw) {
-    const text = decodeURIComponent(String(raw || "").trim());
+    let text = String(raw || "").trim();
+    const hashAt = text.indexOf("#");
+    if (/^https?:\/\//i.test(text) && hashAt !== -1) text = text.slice(hashAt + 1);
+    try {
+      text = decodeURIComponent(text);
+    } catch (error) {
+      text = String(raw || "").trim();
+    }
     if (!text.includes("qr1:")) return window.ClaraExchange.openCode(text);
     const incoming = text.split(/\s+/).filter((line) => line.startsWith("qr1:"));
     ui.qrInbox = ui.qrInbox.concat(incoming);
@@ -972,6 +979,7 @@
     }
     if (button.dataset.guestPerson) {
       ui.guestPersonId = button.dataset.guestPerson;
+      ui.qrChunks = null;
       return render();
     }
     if (button.dataset.guestAte) return toggleGuestAte(button.dataset.guestAte);

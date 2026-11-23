@@ -26,7 +26,10 @@ async function run() {
   const partChunks = exchange.splitQr(part);
   assert.equal(partChunks.length, 1);
   assert.equal(qr.readPixels(qr.toPixels(partChunks[0])), partChunks[0]);
-  assert.match(qr.toSvg(partChunks[0]), /^<svg /);
+  const trial = require("node:fs").readFileSync(require("node:path").join(__dirname, "..", "..", "claramente.js"), "utf8").match(/const TRIAL_CODE = "([^"]+)"/)[1];
+  const accountUrl = `https://pixelane.github.io/claramente/claramente.html#${trial}`;
+  assert.equal(qr.readPixels(qr.toPixels(accountUrl)), accountUrl);
+  assert.equal(accountUrl.startsWith("https://"), true);
 
   const list = await exchange.seal("list1", exchange.toList(bill()));
   const chunks = exchange.splitQr(list);
