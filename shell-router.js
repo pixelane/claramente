@@ -21,6 +21,7 @@
     const forcedShell = params.get("shell");
 
     if (["claramente-full", "clara", "claramente"].includes(forcedShell)) return "";
+    if (params.get("prueba") === "qr") return page === "claramente.html" ? "" : "claramente.html";
     if (hash && page === "index.html") return "";
     if (page === "index.html" && width > 0 && width <= MOBILE_MAX_WIDTH) return "claramente.html";
     if (page === "claramente.html" && width > MOBILE_MAX_WIDTH) return "index.html";
@@ -35,7 +36,7 @@
       width: targetWindow.innerWidth
     });
     if (!destination) return;
-    targetWindow.location.replace(destination);
+    targetWindow.location.replace(destination + targetWindow.location.search + targetWindow.location.hash);
   }
 
   return {

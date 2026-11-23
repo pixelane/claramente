@@ -36,6 +36,20 @@ function run() {
     hash: "",
     width: 1024
   }), "");
+
+  assert.equal(getShellRedirect({
+    pathname: "/claramente.html",
+    search: "?prueba=qr",
+    hash: "",
+    width: 1280
+  }), "");
+
+  assert.equal(getShellRedirect({
+    pathname: "/index.html",
+    search: "?prueba=qr",
+    hash: "",
+    width: 1280
+  }), "claramente.html");
 }
 
 run();
