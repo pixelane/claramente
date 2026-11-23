@@ -119,3 +119,31 @@ test("conserva el mismo resultado en movil tableta y PC", async ({ page }) => {
     });
   }
 });
+
+test("abre una cuenta guardada en el flujo movil", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem("claramente.flow.v1", JSON.stringify({
+      people: [
+        { id: "p_ana", name: "Ana", isGuest: false },
+        { id: "p_luis", name: "Luis", isGuest: false },
+        { id: "p_maria", name: "Maria", isGuest: false }
+      ],
+      items: [
+        { id: "propina", type: "shared", name: "Propina", amountCents: 100, splitWith: ["p_ana", "p_luis", "p_maria"] }
+      ],
+      paidMode: "single",
+      paymentMethod: "cash",
+      cardPayerId: "",
+      paidById: "p_ana"
+    }));
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/claramente.html");
+  await page.getByRole("button", { name: "Abrir cuenta guardada" }).click();
+  await expect(page.getByRole("heading", { name: "Propina" })).toBeVisible();
+  await page.getByRole("button", { name: "Ya termine la cuenta" }).click();
+  await page.getByRole("button", { name: "Calcular cuenta" }).click();
+  await expect(page.getByText("Luis le paga $0.33 a Ana", { exact: true })).toBeVisible();
+  await expect(page.getByText("Maria le paga $0.33 a Ana", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ana recibe $0.66", { exact: true })).toBeVisible();
+});

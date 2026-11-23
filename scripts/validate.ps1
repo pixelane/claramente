@@ -84,12 +84,14 @@ try {
     "claramente.html",
     "claramente.css",
     "claramente.js",
+    "clara-store.js",
     "AGENTS.md",
     "docs/CANONICAL_MODEL.md",
     "playwright.config.js",
     "tests/fixtures/accounts.json",
     "tests/unit/core-contract.test.js",
     "tests/unit/claramente-core-contract.test.js",
+    "tests/unit/clara-store-contract.test.js",
     "tests/unit/shell-router-contract.test.js",
     "tests/unit/ux-style-contract.test.js",
     "tests/unit/claramente-ux-contract.test.js",
@@ -106,11 +108,11 @@ try {
 
   $node = Resolve-Node
   Write-Pass "Node.js: $node"
-  foreach ($script in @("shell-router.js", "clara-core.js", "app.js", "sw.js", "claramente.js", "playwright.config.js", "tests/e2e/server.js", "tests/e2e/critical-flows.spec.js", "tests/unit/core-contract.test.js", "tests/unit/claramente-core-contract.test.js", "tests/unit/shell-router-contract.test.js", "tests/unit/ux-style-contract.test.js", "tests/unit/claramente-ux-contract.test.js")) {
+  foreach ($script in @("shell-router.js", "clara-core.js", "clara-store.js", "app.js", "sw.js", "claramente.js", "playwright.config.js", "tests/e2e/server.js", "tests/e2e/critical-flows.spec.js", "tests/unit/core-contract.test.js", "tests/unit/claramente-core-contract.test.js", "tests/unit/clara-store-contract.test.js", "tests/unit/shell-router-contract.test.js", "tests/unit/ux-style-contract.test.js", "tests/unit/claramente-ux-contract.test.js")) {
     Test-JavaScriptSyntax $node $script
   }
 
-  foreach ($unitTest in @("tests\unit\core-contract.test.js", "tests\unit\claramente-core-contract.test.js", "tests\unit\shell-router-contract.test.js", "tests\unit\ux-style-contract.test.js", "tests\unit\claramente-ux-contract.test.js")) {
+  foreach ($unitTest in @("tests\unit\core-contract.test.js", "tests\unit\claramente-core-contract.test.js", "tests\unit\clara-store-contract.test.js", "tests\unit\shell-router-contract.test.js", "tests\unit\ux-style-contract.test.js", "tests\unit\claramente-ux-contract.test.js")) {
     try {
       & $node (Join-Path $repoRoot $unitTest)
       if ($LASTEXITCODE -eq 0) {

@@ -1,12 +1,14 @@
-const CACHE_NAME = "clara-cache-v37";
+const CACHE_NAME = "clara-cache-v38";
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./claramente.html",
   "./claramente.css",
+  "./claramente.js",
   "./shell-router.js",
   "./clara-core.js",
+  "./clara-store.js",
   "./app.js",
   "./manifest.json",
   "./icon-192.png",

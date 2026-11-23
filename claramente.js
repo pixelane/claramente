@@ -68,6 +68,9 @@
   };
 
   let restoringHistory = false;
+  let persistEnabled = false;
+  let savedGuided = null;
+  let savedCanonical = null;
 
   const iconPaths = {
     back: '<path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/>',
@@ -90,6 +93,10 @@
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
+    if (window.ClaraStore) {
+      savedGuided = window.ClaraStore.loadGuided(window.localStorage);
+      savedCanonical = savedGuided ? null : window.ClaraStore.loadCanonicalAsGuided(window.localStorage);
+    }
     window.history.replaceState({ claramenteScreen: state.screen }, "", window.location.href);
     window.addEventListener("popstate", handlePopState);
     els.backBtn.addEventListener("click", goBack);
@@ -115,6 +122,7 @@
     }[state.screen];
 
     els.root.innerHTML = renderer();
+    persistDomain();
   }
 
   function renderHeader(title, help = "", kicker = "claramente") {
@@ -133,6 +141,7 @@
       <div class="panel">
         <p class="panel-note">Todo queda en este celular y puedes compartir el resumen al final.</p>
         <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
+        ${savedAccountButton()}
       </div>
     `;
   }
@@ -543,6 +552,7 @@
     if (!button) return;
 
     if (button.dataset.go) return goTo(button.dataset.go);
+    if (button.hasAttribute("data-open-saved")) return openSavedAccount();
     if (button.dataset.toast) return showToast(button.dataset.toast);
     if (button.dataset.itemMode) return chooseItemMode(button.dataset.itemMode);
     if (button.dataset.editPerson) return openPersonEdit(button.dataset.editPerson);
@@ -673,6 +683,7 @@
       return;
     }
     if (state.screen === screen) return;
+    if (state.screen === "start") beginSession();
     state.screen = screen;
     pushFlowHistory(screen);
     render();
@@ -1008,7 +1019,7 @@
 
         return {
           help: `${personName(state.cardPayerId)} pondra la tarjeta. Los demas le pagan su parte.`,
-          cards: cards.length ? cards : [{ kind: "neutral", text: "No hay pagos pendientes." }]
+          cards: withReceipts(cards, settlements)
         };
       }
 
@@ -1035,8 +1046,72 @@
 
     return {
       help: "Estos son los pagos sugeridos.",
-      cards: cards.length ? cards : [{ kind: "neutral", text: "No hay pagos pendientes." }]
+      cards: withReceipts(cards, settlements)
     };
+  }
+
+  function withReceipts(cards, settlements) {
+    const receipts = receiveCards(settlements);
+    const visible = cards.concat(receipts);
+    return visible.length ? visible : [{ kind: "neutral", text: "No hay pagos pendientes." }];
+  }
+
+  function receiveCards(settlements) {
+    const totals = new Map();
+    settlements.forEach((payment) => {
+      if (!payment || payment.amountCents <= 0) return;
+      totals.set(payment.to, (totals.get(payment.to) || 0) + payment.amountCents);
+    });
+    return state.people
+      .map((person) => {
+        const amountCents = totals.get(person.id) || 0;
+        if (amountCents <= 0) return null;
+        return { kind: "receive", text: `${person.name} recibe ${formatMoney(amountCents)}` };
+      })
+      .filter(Boolean);
+  }
+
+  function savedAccountButton() {
+    if (persistEnabled || (!savedGuided && !savedCanonical)) return "";
+    return `<button class="secondary-button" type="button" data-open-saved>Abrir cuenta guardada</button>`;
+  }
+
+  function domainSnapshot() {
+    return {
+      people: domain.people,
+      items: domain.items,
+      paidMode: domain.paidMode,
+      paymentMethod: domain.paymentMethod,
+      cardPayerId: domain.cardPayerId,
+      paidById: domain.paidById
+    };
+  }
+
+  function applyDomain(next) {
+    domain.people = next.people;
+    domain.items = next.items;
+    domain.paidMode = next.paidMode;
+    domain.paymentMethod = next.paymentMethod;
+    domain.cardPayerId = next.cardPayerId;
+    domain.paidById = next.paidById;
+  }
+
+  function beginSession(next) {
+    if (next) applyDomain(next);
+    persistEnabled = true;
+  }
+
+  function persistDomain() {
+    if (!persistEnabled || !window.ClaraStore) return;
+    window.ClaraStore.saveGuided(window.localStorage, domainSnapshot());
+  }
+
+  function openSavedAccount() {
+    const next = savedGuided || savedCanonical;
+    if (!next) return;
+    beginSession(next);
+    goTo(domain.items.length ? "items" : "people");
+    showToast("Listo, se abrio tu cuenta");
   }
 
   function calculateContributions() {
