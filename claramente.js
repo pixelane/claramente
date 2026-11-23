@@ -172,6 +172,8 @@
     els.editForm.addEventListener("submit", saveEdit);
     els.root.addEventListener("click", handleRootClick);
     els.root.addEventListener("submit", handleRootSubmit);
+    els.root.addEventListener("input", clearFieldError);
+    els.root.addEventListener("focusout", validateTouchedField);
     if (els.qrPhoto) els.qrPhoto.addEventListener("change", readQrPhoto);
     if (els.closeScanBtn) els.closeScanBtn.addEventListener("click", stopScan);
     render();
@@ -223,7 +225,7 @@
         <button class="quiet-link" type="button" data-ask-code>${ui.askCode ? "Ocultar" : "Ya me pasaron un enlace"}</button>
       </div>
       ${ui.askCode ? `<form class="panel form-grid" id="codeForm">
-        <label class="field">
+        <label class="field" for="codeInput">
           <span>Pega aqui el enlace</span>
           <textarea id="codeInput" name="codeInput" rows="3" placeholder="Pega el enlace"></textarea>
         </label>
@@ -243,7 +245,7 @@
     return `
       ${renderHeader("Quienes estan en la mesa?", "Escribe un nombre y toca agregar.")}
       <form class="panel form-grid" id="personForm" novalidate>
-        <label class="field">
+        <label class="field" for="personNameInput">
           <span>Nombre</span>
           <input id="personNameInput" name="personName" type="text" autocomplete="off" placeholder="Ana">
         </label>
@@ -254,7 +256,7 @@
         ${state.people.length ? state.people.map(renderPersonCard).join("") : `<div class="empty-state">Agrega a quienes estan en la mesa.</div>`}
       </div>
       <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="items" ${canContinue ? "" : "disabled"}>${message}</button>
+        <button class="primary-button" type="button" data-go="items">${message}</button>
       </div>
     `;
   }
@@ -310,7 +312,7 @@
     const canContinue = itemsReady() && payers().length > 0;
     const finish = `
       <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="paid" ${canContinue ? "" : "disabled"}>${canContinue ? "Ya termine la cuenta" : continueMessage()}</button>
+        <button class="primary-button" type="button" data-go="paid">${canContinue ? "Ya termine la cuenta" : continueMessage()}</button>
       </div>
     `;
     if (pending) {
@@ -356,13 +358,13 @@
     if (state.itemMode === "shared") {
       return `
         <form class="panel form-grid" id="sharedForm" novalidate>
-          <label class="field">
+          <label class="field" for="sharedNameInput">
             <span>Producto o cargo</span>
             <input id="sharedNameInput" name="itemName" type="text" autocomplete="off" placeholder="Pizza">
           </label>
-          <label class="field">
+          <label class="field" for="sharedAmountInput">
             <span>Monto</span>
-            <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+            <input id="sharedAmountInput" name="itemAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="120">
           </label>
           <p class="error-text" id="itemError"></p>
           <button class="primary-button" type="submit">${icon("plus")}<span>Agregar para todos</span></button>
@@ -373,21 +375,21 @@
     if (state.itemMode === "single") {
       return `
         <form class="panel form-grid" id="singleForm" novalidate>
-          <label class="field">
+          <label class="field" for="singleNameInput">
             <span>Nombre del gasto</span>
             <input id="singleNameInput" name="itemName" type="text" autocomplete="off" placeholder="Cafe">
           </label>
-          <label class="field">
+          <label class="field" for="singleAmountInput">
             <span>Monto</span>
-            <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+            <input id="singleAmountInput" name="itemAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="120">
           </label>
-          <label class="field">
+          <label class="field" for="singleOwnerInput">
             <span>De quien es</span>
-            <select name="ownerId">${personOptions()}</select>
+            <select id="singleOwnerInput" name="ownerId">${personOptions()}</select>
           </label>
-          <label class="field">
+          <label class="field" for="singlePaidInput">
             <span>Quien lo pago</span>
-            <select name="paidById">${personOptions()}</select>
+            <select id="singlePaidInput" name="paidById">${personOptions()}</select>
           </label>
           <p class="error-text" id="itemError"></p>
           <button class="primary-button" type="submit">${icon("plus")}<span>Agregar gasto de una persona</span></button>
@@ -397,13 +399,13 @@
 
     return `
       <form class="panel form-grid" id="productForm" novalidate>
-        <label class="field">
+        <label class="field" for="productNameInput">
           <span>Producto</span>
           <input id="productNameInput" name="itemName" type="text" autocomplete="off" placeholder="Pizza">
         </label>
-        <label class="field">
+        <label class="field" for="productAmountInput">
           <span>Precio</span>
-          <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+          <input id="productAmountInput" name="itemAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="120">
         </label>
         <p class="error-text" id="itemError"></p>
         <button class="primary-button" type="submit">${icon("plus")}<span>Agregar producto</span></button>
@@ -501,7 +503,7 @@
     const canContinue = paidReady();
     const action = state.paidMode
       ? `<div class="sticky-actions">
-          <button class="primary-button" type="button" data-go="result" ${canContinue ? "" : "disabled"}>${canContinue ? "Calcular cuenta" : paidMessage()}</button>
+          <button class="primary-button" type="button" data-go="result">${canContinue ? "Calcular cuenta" : paidMessage()}</button>
         </div>`
       : "";
     if (!state.paidMode) {
@@ -627,7 +629,7 @@
           <button class="secondary-button" type="button" data-copy-summary>${icon("copy")}<span>Copiar resumen</span></button>
           <button class="secondary-button" type="button" data-share-list>${icon("send")}<span>Compartir lista</span></button>
           <form class="form-grid" id="partForm">
-            <label class="field">
+            <label class="field" for="partCode">
               <span>Si no puede escanear, pega el enlace</span>
               <textarea id="partCode" name="partCode" rows="3" placeholder="Pega el enlace"></textarea>
             </label>
@@ -1409,13 +1411,13 @@
 
   function editBody(item) {
     const base = `
-      <label class="field">
+      <label class="field" for="editItemName">
         <span>${item.type === "product" ? "Producto" : "Nombre del gasto"}</span>
-        <input name="itemName" type="text" value="${escapeAttr(item.name)}" autocomplete="off">
+        <input id="editItemName" name="itemName" type="text" value="${escapeAttr(item.name)}" autocomplete="off">
       </label>
-      <label class="field">
+      <label class="field" for="editItemAmount">
         <span>Monto</span>
-        <input name="itemAmount" type="number" min="0" step="0.01" inputmode="decimal" value="${(item.amountCents / 100).toFixed(2)}">
+        <input id="editItemAmount" name="itemAmount" type="text" inputmode="decimal" autocomplete="off" value="${(item.amountCents / 100).toFixed(2)}">
       </label>
     `;
 
@@ -1925,8 +1927,45 @@
   }
 
   function showFieldError(error, input, message) {
+    markFieldError(error, input, message, true);
+  }
+
+  function markFieldError(error, input, message, shouldFocus) {
     error.textContent = message;
-    input.focus();
+    input.setCustomValidity(message);
+    input.setAttribute("aria-invalid", "true");
+    input.setAttribute("aria-describedby", error.id);
+    if (shouldFocus) input.focus();
+    showToast(message);
+  }
+
+  function clearFieldError(event) {
+    const input = event.target;
+    if (!input || !input.name) return;
+    input.dataset.touched = "1";
+    const amountOk = input.name !== "itemAmount" || toCents(input.value) > 0;
+    const textOk = input.name === "itemAmount" || Boolean(sanitizeText(input.value, 80));
+    if (!amountOk || !textOk) return;
+    input.setCustomValidity("");
+    input.removeAttribute("aria-invalid");
+    const error = document.getElementById(input.getAttribute("aria-describedby") || "");
+    if (error) error.textContent = "";
+  }
+
+  function validateTouchedField(event) {
+    const input = event.target;
+    if (!input || input.dataset.touched !== "1") return;
+    const error = input.form && input.form.querySelector(".error-text");
+    if (!error) return;
+    if (input.name === "personName" && !sanitizeText(input.value, 40)) {
+      markFieldError(error, input, "Falta el nombre", false);
+    }
+    if (input.name === "itemName" && !sanitizeText(input.value, 60)) {
+      markFieldError(error, input, input.form.id === "productForm" ? "Falta el producto" : "Falta el nombre", false);
+    }
+    if (input.name === "itemAmount" && toCents(input.value) <= 0) {
+      markFieldError(error, input, "Ponle un precio", false);
+    }
   }
 
   function showToast(message) {

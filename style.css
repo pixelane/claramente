@@ -280,6 +280,7 @@ p {
 
 .inline-form {
   grid-template-columns: 1fr auto;
+  align-items: end;
 }
 
 .full-action {
@@ -635,7 +636,7 @@ p {
 .mode-toggle span {
   display: grid;
   place-items: center;
-  min-height: 44px;
+  min-height: 48px;
   border: 1px solid var(--line);
   border-radius: var(--control-radius);
   background: #fff;
@@ -1041,7 +1042,7 @@ p {
   border-radius: 999px;
   padding: 7px;
   width: fit-content;
-  margin: 0 auto 24px;
+  margin: 0 auto max(24px, env(safe-area-inset-bottom));
   box-shadow: var(--shadow);
   backdrop-filter: blur(14px) saturate(140%);
 }
@@ -1507,15 +1508,15 @@ body.force-mobile .diagnostic-actions {
 
   .ticket-consumer-cell .item-bubble {
     width: 100%;
-    min-height: 44px;
+    min-height: 48px;
     padding: 6px 8px;
     font-size: 0.78rem;
     overflow-wrap: anywhere;
   }
 
   .delete-ticket-item-btn {
-    width: 36px;
-    min-height: 36px;
+    width: 48px;
+    min-height: 48px;
   }
 }
 
@@ -1666,7 +1667,7 @@ details[open] .group-summary-header::after {
   background: var(--primary);
   color: #271706;
   border: 1px solid var(--primary);
-  min-height: 42px;
+  min-height: 48px;
   transition: background 150ms ease;
 }
 

@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v53";
+  const CACHE_NAME = "clara-cache-v54";
   const MAX_HASH_LENGTH = 180000;
   const MAX_BACKUP_BYTES = 350000;
   const MAX_PEOPLE = 80;
@@ -649,7 +649,6 @@
       ? state.people.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join("")
       : `<option value="">Agrega participantes</option>`;
     els.expensePaidByInput.disabled = !state.people.length;
-    els.expenseForm.querySelector("button[type='submit']").disabled = !state.people.length;
     els.splitWithList.innerHTML = state.people.length
       ? state.people
           .map(
@@ -757,7 +756,7 @@
               <input type="text" class="ticket-item-name" value="${escapeHtml(item.name)}" placeholder="Producto ${index + 1}">
             </td>
             <td class="ticket-price-cell">
-              <input type="number" min="0" step="0.01" class="ticket-item-price" value="${itemPrice}" placeholder="0.00">
+              <input type="text" inputmode="decimal" autocomplete="off" class="ticket-item-price" value="${itemPrice}" placeholder="120" aria-label="Precio del producto ${index + 1}">
             </td>
             <td class="ticket-consumer-cell">
               <div class="item-bubbles">
@@ -1058,7 +1057,7 @@
           <li class="list-item">
             <div class="expense-edit-row">
               <input class="inline-expense-description" type="text" value="${escapeHtml(expense.description)}" data-expense-description="${expense.id}" aria-label="Editar descripcion">
-              <input class="inline-expense-amount" type="number" min="0" step="0.01" inputmode="decimal" value="${(expense.amountCents / 100).toFixed(2)}" data-expense-amount="${expense.id}" aria-label="Editar monto">
+              <input class="inline-expense-amount" type="text" inputmode="decimal" autocomplete="off" value="${(expense.amountCents / 100).toFixed(2)}" data-expense-amount="${expense.id}" aria-label="Editar monto">
               <p class="item-meta">${escapeHtml(meta)}</p>
             </div>
             <button class="danger-button" type="button" data-remove-expense="${expense.id}">Quitar</button>
@@ -1447,7 +1446,7 @@
           ${absorbed}
           <label>
             Entrego
-            <input type="number" min="0" step="0.01" inputmode="decimal" data-close-delivered="${row.key}" value="${row.paidCents ? (row.paidCents / 100).toFixed(2) : ""}" placeholder="0.00" ${row.isGuest ? "disabled" : ""}>
+            <input type="text" inputmode="decimal" autocomplete="off" data-close-delivered="${row.key}" value="${row.paidCents ? (row.paidCents / 100).toFixed(2) : ""}" placeholder="120" ${row.isGuest ? "disabled" : ""}>
           </label>
           <strong class="${isPaid || row.isGuest ? "positive" : "negative"}">${status}</strong>
           ${change}

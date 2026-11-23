@@ -46,7 +46,7 @@ body {
     linear-gradient(180deg, oklch(98.5% 0.022 78) 0%, var(--bg) 32rem);
   color: var(--ink);
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.45;
 }
 
@@ -100,6 +100,12 @@ select {
 
 h1,
 h2,
+h3 {
+  text-wrap: balance;
+}
+
+h1,
+h2,
 h3,
 p {
   margin-top: 0;
@@ -107,13 +113,18 @@ p {
 
 p {
   color: var(--muted);
+  text-wrap: pretty;
 }
 
 .claramente-shell {
   width: min(520px, 100%);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 16px 14px 24px;
+  padding:
+    max(16px, env(safe-area-inset-top))
+    max(14px, env(safe-area-inset-right))
+    24px
+    max(14px, env(safe-area-inset-left));
 }
 
 .flow-topbar {
@@ -127,7 +138,7 @@ p {
 .back-button {
   border: 0;
   background: transparent;
-  min-height: 46px;
+  min-height: 48px;
   padding: 6px 0;
   color: var(--action);
   font-weight: 900;
@@ -245,7 +256,7 @@ p {
 
 .quiet-link {
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   border: 0;
   background: transparent;
   color: var(--action);
@@ -359,7 +370,7 @@ p {
 }
 
 .mini-button {
-  min-height: 42px;
+  min-height: 48px;
   border-radius: 999px;
   padding: 8px 12px;
   color: var(--action);
@@ -489,7 +500,7 @@ p {
 }
 
 .pick-button {
-  min-height: 46px;
+  min-height: 48px;
   border-radius: 999px;
   padding: 8px 14px;
   background: var(--surface-soft);
@@ -558,7 +569,7 @@ p {
 .sticky-actions {
   position: fixed;
   right: max(14px, calc((100vw - 520px) / 2 + 14px));
-  bottom: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
   left: max(14px, calc((100vw - 520px) / 2 + 14px));
   display: grid;
   gap: 8px;
@@ -568,6 +579,12 @@ p {
   box-shadow: 0 8px 14px rgba(54, 43, 30, 0.14);
   padding: 10px;
   backdrop-filter: blur(14px);
+}
+
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: var(--danger);
 }
 
 .error-text {
@@ -670,8 +687,8 @@ p {
 }
 
 .icon-button {
-  width: 44px;
-  min-height: 44px;
+  width: 48px;
+  min-height: 48px;
   border-radius: 999px;
   padding: 0;
   color: var(--muted);

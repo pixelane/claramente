@@ -41,7 +41,7 @@
       }
     }
     const size = count + 8;
-    return `<svg class="qr-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="Codigo QR"><rect x="-4" y="-4" width="${size}" height="${size}" fill="#ffffff"/><path fill="#14120b" d="${path}"/></svg>`;
+    return `<svg class="qr-svg" xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 ${size} ${size}" shape-rendering="crispEdges" role="img" aria-label="Dibujo para escanear"><rect x="-4" y="-4" width="${size}" height="${size}" fill="#ffffff"/><path fill="#14120b" d="${path}"/></svg>`;
   }
 
   function toPixels(text, scale) {

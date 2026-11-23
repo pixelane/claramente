@@ -17,13 +17,13 @@
         <span class="progress-label" id="progressLabel">Inicio</span>
       </header>
 
-      <section class="flow-card" id="screenRoot" aria-live="polite">
+      <section class="flow-card" id="screenRoot">
         <h1 class="screen-title">Vamos a dividir la cuenta</h1>
         <p class="screen-help">Si el boton no aparece, cierra esta pestaña y vuelve a abrir el enlace en Chrome o Safari.</p>
       </section>
     </main>
 
-    <dialog class="sheet" id="editSheet">
+    <dialog class="sheet" id="editSheet" closedby="any">
       <form method="dialog" class="sheet-panel" id="editForm">
         <div class="sheet-handle" aria-hidden="true"></div>
         <div class="sheet-header">
@@ -40,14 +40,14 @@
       </form>
     </dialog>
 
-    <dialog class="sheet" id="scanDialog">
+    <dialog class="sheet" id="scanDialog" closedby="any">
       <div class="sheet-panel">
         <div class="sheet-header">
-          <h2>Escanear codigo</h2>
-          <button class="icon-button" id="closeScanBtn" type="button" aria-label="Cerrar escanner">&times;</button>
+          <h2>Escanear el dibujo</h2>
+          <button class="icon-button" id="closeScanBtn" type="button" aria-label="Cerrar escaner">&times;</button>
         </div>
         <video id="scanVideo" playsinline autoplay muted></video>
-        <p class="panel-note">Apunta al codigo de la otra pantalla.</p>
+        <p class="panel-note">Apunta al dibujo de la otra pantalla.</p>
       </div>
     </dialog>
     <input id="qrPhoto" type="file" accept="image/*" capture="environment" hidden>
