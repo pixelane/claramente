@@ -33,7 +33,8 @@ function run() {
   assert.match(claramenteJs, /recibe /, "a person who is owed money should see that they receive it");
   assert.match(claramenteJs, /¿\$\{item\.name\} es tuyo\?/, "the guest should answer one product at a time");
   assert.match(claramenteJs, /data-guest-answer="0"/, "each product should have an explicit no");
-  assert.match(claramenteJs, /showGuestCode\(\)/, "the last answer should open the code without another hunt");
+  assert.match(claramenteJs, /data-guest-fix=/, "each answer can be changed on its own");
+  assert.match(claramenteJs, /ensureShareCode\(/, "the drawing should appear without opening extra options");
   assert.match(claramenteJs, /if \(demoMode \|\| state\.screen === "guest"/, "the trial account must not replace the saved account");
   const claramenteHtml = fs.readFileSync(path.join(root, "claramente.html"), "utf8");
   assert.match(claramenteHtml, /clara-store\.js/, "the guided flow should load the shared store");

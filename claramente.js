@@ -9,11 +9,11 @@
   const screens = ["start", "people", "type", "items", "paid", "result"];
   const progress = {
     start: "Inicio",
-    people: "1 de 5",
-    type: "2 de 5",
-    items: "3 de 5",
-    paid: "4 de 5",
-    result: "5 de 5",
+    people: "1 de 4",
+    type: "2 de 4",
+    items: "2 de 4",
+    paid: "3 de 4",
+    result: "4 de 4",
     guest: "Tu parte"
   };
 
@@ -40,6 +40,7 @@
     guestAte: [],
     guestChoice: {},
     guestIndex: 0,
+    guestFixId: "",
     qrChunks: null,
     qrIndex: 0,
     qrInbox: [],
@@ -150,6 +151,7 @@
       }
     } else {
       await openIncoming();
+      restoreResult();
     }
     const nextUrl = demoMode
       ? `${window.location.pathname}${window.location.search}#${TRIAL_CODE}`
@@ -158,6 +160,9 @@
         : window.location.pathname + window.location.search;
     window.history.replaceState({ claramenteScreen: state.screen }, "", nextUrl);
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("hashchange", () => { openIncoming(); });
+    window.addEventListener("storage", refreshFromOtherScreen);
+    if (state.screen === "result" && !demoMode) ensureShareCode();
     els.backBtn.addEventListener("click", goBack);
     els.closeSheetBtn.addEventListener("click", closeSheet);
     els.editForm.addEventListener("submit", saveEdit);
@@ -185,6 +190,12 @@
 
     els.root.innerHTML = renderer();
     persistDomain();
+    try {
+      if (state.screen !== "guest") sessionStorage.setItem("clara.screen", state.screen);
+    } catch (error) {
+      /* seguir aunque el celular no guarde la pantalla */
+    }
+    if (state.screen === "guest") window.scrollTo(0, 0);
   }
 
   function renderHeader(title, help = "", kicker = "claramente") {
@@ -289,10 +300,24 @@
   }
 
   function renderItems() {
+    const pending = state.itemMode === "product"
+      ? state.items.find((item) => item.type === "product" && (!item.eatenBy || item.eatenBy.length === 0))
+      : null;
     const canContinue = itemsReady() && payers().length > 0;
+    const finish = `
+      <div class="sticky-actions">
+        <button class="primary-button" type="button" data-go="paid" ${canContinue ? "" : "disabled"}>${canContinue ? "Ya termine la cuenta" : continueMessage()}</button>
+      </div>
+    `;
+    if (pending) {
+      return `
+        ${renderHeader(`¿Quien comio ${pending.name}?`, "Toca los nombres. Si fueron todos, usa el boton de abajo.")}
+        ${renderProductCard(pending)}
+        ${finish}
+      `;
+    }
     return `
       ${renderHeader(itemQuestion(), itemHelp())}
-      <p class="section-note item-decision-note">¿Quien lo consumio?</p>
       <div class="quick-row" aria-label="Tipo de cargo">
         <button class="quick-button ${state.itemMode === "shared" ? "active" : ""}" type="button" data-item-mode="shared">
           <strong>Lo comieron todos</strong>
@@ -307,9 +332,7 @@
       <section class="list" aria-label="Cuenta agregada">
         ${state.items.length ? displayItems().map(renderItemCard).join("") : `<div class="empty-state">Agrega lo primero de la cuenta.</div>`}
       </section>
-      <div class="sticky-actions">
-        <button class="primary-button" type="button" data-go="paid" ${canContinue ? "" : "disabled"}>${canContinue ? "Ya termine la cuenta" : continueMessage()}</button>
-      </div>
+      ${finish}
     `;
   }
 
@@ -477,29 +500,26 @@
           <button class="primary-button" type="button" data-go="result" ${canContinue ? "" : "disabled"}>${canContinue ? "Calcular cuenta" : paidMessage()}</button>
         </div>`
       : "";
-    return `
-      ${renderHeader("¿La cuenta ya se pago?", "Elige la situacion de la mesa. Despues te pedimos solo lo necesario.")}
-      <div class="panel paid-summary">
-        <p class="panel-note">${state.items.length} ${state.items.length === 1 ? "cargo agregado" : "cargos agregados"}.</p>
-        <button class="secondary-button" type="button" data-go="items">Editar cuenta antes de calcular</button>
-      </div>
-      <section class="payment-section" aria-labelledby="paymentSituationTitle">
-        <h2 class="payment-section-title" id="paymentSituationTitle">Situacion de pago</h2>
+    if (!state.paidMode) {
+      return `
+        ${renderHeader("¿La cuenta ya se pago?", "Elige una. Despues solo te pedimos lo que falta.")}
         <div class="list paid-mode-list" aria-label="Situacion de pago">
-          ${renderPaidMode("none", "Todavia no se ha pagado", "Van a juntar el dinero antes de pagar.", "coin")}
           ${renderPaidMode("single", "Alguien ya pago", "Calculamos cuanto deben devolverle.", "user")}
-        </div>
-      </section>
-      ${state.paidMode === "none" ? renderUnpaidMethod() : ""}
-      ${state.paidMode === "single" ? renderPaidPeople() + renderPaidMethod("¿Como pago?", "Esto solo ayuda a entender el caso; el calculo depende de quien pago.") : ""}
-      <section class="payment-section special-payment-section" aria-labelledby="specialPaymentTitle">
-        <h2 class="payment-section-title" id="specialPaymentTitle">Caso especial</h2>
-        <div class="list paid-mode-list" aria-label="Caso especial de pago">
+          ${renderPaidMode("none", "Todavia no se ha pagado", "Van a juntar el dinero antes de pagar.", "coin")}
           ${renderPaidMode("multiple", "Cada producto lo pago alguien distinto", "Usalo solo si varias personas ya pagaron productos separados.", "users")}
         </div>
-      </section>
+      `;
+    }
+    const title = state.paidMode === "none" ? "¿Como van a pagar?" : state.paidMode === "multiple" ? "¿Quien pago cada cosa?" : "¿Quien pago?";
+    return `
+      ${renderHeader(title, "Una sola respuesta. Luego calculamos.")}
+      ${state.paidMode === "none" ? renderUnpaidMethod() : ""}
+      ${state.paidMode === "single" ? renderPaidPeople() + renderPaidMethod("¿Con que pago?", "Toca efectivo o tarjeta.") : ""}
       ${state.paidMode === "multiple" ? renderMultiplePaid() : ""}
-      <p class="error-text" id="paidError"></p>
+      <div class="panel">
+        <button class="secondary-button" type="button" data-go="items">Editar cuenta antes de calcular</button>
+        <button class="secondary-button" type="button" data-clear-paid>Elegir otra situacion</button>
+      </div>
       ${action}
     `;
   }
@@ -585,12 +605,13 @@
   function renderResult() {
     const result = calculateResult();
     return `
-      ${renderHeader("Muestra este codigo", "La otra persona lo escanea con la camara del celular.")}
-      ${renderQrPanel()}
+      ${renderHeader("Muestra este dibujo", "Pide que lo escaneen con la camara del celular.")}
+      ${ui.qrChunks && ui.qrChunks.length ? renderQrPanel() : `<p class="section-note">Preparando el dibujo...</p>`}
       <div class="panel">
-        <button class="primary-button" type="button" data-scan-live>Leer el codigo de alguien</button>
+        <button class="primary-button" type="button" data-scan-live>Leer el dibujo de alguien</button>
       </div>
       ${renderRectification()}
+      ${renderWhoAte()}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
@@ -615,6 +636,16 @@
     `;
   }
 
+  function renderWhoAte() {
+    const lines = state.items.filter((item) => item.type === "product").map((item) => {
+      const names = (item.eatenBy || []).map(personName).filter(Boolean);
+      const text = names.length ? `${item.name}: ${names.join(", ")}` : `${item.name}: todavia entre todos`;
+      return `<article class="result-card neutral"><strong>${escapeHtml(text)}</strong></article>`;
+    });
+    if (!lines.length) return "";
+    return `<section class="list">${lines.join("")}</section>`;
+  }
+
   function renderResultCard(card) {
     return `
       <article class="result-card ${card.kind}">
@@ -627,7 +658,7 @@
   function renderRectification() {
     if (!window.ClaraExchange || !state.billId) return "";
     const lines = window.ClaraExchange.rectify(domainSnapshot()).map((issue) => {
-      if (issue.type === "missing") return `Falta el codigo de ${personName(issue.personId)}`;
+      if (issue.type === "missing") return `Falta que ${personName(issue.personId)} marque lo suyo`;
       if (issue.type === "two-owners") return `Dos personas marcaron ${itemName(issue.itemId)}. Preguntales.`;
       return "";
     }).filter(Boolean);
@@ -665,7 +696,7 @@
       ${renderHeader("Ensenale esto a quien pago", person ? `Listo, ${person.name}. No cierres esta pantalla.` : "No cierres esta pantalla.")}
       ${renderQrPanel()}
       <div class="panel">
-        <button class="secondary-button" type="button" data-guest-fix>Cambiar una respuesta</button>
+        ${guestProducts().map((item) => `<button class="secondary-button" type="button" data-guest-fix="${escapeAttr(item.id)}"><span>Cambiar ${escapeHtml(item.name)}</span></button>`).join("")}
       </div>
     `;
   }
@@ -686,6 +717,11 @@
     if (!item) return showGuestCode();
     ui.guestChoice[item.id] = mine;
     ui.guestAte = products.filter((product) => ui.guestChoice[product.id] === true).map((product) => product.id);
+    saveGuestSession();
+    if (ui.guestFixId) {
+      ui.guestFixId = "";
+      return showGuestCode();
+    }
     let next = -1;
     for (let index = ui.guestIndex + 1; index < products.length; index += 1) {
       if (ui.guestChoice[products[index].id] !== true && ui.guestChoice[products[index].id] !== false) {
@@ -724,6 +760,54 @@
     });
   }
 
+  function saveGuestSession() {
+    if (!ui.guestList) return;
+    try {
+      sessionStorage.setItem("clara.guest", JSON.stringify({
+        billId: ui.guestList.billId,
+        personId: ui.guestPersonId,
+        choice: ui.guestChoice,
+        index: ui.guestIndex
+      }));
+    } catch (error) {
+      /* la pregunta se puede repetir si el celular no guarda */
+    }
+  }
+
+  function savedGuest(billId) {
+    try {
+      const raw = JSON.parse(sessionStorage.getItem("clara.guest") || "null");
+      if (!raw || raw.billId !== billId) return null;
+      return raw;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function restoreResult() {
+    if (state.screen !== "start" || demoMode || !savedGuided || !savedGuided.items || !savedGuided.items.length) return;
+    let remembered = "";
+    try { remembered = sessionStorage.getItem("clara.screen") || ""; } catch (error) { remembered = ""; }
+    if (remembered !== "result") return;
+    beginSession(savedGuided);
+    state.screen = "result";
+  }
+
+  function refreshFromOtherScreen(event) {
+    if (!event || event.key !== "claramente.flow.v1" || !event.newValue || state.screen === "guest" || demoMode) return;
+    try {
+      const saved = JSON.parse(event.newValue);
+      if (!saved || !saved.billId || saved.billId !== state.billId) return;
+      applyDomain(saved);
+      state.screen = "result";
+      ui.qrChunks = null;
+      render();
+      ensureShareCode();
+    } catch (error) {
+      /* la otra pantalla traia datos incompletos */
+    }
+  }
+
   async function openIncoming() {
     const raw = window.location.hash.replace(/^#/, "");
     if (!raw || !window.ClaraExchange) return;
@@ -747,6 +831,15 @@
     return code;
   }
 
+  async function ensureShareCode() {
+    if (ui.qrChunks && ui.qrChunks.length && String(ui.qrChunks[0]).startsWith("http")) return;
+    const code = await prepareListCode();
+    if (!code || state.screen !== "result") return;
+    ui.qrChunks = [codeUrl(code)];
+    ui.qrIndex = 0;
+    render();
+  }
+
   async function shareList() {
     const code = await prepareListCode();
     if (!code) return showToast("Primero arma la cuenta");
@@ -766,7 +859,6 @@
     ui.qrChunks = [partUrl(code)];
     ui.qrIndex = 0;
     render();
-    scrollToNode("guestQr");
   }
 
   async function readPastedCode(form) {
@@ -795,7 +887,7 @@
       ? "Codigo para la otra pantalla"
       : state.screen === "guest"
         ? "Ensenale esta pantalla a quien pago."
-        : "Un codigo. El otro celular lo escanea y abre esta cuenta en el navegador.";
+        : "Un dibujo. La otra persona lo escanea y abre la cuenta.";
     return `
       <section class="panel" id="guestQr">
         <p class="section-note">${note}</p>
@@ -844,8 +936,17 @@
       ui.guestAte = [];
       ui.guestChoice = {};
       ui.guestIndex = 0;
+      ui.guestFixId = "";
       ui.qrChunks = null;
+      const saved = savedGuest(message.billId);
+      if (saved && message.people.some((person) => person.id === saved.personId)) {
+        ui.guestPersonId = saved.personId;
+        ui.guestChoice = saved.choice && typeof saved.choice === "object" ? saved.choice : {};
+        ui.guestIndex = Number.isInteger(saved.index) ? saved.index : 0;
+        ui.guestAte = guestProducts().filter((item) => ui.guestChoice[item.id] === true).map((item) => item.id);
+      }
       render();
+      if (ui.guestPersonId && !pendingGuestItem()) return showGuestCode();
       return;
     }
     const base = persistEnabled ? domainSnapshot() : savedGuided;
@@ -881,12 +982,14 @@
 
   async function startScan() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !els.scanDialog || !els.scanVideo) {
+      showToast("Elige la foto del dibujo.");
       if (els.qrPhoto) els.qrPhoto.click();
       return;
     }
     try {
       scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
     } catch (error) {
+      showToast("No pude abrir la camara. Elige la foto del dibujo.");
       if (els.qrPhoto) els.qrPhoto.click();
       return;
     }
@@ -1048,18 +1151,26 @@
       ui.showMore = !ui.showMore;
       return render();
     }
+    if (button.hasAttribute("data-clear-paid")) {
+      state.paidMode = "";
+      return render();
+    }
     if (button.dataset.guestPerson) {
       ui.guestPersonId = button.dataset.guestPerson;
       ui.guestIndex = 0;
       ui.qrChunks = null;
+      saveGuestSession();
       if (!guestProducts().length) return showGuestCode();
       return render();
     }
     if (button.dataset.guestAnswer) return answerGuest(button.dataset.guestAnswer === "1");
     if (button.hasAttribute("data-guest-back")) return guestBack();
-    if (button.hasAttribute("data-guest-fix")) {
+    if (button.dataset.guestFix) {
+      const index = guestProducts().findIndex((item) => item.id === button.dataset.guestFix);
+      if (index < 0) return;
+      ui.guestFixId = button.dataset.guestFix;
+      ui.guestIndex = index;
       ui.qrChunks = null;
-      ui.guestIndex = 0;
       return render();
     }
     if (button.hasAttribute("data-copy-part") || button.hasAttribute("data-share-part")) return showGuestCode();
@@ -1183,6 +1294,7 @@
     state.screen = screen;
     pushFlowHistory(screen);
     render();
+    if (screen === "result") ensureShareCode();
   }
 
   function goBack() {
