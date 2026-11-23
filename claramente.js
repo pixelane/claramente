@@ -179,6 +179,7 @@
     render();
   }
 
+  let lastRenderedScreen = "";
   function render() {
     els.progressLabel.textContent = progress[state.screen];
     els.backBtn.hidden = state.screen === "start" || state.screen === "guest";
@@ -201,7 +202,10 @@
     } catch (error) {
       /* seguir aunque el celular no guarde la pantalla */
     }
-    if (state.screen === "guest") window.scrollTo(0, 0);
+    if (state.screen !== lastRenderedScreen) {
+      lastRenderedScreen = state.screen;
+      window.scrollTo(0, 0);
+    }
   }
 
   function renderHeader(title, help = "", kicker = "claramente") {
@@ -215,23 +219,29 @@
   }
 
   function renderStart() {
+    const savedBtn = savedAccountButton();
     return `
       ${renderHeader("Vamos a dividir la cuenta", "Empieza agregando personas. Despues pones productos, quien comio y quien pago.")}
       <div class="panel">
         <p class="panel-note">Todo queda en este celular y puedes compartir el resumen al final.</p>
         <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
-        ${savedAccountButton()}
-        <button class="quiet-link" type="button" data-prueba>Probar con una cuenta lista</button>
-        <button class="quiet-link" type="button" data-presentacion>Ver como se usa</button>
-        <button class="quiet-link" type="button" data-ask-code>${ui.askCode ? "Ocultar" : "Ya me pasaron un enlace"}</button>
+        ${savedBtn}
       </div>
-      ${ui.askCode ? `<form class="panel form-grid" id="codeForm">
-        <label class="field" for="codeInput">
-          <span>Pega aqui el enlace</span>
-          <textarea id="codeInput" name="codeInput" rows="3" placeholder="Pega el enlace"></textarea>
-        </label>
-        <button class="primary-button" type="submit">Abrir</button>
-      </form>` : ""}
+      <details class="panel more-start-options"${ui.askCode ? " open" : ""}>
+        <summary>Otras opciones</summary>
+        <div class="more-start-body">
+          <button class="secondary-button" type="button" data-prueba>Probar con una cuenta lista</button>
+          <button class="secondary-button" type="button" data-presentacion>Ver como se usa</button>
+          <button class="secondary-button" type="button" data-ask-code>${ui.askCode ? "Ocultar enlace" : "Ya me pasaron un enlace"}</button>
+          ${ui.askCode ? `<form class="form-grid" id="codeForm">
+            <label class="field" for="codeInput">
+              <span>Pega aqui el enlace</span>
+              <textarea id="codeInput" name="codeInput" rows="3" placeholder="Pega el enlace"></textarea>
+            </label>
+            <button class="primary-button" type="submit">Abrir</button>
+          </form>` : ""}
+        </div>
+      </details>
     `;
   }
 
@@ -612,14 +622,17 @@
   function renderResult() {
     const result = calculateResult();
     return `
-      ${renderHeader("Muestra este dibujo", "Pide que lo escaneen con la camara del celular.")}
-      ${ui.qrChunks && ui.qrChunks.length ? renderQrPanel() : `<p class="section-note">Preparando el dibujo...</p>`}
-      ${renderRectification()}
-      ${renderWhoAte()}
-      ${renderSplitNote()}
+      ${renderHeader("Asi queda la cuenta", "Quien paga, quien recibe y opciones para compartir.")}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
+      ${renderRectification()}
+      ${renderWhoAte()}
+      ${renderSplitNote()}
+      <div class="panel">
+        <p class="panel-note">Comparte el codigo QR con la mesa</p>
+        ${ui.qrChunks && ui.qrChunks.length ? renderQrPanel() : `<p class="section-note">Preparando el codigo QR...</p>`}
+      </div>
       <div class="panel">
         <button class="primary-button" type="button" data-scan-live>Leer el dibujo de alguien</button>
       </div>
@@ -707,8 +720,12 @@
     }
     const person = list.people.find((entry) => entry.id === ui.guestPersonId);
     return `
-      ${renderHeader("Ensenale esto a quien pago", person ? `Listo, ${person.name}. No cierres esta pantalla.` : "No cierres esta pantalla.")}
+      ${renderHeader("Listo, ya marcaste lo tuyo", person ? `${person.name}, ensena este QR o manda tu enlace a quien pago para actualizar la cuenta.` : "Ensena este QR o manda tu enlace a quien pago.")}
       ${renderQrPanel()}
+      <div class="panel">
+        <button class="primary-button" type="button" data-copy-guest-link>${icon("copy")}<span>Copiar enlace para quien pago</span></button>
+        <button class="secondary-button" type="button" data-whatsapp-guest-link>${icon("send")}<span>Enviar respuesta por WhatsApp</span></button>
+      </div>
       <div class="panel">
         ${guestProducts().map((item) => `<button class="secondary-button" type="button" data-guest-fix="${escapeAttr(item.id)}"><span>Cambiar ${escapeHtml(item.name)}</span></button>`).join("")}
       </div>
@@ -939,6 +956,22 @@
     const chunk = ui.qrChunks && ui.qrChunks[ui.qrIndex];
     if (!chunk) return;
     await shareOrCopy(ui.qrChunks.length === 1 && !chunk.startsWith("qr1:") ? codeUrl(chunk) : chunk);
+  }
+
+  async function copyGuestLink() {
+    const url = ui.qrChunks && ui.qrChunks[0];
+    if (!url) return showToast("Todavia no esta listo el enlace");
+    await copyText(url);
+    showToast("Enlace copiado para quien pago");
+  }
+
+  function whatsappGuestLink() {
+    const url = ui.qrChunks && ui.qrChunks[0];
+    if (!url) return showToast("Todavia no esta listo el enlace");
+    const list = ui.guestList;
+    const person = list && list.people ? list.people.find((entry) => entry.id === ui.guestPersonId) : null;
+    const label = person ? `Ya marque lo mio (${person.name}): ${url}` : `Ya marque lo mio: ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(label)}`, "_blank", "noopener,noreferrer");
   }
 
   async function deliverMessage(message) {
@@ -1192,6 +1225,8 @@
     if (button.hasAttribute("data-qr-next")) return stepQr(1);
     if (button.hasAttribute("data-qr-copy")) return copyQrChunk();
     if (button.hasAttribute("data-share-code")) return shareQrChunk();
+    if (button.hasAttribute("data-copy-guest-link")) return copyGuestLink();
+    if (button.hasAttribute("data-whatsapp-guest-link")) return whatsappGuestLink();
     if (button.hasAttribute("data-scan-photo")) {
       if (els.qrPhoto) els.qrPhoto.click();
       return;

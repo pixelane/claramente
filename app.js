@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v57";
+  const CACHE_NAME = "clara-cache-v58";
   const MAX_HASH_LENGTH = 180000;
   const MAX_BACKUP_BYTES = 350000;
   const MAX_PEOPLE = 80;
@@ -87,6 +87,8 @@
     tableClosePanel: document.getElementById("tableClosePanel"),
     copyLinkBtn: document.getElementById("copyLinkBtn"),
     copyMessageBtn: document.getElementById("copyMessageBtn"),
+    openWhatsappBtn: document.getElementById("openWhatsappBtn"),
+    whatsappPreviewBox: document.getElementById("whatsappPreviewBox"),
     shareLinkOutput: document.getElementById("shareLinkOutput"),
     privateKeyField: document.getElementById("privateKeyField"),
     privateKeyOutput: document.getElementById("privateKeyOutput"),
@@ -232,6 +234,21 @@
     els.copyMessageBtn.addEventListener("click", async () => {
       await generateAndCopyShare(true);
     });
+    if (els.openWhatsappBtn) {
+      els.openWhatsappBtn.addEventListener("click", async () => {
+        try {
+          const { url, key } = await createShareUrl("easy");
+          els.shareLinkOutput.value = url;
+          els.privateKeyOutput.value = key || "";
+          renderShareMode();
+          const content = createWhatsAppMessage(url, Boolean(key));
+          window.open(`https://wa.me/?text=${encodeURIComponent(content)}`, "_blank", "noopener,noreferrer");
+          setStatus("Abriendo WhatsApp con el resumen.");
+        } catch (error) {
+          setStatus(error.message || "No pude abrir WhatsApp.");
+        }
+      });
+    }
 
     els.copyPrivateKeyBtn.addEventListener("click", async () => {
       if (!els.privateKeyOutput.value) return setStatus("Genera un link privado primero.");
@@ -1463,6 +1480,13 @@
     els.privateKeyField.classList.add("hidden");
     els.copyPrivateKeyBtn.classList.add("hidden");
     els.privacyNote.textContent = "El link incluye los datos para abrir el grupo. Compartelo solo con quienes participan en la cuenta.";
+    if (els.whatsappPreviewBox) {
+      if (!state.people.length || !state.expenses.length) {
+        els.whatsappPreviewBox.textContent = "Agrega participantes y al menos un gasto para ver el mensaje listo.";
+      } else {
+        els.whatsappPreviewBox.textContent = createWhatsAppMessage(els.shareLinkOutput.value || "", false);
+      }
+    }
   }
 
   function addExpense() {

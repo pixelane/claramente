@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Open Sans";
+  src: url("fonts/OpenSans-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
   --bg: oklch(96.5% 0.018 78);
@@ -7,7 +15,7 @@
   --muted: oklch(43.5% 0.032 68);
   --line: oklch(88.5% 0.028 74);
   --primary: oklch(78% 0.145 73);
-  --primary-dark: oklch(58% 0.15 57);
+  --primary-dark: #9a4e00;
   --accent: oklch(56% 0.15 252);
   --danger: oklch(48% 0.13 38);
   --success: oklch(50% 0.12 151);
@@ -38,13 +46,17 @@
 body {
   margin: 0;
   min-width: 320px;
-  background:
-    radial-gradient(circle at 18% -10%, rgba(242, 169, 59, 0.18), transparent 28rem),
-    radial-gradient(circle at 92% 8%, rgba(47, 127, 211, 0.08), transparent 22rem),
-    linear-gradient(180deg, oklch(98.5% 0.022 78) 0%, var(--bg) 34rem);
+  background: var(--bg);
   color: var(--ink);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Open Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.5;
+}
+
+html:has(dialog[open]),
+body:has(dialog[open]) {
+  overflow: hidden;
+  overscroll-behavior: none;
+  scrollbar-gutter: stable;
 }
 
 button,
@@ -156,8 +168,9 @@ p {
 }
 
 .topbar-button {
-  min-height: 38px;
-  padding: 0 13px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
 }
 
 a.topbar-button {
@@ -173,7 +186,8 @@ a.topbar-button {
 }
 
 #supportBtn {
-  width: 38px;
+  width: 44px;
+  min-height: 44px;
   padding: 0;
   border-radius: 999px;
 }
@@ -195,8 +209,8 @@ a.topbar-button {
 }
 
 .group-panel {
-  margin-bottom: 16px;
-  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-soft) 100%);
+  margin-top: 16px;
+  background: var(--panel);
 }
 
 .main-grid {
@@ -366,14 +380,11 @@ a.topbar-button {
 .person-info::before {
   content: "";
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
-  border: 2px solid transparent;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--primary-dark);
   border-radius: 999px;
-  background:
-    linear-gradient(#fff, #fff) padding-box,
-    linear-gradient(135deg, var(--primary), var(--accent)) border-box;
-  box-shadow: inset 0 0 0 8px #f8efe2;
+  background: var(--panel-soft);
 }
 
 .item-title {
@@ -401,9 +412,12 @@ a.topbar-button {
 }
 
 .single-expense summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   cursor: pointer;
   color: #8b4f0c;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .single-expense .expense-form {
@@ -676,14 +690,14 @@ a.topbar-button {
 
 #copyMessageBtn {
   border-color: #35b861;
-  background: #35c967;
+  background: #16653d;
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(53, 201, 103, 0.18);
+  box-shadow: 0 10px 22px rgba(22, 101, 61, 0.14);
 }
 
 #copyMessageBtn:hover {
-  border-color: #2ca957;
-  background: #2ca957;
+  border-color: #115030;
+  background: #115030;
 }
 
 .status-line {
@@ -717,7 +731,8 @@ a.topbar-button {
   box-shadow: var(--shadow);
   color: var(--ink);
   max-height: 90vh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .reminder-dialog,
@@ -793,10 +808,13 @@ a.topbar-button {
   max-height: 300px;
   overflow: auto;
   margin-bottom: 12px;
+
+  padding: 6px 10px;
 }
 
 .ticket-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
 }
@@ -1755,4 +1773,66 @@ details[open] .group-summary-header::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* UX Audit Fixes: tabular numbers & participant row breathing room */
+.counter,
+.amount,
+.summary-line,
+.balance-summary,
+.settlements {
+  font-variant-numeric: tabular-nums;
+}
+
+#peopleList .list-item {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#peopleList .person-info {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+#peopleList .person-info input {
+  min-width: 0;
+  width: 100%;
+}
+
+.whatsapp-preview-box {
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: var(--panel-soft);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.whatsapp-preview-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--primary-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.whatsapp-preview {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--ink);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.share-link-field {
+  margin-top: 12px;
+}
+
+.share-link-field textarea {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
 }

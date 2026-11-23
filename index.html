@@ -33,6 +33,23 @@
 
       <div class="main-grid">
         <div id="tab-group" class="tab-content">
+          <section class="panel" aria-labelledby="peopleTitle">
+            <div class="section-header">
+              <div>
+                <h2 id="peopleTitle">Participantes</h2>
+                <p>Agrega a quienes van a dividir la cuenta.</p>
+              </div>
+              <span class="counter" id="peopleCount">0</span>
+            </div>
+            <form class="inline-form" id="personForm">
+              <label class="field" for="personNameInput"><span>Nombre</span><input id="personNameInput" type="text" autocomplete="off" placeholder="Ana"></label>
+              <button type="submit">Agregar</button>
+            </form>
+            <ul class="list" id="peopleList"></ul>
+            <div class="guest-panel hidden" id="guestPanel"></div>
+            <div class="tab-flow-actions"><button class="primary-button next-tab-btn" data-next-tab="tab-expenses" type="button">Siguiente: agregar gastos</button></div>
+          </section>
+
           <details class="panel group-panel" id="groupConfigDetails">
             <summary class="group-summary-header">
               <div>
@@ -56,23 +73,6 @@
               </div>
             </div>
           </details>
-
-          <section class="panel" aria-labelledby="peopleTitle">
-            <div class="section-header">
-              <div>
-                <h2 id="peopleTitle">Participantes</h2>
-                <p>Agrega a quienes van a dividir la cuenta.</p>
-              </div>
-              <span class="counter" id="peopleCount">0</span>
-            </div>
-            <form class="inline-form" id="personForm">
-              <label class="field" for="personNameInput"><span>Nombre</span><input id="personNameInput" type="text" autocomplete="off" placeholder="Ana"></label>
-              <button type="submit">Agregar</button>
-            </form>
-            <ul class="list" id="peopleList"></ul>
-            <div class="guest-panel hidden" id="guestPanel"></div>
-            <div class="tab-flow-actions"><button class="primary-button next-tab-btn" data-next-tab="tab-expenses" type="button">Siguiente: agregar gastos</button></div>
-          </section>
         </div>
 
         <div id="tab-expenses" class="tab-content hidden">
@@ -129,11 +129,16 @@
               </div>
             </div>
             <p class="privacy-note" id="privacyNote"></p>
+            <div class="whatsapp-preview-box">
+              <span class="whatsapp-preview-label">Vista previa del mensaje</span>
+              <pre class="whatsapp-preview" id="whatsappPreviewBox" aria-live="polite">Agrega gastos para ver el resumen listo para mandar.</pre>
+            </div>
             <div class="share-actions">
-              <button class="primary-button" id="copyMessageBtn" type="button">Copiar resumen para WhatsApp</button>
+              <button class="primary-button" id="copyMessageBtn" type="button">Copiar resumen</button>
+              <button class="secondary-button" id="openWhatsappBtn" type="button">Enviar por WhatsApp</button>
               <button id="copyLinkBtn" type="button">Copiar link</button>
             </div>
-            <label class="field"><span>Link generado</span><textarea id="shareLinkOutput" readonly rows="3"></textarea></label>
+            <label class="field share-link-field"><span>Link para abrir la cuenta</span><textarea id="shareLinkOutput" readonly rows="2" placeholder="Se genera al copiar el link o enviar"></textarea></label>
             <label class="field hidden" id="privateKeyField"><span>Clave privada</span><input id="privateKeyOutput" type="text" readonly></label>
             <button class="hidden" id="copyPrivateKeyBtn" type="button">Copiar clave</button>
             <p class="status-line" id="statusLine" aria-live="polite"></p>
@@ -167,7 +172,7 @@
           </section>
           <section class="panel support-dev-panel" aria-labelledby="devTitle">
             <div class="section-header"><div><h2 id="devTitle">Diagnostico y errores</h2><p>Herramientas tecnicas para resolver fallos y reportar problemas.</p></div></div>
-            <div class="diagnostic-box"><p><strong>Version de cache:</strong> <code id="cacheVersionLabel">clara-cache-v57</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualizacion</button></div></div>
+            <div class="diagnostic-box"><p><strong>Version de cache:</strong> <code id="cacheVersionLabel">clara-cache-v58</code></p><div class="diagnostic-actions"><button type="button" class="topbar-button" id="copyStateJsonBtn">Copiar estado JSON</button><button type="button" class="topbar-button accent-button" id="forceReloadBtn">Forzar actualizacion</button></div></div>
             <div class="error-console-panel"><h3>Consola de errores</h3><div id="errorConsoleBox" class="error-console-box no-errors">No se han detectado errores de ejecucion. Todo funciona bien.</div><button type="button" class="primary-button hidden full-action compact-action" id="copyErrorLogBtn">Copiar reporte de errores</button></div>
           </section>
         </div>

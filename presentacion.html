@@ -4,251 +4,1011 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="text-scale" content="scale">
-    <meta name="theme-color" content="#f4efe6">
-    <meta name="description" content="Cada quien sabe cuánto le toca. La cuenta de la mesa, en el celular.">
-    <title>Claramente</title>
+    <meta name="theme-color" content="#f7f8f6">
+    <meta name="description" content="Claramente: divide la cuenta de la mesa en segundos, sin registro y listo para mandar por WhatsApp.">
+    <title>Claramente · Cada quien sabe cuánto le toca</title>
     <link rel="icon" href="icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      @font-face {
-        font-family: "Open Sans";
-        src: url("fonts/OpenSans-latin.woff2") format("woff2");
-        font-weight: 400 700;
-        font-style: normal;
-        font-display: swap;
-      }
       :root {
         color-scheme: light;
-        --bg: #f4efe6;
-        --surface: #fffdf8;
-        --ink: #241e18;
-        --muted: #4a4036;
-        --line: #e4d9c8;
-        --primary: #e6a21a;
-        --receive: #1c6b45;
-        --receive-soft: #e5f4eb;
-        --owe: #8d4e24;
-        --owe-soft: #f8eadc;
+        --bg: #f7f8f6;
+        --surface: #ffffff;
+        --surface-tint: #eceee9;
+        --dark-bg: #1e1915;
+        --dark-card: #29221d;
+        --dark-line: #3d342d;
+        --dark-muted: #cfc5b9;
+        --ink: #201a15;
+        --muted: #52483e;
+        --line: #dfe3da;
+        --primary: #e89d18;
+        --primary-deep: #9a4e00;
+        --receive: #16653d;
+        --receive-soft: #e2f2e9;
+        --owe: #8f4719;
+        --owe-soft: #f8e8d8;
+        --bar-h: 4.5rem;
+        --radius-card: 22px;
+        --radius-control: 14px;
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
       }
+
       * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
+      html {
+        scroll-behavior: smooth;
+        scrollbar-color: #bcc2b7 var(--bg);
+      }
+      ::selection {
+        background: rgba(232, 157, 24, 0.3);
+        color: var(--ink);
+      }
+
       body {
         margin: 0;
         min-width: 320px;
         background: var(--bg);
         color: var(--ink);
-        font-family: "Open Sans", "Segoe UI", sans-serif;
-        font-size: 1.125rem;
+        font-family: "Figtree", "Segoe UI", sans-serif;
+        font-size: 1.0625rem;
         line-height: 1.55;
       }
+
+      h1, h2, h3 {
+        margin: 0;
+        font-family: "Bricolage Grotesque", "Figtree", sans-serif;
+        font-weight: 700;
+        line-height: 1.1;
+        text-wrap: balance;
+      }
+
+      h2 {
+        font-size: clamp(2rem, 1.35rem + 1.8vw, 2.85rem);
+        letter-spacing: -0.025em;
+      }
+
+      p { margin: 0; text-wrap: pretty; }
       button, a { font: inherit; }
       button { cursor: pointer; }
-      h1, h2, h3 { margin: 0; font-weight: 700; line-height: 1.25; text-wrap: balance; }
-      p { margin: 0; text-wrap: pretty; }
-      a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+      a:focus-visible,
+      button:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid var(--primary);
+        outline-offset: 3px;
+      }
+
       .skip {
-        position: absolute; left: 0.5rem; top: 0.5rem; z-index: 5;
-        transform: translateY(-150%); background: var(--primary); color: var(--ink);
-        padding: 0.75rem 1rem; border-radius: 999px; font-weight: 700; text-decoration: none;
+        position: absolute;
+        left: 0.75rem;
+        top: 0.75rem;
+        z-index: 30;
+        transform: translateY(-180%);
+        background: var(--primary);
+        color: var(--ink);
+        padding: 0.75rem 1.1rem;
+        border-radius: 999px;
+        font-weight: 700;
+        text-decoration: none;
       }
       .skip:focus { transform: none; }
+
       .bar {
-        position: sticky; top: 0; z-index: 2;
-        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-        padding: 0.75rem 1rem; border-bottom: 1px solid var(--line); background: var(--bg);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: var(--bar-h);
+        padding: 0.65rem clamp(1rem, 4vw, 2.5rem);
+        border-bottom: 1px solid var(--line);
+        background: rgba(247, 248, 246, 0.92);
+        backdrop-filter: blur(10px);
       }
-      .mark { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); font-weight: 700; font-size: 1.35rem; text-decoration: none; }
+
+      .mark {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        color: var(--ink);
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-weight: 800;
+        font-size: 1.32rem;
+        letter-spacing: -0.02em;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .bar-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .bar-link {
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        padding: 0.5rem 0.85rem;
+        border-radius: 999px;
+        white-space: nowrap;
+        transition: color 180ms ease, background 180ms ease;
+      }
+      .bar-link:hover {
+        color: var(--ink);
+        background: var(--surface-tint);
+      }
+
       .go, .ghost {
-        display: inline-flex; align-items: center; justify-content: center;
-        min-height: 3rem; padding: 0 1.1rem; border-radius: 999px; font-weight: 700; text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3rem;
+        padding: 0.72rem 1.4rem;
+        border-radius: 999px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        width: fit-content;
+        transition: transform 240ms var(--ease-out), background 180ms ease, box-shadow 240ms var(--ease-out);
       }
-      .go { background: var(--primary); color: var(--ink); }
-      .ghost { border: 1px solid var(--ink); color: var(--ink); }
-      .wrap { width: min(60rem, 100%); margin: 0 auto; padding: 3.5rem 1rem; }
-      .hero { display: grid; gap: 2rem; align-items: center; }
-      @media (min-width: 54rem) { .hero { grid-template-columns: 1.15fr 0.85fr; } }
-      h1 { font-size: clamp(2.4rem, 1.4rem + 2.4vw, 3.5rem); }
-      h2 { font-size: clamp(1.8rem, 1.2rem + 1.4vw, 2.4rem); }
-      .kicker { font-weight: 700; color: var(--muted); }
-      .lead { max-width: 38rem; color: var(--muted); font-size: 1.2rem; }
-      .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-      .band { border-top: 1px solid var(--line); background: var(--surface); }
-      .pain { display: grid; gap: 0.2rem; border-left: 0.25rem solid var(--owe); padding-left: 1rem; }
-      .pain strong, .fix strong { font-size: 1.25rem; }
-      .stack, .fixes, .help { display: grid; gap: 1.25rem; }
-      .fix { display: grid; grid-template-columns: 2.5rem 1fr; gap: 0.75rem; }
-      .fix b { color: var(--primary); font-size: 1.8rem; line-height: 1; }
-      .roles { display: grid; gap: 0.8rem; }
-      @media (min-width: 40rem) { .roles { grid-template-columns: 1fr 1fr; } }
-      .card { display: grid; gap: 0.5rem; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--bg); padding: 1.25rem; }
-      .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; max-width: 28rem; }
-      .pair button { min-height: 3.5rem; border-radius: 1rem; border: 1px solid var(--ink); background: var(--surface); font-size: 1.25rem; font-weight: 700; }
-      .pair button[aria-pressed="true"] { background: var(--primary); }
-      .bill { display: grid; gap: 0.75rem; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--surface); color: var(--ink); padding: 1.25rem; }
-      .bill-name { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
-      .pay, .get { border-radius: 1rem; padding: 0.8rem; font-size: 1.2rem; font-weight: 700; }
+
+      .go {
+        background: var(--primary);
+        color: var(--ink);
+        border: 1px solid var(--primary-deep);
+        box-shadow: 0 4px 14px rgba(154, 78, 0, 0.18);
+      }
+      .go:hover {
+        background: #f0a726;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(154, 78, 0, 0.25);
+      }
+
+      .ghost {
+        border: 1px solid var(--ink);
+        background: transparent;
+        color: var(--ink);
+      }
+      .ghost:hover { background: var(--surface); }
+
+      /* HERO 100dvh */
+      .hero-section {
+        min-height: calc(100dvh - var(--bar-h));
+        display: grid;
+        grid-template-rows: 1fr auto;
+        width: min(70rem, 100%);
+        margin: 0 auto;
+        padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem) 1.5rem;
+      }
+
+      .hero {
+        display: grid;
+        gap: clamp(2rem, 5vw, 4rem);
+        align-items: center;
+        align-self: center;
+      }
+      @media (min-width: 56rem) {
+        .hero { grid-template-columns: 1.05fr 0.95fr; }
+      }
+
+      .hero-copy { display: grid; gap: 1.25rem; }
+
+      h1 {
+        font-size: clamp(2.65rem, 1.5rem + 3.2vw, 4.35rem);
+        letter-spacing: -0.035em;
+      }
+
+      .lead {
+        max-width: 34ch;
+        color: var(--muted);
+        font-size: 1.18rem;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.35rem;
+      }
+
+      /* Interactive Live Receipt */
+      .live-bill {
+        display: grid;
+        gap: 1rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-card);
+        background: var(--surface);
+        padding: 1.5rem;
+        box-shadow: 0 18px 40px rgba(32, 26, 21, 0.09);
+      }
+
+      .live-bill-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .live-bill-title {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-weight: 700;
+        font-size: 1.12rem;
+      }
+
+      .pill-paid {
+        border-radius: 999px;
+        background: var(--receive-soft);
+        color: var(--receive);
+        padding: 0.3rem 0.75rem;
+        font-size: 0.84rem;
+        font-weight: 700;
+      }
+
+      .live-items { display: grid; gap: 0.55rem; }
+
+      .live-item-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        width: 100%;
+        min-height: 3.1rem;
+        padding: 0.65rem 0.95rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-control);
+        background: var(--bg);
+        color: var(--ink);
+        text-align: left;
+        transition: border-color 180ms ease, background 180ms ease, transform 180ms var(--ease-out);
+      }
+      .live-item-btn:hover { transform: translateY(-1px); }
+      .live-item-btn[aria-pressed="true"] {
+        border-color: var(--primary-deep);
+        background: #fdf3de;
+      }
+      .live-item-btn small {
+        display: block;
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .live-item-price {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .live-result { display: grid; gap: 0.5rem; padding-top: 0.25rem; }
+
+      .pay, .get {
+        border-radius: var(--radius-control);
+        padding: 0.85rem 1rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
       .pay { background: var(--owe-soft); color: var(--owe); }
       .get { background: var(--receive-soft); color: var(--receive); }
-      .muted { color: var(--muted); }
-      details { border-bottom: 1px solid var(--line); }
-      summary { min-height: 3rem; display: flex; align-items: center; cursor: pointer; font-size: 1.15rem; font-weight: 700; }
-      details p { padding: 0 0 0.9rem; }
-      .limits { display: grid; gap: 0.4rem; max-width: 36rem; padding-left: 1.1rem; color: var(--muted); }
-      .close { background: var(--ink); color: var(--surface); }
-      .close .wrap { display: grid; gap: 1rem; }
-      footer { width: min(60rem, 100%); margin: 0 auto; padding: 1.5rem 1rem 2rem; color: var(--muted); font-size: 0.95rem; }
-      footer a { color: var(--ink); }
-      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+      .scroll-cue {
+        justify-self: center;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 1rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+        font-weight: 600;
+        text-decoration: none;
+        text-underline-offset: 4px;
+      }
+      .scroll-cue:hover { color: var(--ink); text-decoration: underline; }
+
+      /* DARK IMMERSIVE SCROLLYTELLING BAND */
+      .dark-band {
+        background: var(--dark-bg);
+        color: #fffdf8;
+        padding: clamp(3.5rem, 7vw, 6rem) clamp(1rem, 4vw, 2rem);
+      }
+
+      .dark-wrap {
+        width: min(70rem, 100%);
+        margin: 0 auto;
+      }
+
+      .dark-wrap h2 {
+        font-size: clamp(2rem, 1.3rem + 2vw, 3rem);
+        letter-spacing: -0.025em;
+        margin-bottom: 0.75rem;
+      }
+
+      .dark-lead {
+        color: var(--dark-muted);
+        max-width: 48ch;
+        font-size: 1.12rem;
+        margin-bottom: 2.75rem;
+      }
+
+      .scrolly-grid {
+        display: grid;
+        gap: 2.5rem;
+        align-items: start;
+      }
+      @media (min-width: 54rem) {
+        .scrolly-grid { grid-template-columns: 1fr 0.95fr; }
+      }
+
+      .story-steps {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .story-step {
+        display: grid;
+        grid-template-columns: 3.25rem 1fr;
+        gap: 1.15rem;
+        align-items: start;
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--dark-line);
+        border-radius: var(--radius-card);
+        background: var(--dark-card);
+        color: #fffdf8;
+        padding: 1.45rem;
+        transition: border-color 220ms var(--ease-out), background 220ms var(--ease-out), transform 220ms var(--ease-out);
+      }
+      .story-step:hover {
+        border-color: #6b5b4e;
+      }
+      .story-step.is-active {
+        border-color: var(--primary);
+        background: #302720;
+        transform: translateX(4px);
+      }
+
+      .step-num {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 999px;
+        background: var(--dark-line);
+        color: #fffdf8;
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-size: 1.35rem;
+        font-weight: 800;
+        transition: background 200ms ease, color 200ms ease;
+      }
+      .story-step.is-active .step-num {
+        background: var(--primary);
+        color: var(--ink);
+      }
+
+      .story-step h3 {
+        font-size: 1.28rem;
+        margin-bottom: 0.4rem;
+      }
+
+      .story-step p {
+        color: var(--dark-muted);
+        font-size: 0.98rem;
+      }
+
+      /* Sticky Phone Stage */
+      .stage-sticky {
+        position: sticky;
+        top: 6rem;
+      }
+
+      .phone-frame {
+        border: 1px solid var(--dark-line);
+        border-radius: 28px;
+        background: #fffdf8;
+        color: var(--ink);
+        padding: 1.5rem;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+        display: grid;
+        gap: 1rem;
+      }
+
+      .phone-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .stage-panel {
+        display: none;
+        gap: 0.85rem;
+        animation: stageFade 260ms var(--ease-out);
+      }
+      .stage-panel.is-active { display: grid; }
+
+      @keyframes stageFade {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .mini-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+      .mini-chip {
+        border-radius: 999px;
+        background: var(--surface-tint);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.86rem;
+        font-weight: 600;
+      }
+
+      .qr-handoff {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 1rem;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-control);
+        background: var(--bg);
+        padding: 1rem;
+      }
+
+      .wa-bubble {
+        border-radius: 16px 16px 16px 4px;
+        background: #e7f6ec;
+        border: 1px solid #c3e4ce;
+        color: #153c27;
+        padding: 1rem;
+        font-size: 0.94rem;
+        line-height: 1.5;
+      }
+      .wa-bubble strong { display: block; margin-bottom: 0.3rem; }
+
+      /* WHITE SURFACE: RULE + SCENARIOS */
+      .light-band {
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        padding: clamp(3.5rem, 6vw, 5.25rem) clamp(1rem, 4vw, 2rem);
+      }
+
+      .wrap {
+        width: min(70rem, 100%);
+        margin: 0 auto;
+      }
+
+      .wrap h2 {
+        font-size: clamp(1.9rem, 1.2rem + 1.8vw, 2.75rem);
+        letter-spacing: -0.025em;
+        margin-bottom: 0.75rem;
+      }
+
+      .section-lead {
+        max-width: 52ch;
+        color: var(--muted);
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+      }
+
+      .rule-grid {
+        display: grid;
+        gap: 2rem;
+        align-items: center;
+      }
+      @media (min-width: 52rem) {
+        .rule-grid { grid-template-columns: 1fr 1fr; }
+      }
+
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        max-width: 24rem;
+        margin-top: 1.25rem;
+      }
+      .pair button {
+        min-height: 3.25rem;
+        border-radius: var(--radius-control);
+        border: 1px solid var(--ink);
+        background: var(--surface);
+        font-weight: 700;
+      }
+      .pair button[aria-pressed="true"] {
+        background: var(--primary);
+        border-color: var(--primary-deep);
+      }
+
+      .rule-card {
+        display: grid;
+        gap: 0.85rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-card);
+        background: var(--bg);
+        padding: 1.65rem;
+      }
+
+      .big-figure {
+        font-family: "Bricolage Grotesque", sans-serif;
+        font-size: clamp(2.5rem, 4vw, 3.6rem);
+        font-weight: 800;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* SCENARIO TABS */
+      .cases-band {
+        background: var(--bg);
+        border-top: 1px solid var(--line);
+        padding: clamp(3.25rem, 6vw, 4.75rem) clamp(1rem, 4vw, 2rem);
+      }
+
+      .tab-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        margin-bottom: 1.25rem;
+      }
+      .tab-btn {
+        min-height: 3rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--muted);
+        padding: 0.55rem 1.15rem;
+        font-weight: 600;
+        transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+      }
+      .tab-btn[aria-selected="true"] {
+        border-color: var(--ink);
+        background: var(--ink);
+        color: #fffdf8;
+      }
+
+      .case-stage {
+        display: grid;
+        gap: 1.25rem;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-card);
+        background: var(--surface);
+        padding: 1.65rem;
+      }
+      @media (min-width: 48rem) {
+        .case-stage { grid-template-columns: 1.1fr 0.9fr; align-items: center; }
+      }
+
+      /* FAQ */
+      .help {
+        display: grid;
+        gap: 0.75rem;
+        max-width: 52rem;
+      }
+      .help details {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-control);
+        background: var(--bg);
+        padding: 0.25rem 1.25rem;
+      }
+      .help summary {
+        min-height: 3.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        font-weight: 700;
+        list-style: none;
+      }
+      .help summary::-webkit-details-marker { display: none; }
+      .help summary::after { content: "+"; font-size: 1.35rem; color: var(--muted); }
+      .help details[open] summary::after { content: "−"; }
+      .help details p { padding: 0 0 1rem; color: var(--muted); }
+
+      /* CLOSE CTA */
+      .close-band {
+        background: var(--dark-bg);
+        color: #fffdf8;
+        padding: clamp(3rem, 6vw, 4.5rem) clamp(1rem, 4vw, 2rem);
+      }
+      .close-inner {
+        width: min(70rem, 100%);
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+      }
+      .close-inner p { color: var(--dark-muted); margin-top: 0.4rem; }
+
+      footer {
+        width: min(70rem, 100%);
+        margin: 0 auto;
+        padding: 1.5rem clamp(1rem, 4vw, 2rem) 2.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      footer a { color: var(--ink); font-weight: 600; text-underline-offset: 4px; }
+
+      @keyframes moduleReveal {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @supports (animation-timeline: view()) {
+        .reveal-module {
+          animation: moduleReveal linear both;
+          animation-timeline: view();
+          animation-range: entry 6% cover 24%;
+        }
+      }
+
+      @media (max-width: 540px) {
+        .bar-link { display: none; }
+        .bar .go { padding: 0.55rem 1rem; font-size: 0.94rem; }
+        .stage-sticky { position: static; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        .reveal-module, .stage-panel {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
     </style>
   </head>
   <body>
     <a class="skip" href="#contenido">Saltar al contenido</a>
+
     <header class="bar">
       <a class="mark" href="presentacion.html">
-        <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         claramente
       </a>
-      <a class="go" href="claramente.html">Hacerlo con mi mesa</a>
+      <nav class="bar-nav" aria-label="Navegación">
+        <a class="bar-link" href="#flujo">Cómo funciona</a>
+        <a class="bar-link" href="#casos">Casos</a>
+        <a class="bar-link" href="#dudas">Dudas</a>
+        <a class="go" href="claramente.html">Empezar mesa</a>
+      </nav>
     </header>
+
     <main id="contenido">
-      <section class="wrap hero">
-        <div class="stack">
-          <p class="kicker">Para cuando alguien pagó la cena</p>
-          <h1>Cada quien sabe cuánto le toca.</h1>
-          <p class="lead">Claramente escribe la cuenta una vez. Los demás marcan lo suyo desde su celular. Al final no se discute el número: está escrito quién paga y quién recibe.</p>
-          <div class="actions">
-            <a class="go" href="claramente.html">Empezar con mi mesa</a>
-            <a class="ghost" href="#resuelve">Ver cómo se resuelve</a>
-          </div>
-        </div>
-        <div class="bill">
-          <p class="bill-name">
-            <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-            claramente
-          </p>
-          <p class="muted">Ejemplo de una cena</p>
-          <p class="pay" id="owes">Luis le paga $180.00 a Ana</p>
-          <p class="get" id="gets">Ana recibe $180.00</p>
-          <p class="muted" id="note">Luis dijo que sí. Ana pagó, así que Luis le devuelve todo.</p>
-        </div>
-      </section>
-
-      <div class="band">
-        <section class="wrap" id="problema">
-          <div class="stack">
-            <h2>Lo que se atasca en la mesa</h2>
-            <p class="pain"><strong>Alguien pagó todo.</strong><span class="muted">Luego tiene que cobrar. El ticket ya no está en la mesa y cada quien recuerda otra cosa.</span></p>
-            <p class="pain"><strong>Repartir parejo no es justo.</strong><span class="muted">Quien no pidió el postre igual lo termina pagando.</span></p>
-            <p class="pain"><strong>Se discute al final.</strong><span class="muted">Cuando ya todos quieren irse y el número no cuadra.</span></p>
-          </div>
-        </section>
-      </div>
-
-      <section class="wrap" id="resuelve">
-        <div class="stack">
-          <h2>Cómo lo resuelve</h2>
-          <p class="muted">Sin cuenta, sin instalar una aplicación y sin mandar la cena a un servidor.</p>
-          <ol class="fixes">
-            <li class="fix"><b>1</b><p><strong>Una sola cuenta.</strong><br><span class="muted">El anfitrión escribe las personas, los precios y quién pagó. Queda en ese celular.</span></p></li>
-            <li class="fix"><b>2</b><p><strong>Un dibujo, no un código.</strong><br><span class="muted">Los demás lo abren con la cámara. No se copia un texto enorme.</span></p></li>
-            <li class="fix"><b>3</b><p><strong>Una pregunta por producto.</strong><br><span class="muted">Sí o no. Nada de listas ni de cuentas de usuario.</span></p></li>
-            <li class="fix"><b>4</b><p><strong>El resultado, en palabras.</strong><br><span class="muted">«Luis le paga $180 a Ana». Si el color no se distingue, la frase basta.</span></p></li>
-          </ol>
-        </div>
-      </section>
-
-      <div class="band">
-        <section class="wrap" id="quien">
-          <div class="stack">
-            <h2>Según el papel en la mesa</h2>
-            <div class="roles">
-              <article class="card">
-                <h3>Si pagaste</h3>
-                <p class="muted">Escribes quién está, qué se pidió y quién pagó. Muestras el dibujo. Cuando regresan el suyo, ves si ya marcaron y cuánto te deben.</p>
-              </article>
-              <article class="card">
-                <h3>Si te pasaron el dibujo</h3>
-                <p class="muted">Lo abres con la cámara. Contestas sí o no en cada producto. Al final muestras tu dibujo para que el anfitrión actualice la cuenta.</p>
-              </article>
+      <section class="hero-section" aria-labelledby="heroTitle">
+        <div class="hero">
+          <div class="hero-copy">
+            <h1 id="heroTitle">Cada quien sabe cuánto le toca.</h1>
+            <p class="lead">Anota la cuenta una vez. Cada persona marca lo suyo desde su celular y al instante ven quién paga a quién, listo para WhatsApp.</p>
+            <div class="actions">
+              <a class="go" href="claramente.html">Empezar con mi mesa</a>
+              <a class="ghost" href="#flujo">Ver cómo funciona</a>
             </div>
           </div>
-        </section>
-      </div>
 
-      <section class="wrap" id="regla">
-        <div class="stack">
-          <h2>La regla que más confunde</h2>
-          <p class="muted">Tacos, $180. Ana ya pagó. Luis contesta si son suyos. Prueba las dos respuestas.</p>
-          <div class="pair">
-            <button type="button" id="yes" aria-pressed="true">Sí</button>
-            <button type="button" id="no" aria-pressed="false">No</button>
+          <aside class="live-bill" aria-label="Simulador rápido de mesa">
+            <div class="live-bill-head">
+              <span class="live-bill-title">Mesa en vivo · Toca para probar</span>
+              <span class="pill-paid">Pagó Marta</span>
+            </div>
+            <div class="live-items">
+              <button class="live-item-btn" type="button" id="heroTacos" aria-pressed="true">
+                <span><strong>Tacos de Luis</strong><small>Toca para quitar o sumar</small></span>
+                <span class="live-item-price">$180.00</span>
+              </button>
+              <button class="live-item-btn" type="button" id="heroPasta" aria-pressed="true">
+                <span><strong>Pasta de Sofía</strong><small>Toca para quitar o sumar</small></span>
+                <span class="live-item-price">$240.00</span>
+              </button>
+              <button class="live-item-btn" type="button" id="heroPostre" aria-pressed="false">
+                <span><strong>Postre compartido</strong><small>Se divide entre quienes sí pagan</small></span>
+                <span class="live-item-price">$120.00</span>
+              </button>
+              <button class="live-item-btn" type="button" id="heroGuest" aria-pressed="false">
+                <span><strong>Ana va invitada (no paga)</strong><small>Actívalo si alguien no aporta hoy</small></span>
+                <span class="live-item-price" id="heroGuestLabel">Paga</span>
+              </button>
+            </div>
+            <div class="live-result" aria-live="polite">
+              <p class="pay" id="heroPayLine">Luis le paga $180.00 a Marta · Sofía le paga $240.00 a Marta</p>
+              <p class="get" id="heroGetLine">Marta recibe $420.00 en total</p>
+            </div>
+          </aside>
+        </div>
+
+        <a class="scroll-cue" href="#flujo">Desliza para ver el flujo en acción ↓</a>
+      </section>
+
+      <section class="dark-band" id="flujo" aria-labelledby="flujoTitle">
+        <div class="dark-wrap">
+          <h2 id="flujoTitle">Del ticket a WhatsApp en 3 pasos</h2>
+          <p class="dark-lead">Toca un paso o desliza hacia abajo para ver cómo cambia la pantalla sin instalar nada.</p>
+
+          <div class="scrolly-grid">
+            <div class="story-steps">
+              <button class="story-step is-active" type="button" data-stage="1">
+                <span class="step-num">1</span>
+                <div>
+                  <h3>Quien pagó anota la cuenta</h3>
+                  <p>Escribe los nombres de la mesa, los platillos y marca quién adelantó el pago. Todo queda guardado en ese celular.</p>
+                </div>
+              </button>
+
+              <button class="story-step" type="button" data-stage="2">
+                <span class="step-num">2</span>
+                <div>
+                  <h3>Cada persona marca lo suyo</h3>
+                  <p>Abren el enlace o escanean el código QR con su cámara, tocan su nombre y contestan «Sí» o «No» por platillo.</p>
+                </div>
+              </button>
+
+              <button class="story-step" type="button" data-stage="3">
+                <span class="step-num">3</span>
+                <div>
+                  <h3>Se actualiza solo y se manda</h3>
+                  <p>Regresan el QR o su enlace al anfitrión, el total cuadra al centavo y sale el mensaje listo para WhatsApp.</p>
+                </div>
+              </button>
+            </div>
+
+            <div class="stage-sticky">
+              <div class="phone-frame" aria-live="polite">
+                <div class="phone-top">
+                  <span>claramente</span>
+                  <span id="stageBadge">Paso 1 de 3</span>
+                </div>
+
+                <div class="stage-panel is-active" data-stage-panel="1">
+                  <strong>Mesa: Cena viernes</strong>
+                  <div class="mini-chip-row">
+                    <span class="mini-chip">Marta (pagó)</span>
+                    <span class="mini-chip">Luis</span>
+                    <span class="mini-chip">Sofía</span>
+                    <span class="mini-chip">Ana (invitada)</span>
+                  </div>
+                  <div class="live-items">
+                    <div class="live-item-btn"><span>Tacos al pastor</span><span class="live-item-price">$180.00</span></div>
+                    <div class="live-item-btn"><span>Pasta Alfredo</span><span class="live-item-price">$240.00</span></div>
+                  </div>
+                </div>
+
+                <div class="stage-panel" data-stage-panel="2">
+                  <strong>Respuesta directa desde su celular</strong>
+                  <div class="qr-handoff">
+                    <svg width="72" height="72" viewBox="0 0 36 36" aria-hidden="true">
+                      <rect width="36" height="36" rx="4" fill="#fffdf8" stroke="#dfe3da"/>
+                      <rect x="4" y="4" width="10" height="10" fill="#201a15"/>
+                      <rect x="6" y="6" width="6" height="6" fill="#fffdf8"/>
+                      <rect x="7.5" y="7.5" width="3" height="3" fill="#201a15"/>
+                      <rect x="22" y="4" width="10" height="10" fill="#201a15"/>
+                      <rect x="24" y="6" width="6" height="6" fill="#fffdf8"/>
+                      <rect x="25.5" y="7.5" width="3" height="3" fill="#201a15"/>
+                      <rect x="4" y="22" width="10" height="10" fill="#201a15"/>
+                      <rect x="6" y="24" width="6" height="6" fill="#fffdf8"/>
+                      <rect x="7.5" y="25.5" width="3" height="3" fill="#201a15"/>
+                      <rect x="17" y="16" width="4" height="4" fill="#e89d18"/>
+                      <rect x="23" y="18" width="4" height="4" fill="#201a15"/>
+                      <rect x="18" y="24" width="6" height="6" fill="#201a15"/>
+                    </svg>
+                    <div>
+                      <p><strong>¿Tacos al pastor es tuyo?</strong></p>
+                      <p class="muted" style="font-size: 0.9rem;">Luis toca «Sí» y manda su enlace o QR de vuelta.</p>
+                    </div>
+                  </div>
+                  <p class="get">Listo. Luis ya marcó lo suyo.</p>
+                </div>
+
+                <div class="stage-panel" data-stage-panel="3">
+                  <strong>Resumen listo para el grupo</strong>
+                  <div class="wa-bubble">
+                    <strong>Cena viernes · Total $420.00</strong>
+                    Luis le paga $180.00 a Marta<br>
+                    Sofía le paga $240.00 a Marta<br>
+                    Ana: $0.00 (invitada)
+                  </div>
+                  <p class="pay">Sin cuentas mentales ni filas de mensajes.</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="bill" aria-live="polite">
+        </div>
+      </section>
+
+      <section class="light-band reveal-module" id="regla" aria-labelledby="reglaTitle">
+        <div class="wrap rule-grid">
+          <div>
+            <h2 id="reglaTitle">La regla que evita que falte dinero</h2>
+            <p class="section-lead" style="margin-bottom: 1rem;">Mesa de <strong>2 personas (Ana y Luis)</strong>. Hay unos tacos de <strong>$180.00</strong> que Ana ya pagó. Prueba qué pasa según lo que conteste Luis.</p>
+            <div class="pair">
+              <button type="button" id="yes" aria-pressed="true">Sí, son míos</button>
+              <button type="button" id="no" aria-pressed="false">No, no pedí</button>
+            </div>
+          </div>
+
+          <div class="rule-card" aria-live="polite">
+            <span class="big-figure" id="ruleBig">$180.00</span>
             <p class="pay" id="owes2">Luis le paga $180.00 a Ana</p>
             <p class="get" id="gets2">Ana recibe $180.00</p>
-            <p class="muted" id="note2">Luis dijo que sí. Ana pagó, así que Luis le devuelve todo.</p>
+            <p class="muted" id="note2">Luis dijo que sí: como él pidió los tacos y Ana los pagó, Luis le devuelve el total.</p>
           </div>
         </div>
       </section>
 
-      <div class="band">
-        <section class="wrap" id="ayuda">
-          <div class="stack">
-            <h2>Si alguien se atora</h2>
-            <p class="muted">Abre solo la duda que tengas. La respuesta es corta y se puede hacer en el momento.</p>
-            <div class="help">
-              <details><summary>El celular se queda en blanco</summary><p class="muted">Cierra esa pestaña y abre otra vez el enlace, no una foto vieja del dibujo.</p></details>
-              <details><summary>El dibujo parece el mismo</summary><p class="muted">El primero abre la cuenta para marcar. Al terminar sale otro: ese lo escanea el anfitrión con la cámara.</p></details>
-              <details><summary>El monto subió</summary><p class="muted">Lo que nadie marcó se reparte entre todos. Si sí era de alguien, hay que decir que sí. Por eso no baja a cero cuando todos dicen que no.</p></details>
-              <details><summary>La cámara no abre</summary><p class="muted">El celular pide permiso. Si no se lo das, la otra persona enseña el dibujo y el anfitrión lo lee.</p></details>
-              <details><summary>No hay internet</summary><p class="muted">La primera vez el enlace tiene que abrir. Después la cuenta sigue en ese celular, sin red.</p></details>
-              <details><summary>Estoy en la computadora</summary><p class="muted">Sirve para armar la cuenta. Para que cada quien marque lo suyo, es más claro el celular.</p></details>
-              <details><summary>Quiero otra cena</summary><p class="muted">En el teléfono, el inicio puede ofrecer la cuenta guardada. Para una nueva, sigue con Agregar personas. En la computadora, Limpiar borra la de ese navegador.</p></details>
+      <section class="cases-band reveal-module" id="casos" aria-labelledby="casosTitle">
+        <div class="wrap">
+          <h2 id="casosTitle">Resuelve las cuentas que nunca salen limpias</h2>
+          <p class="section-lead">Elige un escenario real para ver cómo lo muestra Claramente.</p>
+
+          <div class="tab-bar" role="tablist" aria-label="Escenarios comunes">
+            <button class="tab-btn" type="button" role="tab" aria-selected="true" data-case="tip">Con propina</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-case="guest">Cumpleañero / invitado</button>
+            <button class="tab-btn" type="button" role="tab" aria-selected="false" data-case="split">Cada quien pagó algo</button>
+          </div>
+
+          <div class="case-stage" aria-live="polite">
+            <div>
+              <h3 id="caseTitle" style="font-size: 1.45rem; margin-bottom: 0.5rem;">Propina repartida proporcionalmente</h3>
+              <p class="muted" id="caseDesc">Si alguien pidió más que los demás, la propina o cargos adicionales se suman en proporción a lo que consumió cada persona.</p>
+            </div>
+            <div class="live-result">
+              <p class="pay" id="casePay">Cuenta $500 + 10% propina = $550.00</p>
+              <p class="get" id="caseResult">Cada quien ve su total exacto con propina incluida.</p>
             </div>
           </div>
-        </section>
-      </div>
-
-      <section class="wrap" id="limites">
-        <div class="stack">
-          <h2>Qué no pide</h2>
-          <ul class="limits">
-            <li>No pide correo ni una cuenta para entrar.</li>
-            <li>No manda la cena a un servidor.</li>
-            <li>No cobra por dividirla.</li>
-            <li>No adivina el ticket: alguien escribe los precios.</li>
-          </ul>
         </div>
       </section>
 
-      <section class="close">
+      <section class="light-band reveal-module" id="dudas" aria-labelledby="dudasTitle">
         <div class="wrap">
-          <h2>La próxima cuenta, con la mesa enfrente.</h2>
+          <h2 id="dudasTitle">Dudas rápidas</h2>
+          <p class="section-lead">Respuestas directas para cuando todos sacan el teléfono.</p>
+          <div class="help">
+            <details>
+              <summary>¿Qué pasa si nadie marca un platillo?</summary>
+              <p>Se reparte por igual entre quienes sí pagan para que la cuenta siempre cuadre al cerrar la mesa.</p>
+            </details>
+            <details>
+              <summary>¿Mis datos se suben a algún servidor?</summary>
+              <p>No. La cuenta vive en tu navegador. Los códigos QR y enlaces contienen los datos para abrirla; compártelos solo con tu grupo.</p>
+            </details>
+            <details>
+              <summary>¿Puedo usarla desde computadora o tablet?</summary>
+              <p>Sí. En pantalla grande se abre la vista completa de escritorio (<a href="index.html">abrir vista completa</a>) y en celular el flujo guiado.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="close-band">
+        <div class="close-inner">
+          <div>
+            <h2>La próxima cuenta, con la mesa enfrente.</h2>
+            <p>Sin registro, sin comisiones y sin hacer cuentas mentales.</p>
+          </div>
           <a class="go" href="claramente.html">Hacerlo con mi mesa</a>
         </div>
       </section>
     </main>
+
     <footer>
-      claramente. La cuenta se queda en el celular. <a href="claramente.html">Abrir la cuenta</a>
+      <span>claramente · La cuenta se queda en tu dispositivo.</span>
+      <a href="claramente.html">Abrir la cuenta</a>
     </footer>
+
     <script>
       const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+
+      // 1. Hero interactive live simulator
+      const heroTacos = document.getElementById("heroTacos");
+      const heroPasta = document.getElementById("heroPasta");
+      const heroPostre = document.getElementById("heroPostre");
+      const heroGuest = document.getElementById("heroGuest");
+      function updateHeroDemo() {
+        const hasTacos = heroTacos.getAttribute("aria-pressed") === "true";
+        const hasPasta = heroPasta.getAttribute("aria-pressed") === "true";
+        const hasPostre = heroPostre.getAttribute("aria-pressed") === "true";
+        const anaGuest = heroGuest.getAttribute("aria-pressed") === "true";
+        document.getElementById("heroGuestLabel").textContent = anaGuest ? "No paga" : "Paga";
+        const payersCount = anaGuest ? 3 : 4; // Marta, Luis, Sofia (+ Ana if paying)
+        const shared = hasPostre ? 120 / payersCount : 0;
+        const luis = (hasTacos ? 180 : 0) + shared;
+        const sofia = (hasPasta ? 240 : 0) + shared;
+        const ana = anaGuest ? 0 : shared;
+        const totalMarta = luis + sofia + ana;
+        const parts = [];
+        if (luis > 0) parts.push("Luis le paga " + money.format(luis) + " a Marta");
+        if (sofia > 0) parts.push("Sofía le paga " + money.format(sofia) + " a Marta");
+        if (ana > 0) parts.push("Ana le paga " + money.format(ana) + " a Marta");
+        document.getElementById("heroPayLine").textContent = parts.length
+          ? parts.join(" · ")
+          : "Nadie le debe a Marta todavía";
+        document.getElementById("heroGetLine").textContent = "Marta recibe " + money.format(totalMarta) + " en total";
+      }
+      [heroTacos, heroPasta, heroPostre, heroGuest].forEach((btn) => {
+        btn.addEventListener("click", () => {
+          btn.setAttribute("aria-pressed", btn.getAttribute("aria-pressed") === "true" ? "false" : "true");
+          updateHeroDemo();
+        });
+      });
+
+      // 2. Scrollytelling interactive stage
+      const stepBtns = document.querySelectorAll(".story-step");
+      const stagePanels = document.querySelectorAll(".stage-panel");
+      const stageBadge = document.getElementById("stageBadge");
+      function activateStage(num) {
+        stepBtns.forEach((b) => b.classList.toggle("is-active", b.dataset.stage === num));
+        stagePanels.forEach((p) => p.classList.toggle("is-active", p.dataset.stagePanel === num));
+        stageBadge.textContent = "Paso " + num + " de 3";
+      }
+      stepBtns.forEach((b) => b.addEventListener("click", () => activateStage(b.dataset.stage)));
+      if ("IntersectionObserver" in window) {
+        const stepIo = new IntersectionObserver((entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) activateStage(e.target.dataset.stage);
+          });
+        }, { rootMargin: "-35% 0px -45% 0px" });
+        stepBtns.forEach((b) => stepIo.observe(b));
+      }
+
+      // 3. Rule interactive simulator
       const yes = document.getElementById("yes");
       const no = document.getElementById("no");
       function paint(mine) {
         const pays = mine ? 180 : 90;
-        const line = "Luis le paga " + money.format(pays) + " a Ana";
-        const back = "Ana recibe " + money.format(pays);
-        const note = mine
-          ? "Luis dijo que sí. Ana pagó, así que Luis le devuelve todo."
-          : "Luis dijo que no. Como nadie los marcó, se reparte entre todos.";
-        ["owes", "owes2"].forEach((id) => { document.getElementById(id).textContent = line; });
-        ["gets", "gets2"].forEach((id) => { document.getElementById(id).textContent = back; });
-        ["note", "note2"].forEach((id) => { document.getElementById(id).textContent = note; });
+        document.getElementById("ruleBig").textContent = money.format(pays);
+        document.getElementById("owes2").textContent = "Luis le paga " + money.format(pays) + " a Ana";
+        document.getElementById("gets2").textContent = "Ana recibe " + money.format(pays);
+        document.getElementById("note2").textContent = mine
+          ? "Luis dijo que sí: como él pidió los tacos y Ana los pagó, Luis le devuelve el total."
+          : "Luis dijo que no: como nadie los marcó, los $180.00 se reparten entre las 2 personas de la mesa ($90.00 cada quien).";
         yes.setAttribute("aria-pressed", mine ? "true" : "false");
         no.setAttribute("aria-pressed", mine ? "false" : "true");
       }
       yes.addEventListener("click", () => paint(true));
       no.addEventListener("click", () => paint(false));
+
+      // 4. Scenario tabs
+      const cases = {
+        tip: {
+          title: "Propina repartida proporcionalmente",
+          desc: "Si alguien pidió más que los demás, la propina o cargos adicionales se suman en proporción a lo que consumió cada persona.",
+          pay: "Cuenta $500 + 10% propina = $550.00",
+          result: "Cada quien ve su total exacto con propina incluida."
+        },
+        guest: {
+          title: "Hoy alguien va invitado o cumple años",
+          desc: "La persona aparece en la mesa para marcar lo que comió, pero su parte baja a $0.00 y se reparte entre quienes sí pagan.",
+          pay: "Ana (invitada) · Aporta $0.00",
+          result: "El resto de la mesa absorbe su parte automáticamente."
+        },
+        split: {
+          title: "Varios pagaron cosas distintas",
+          desc: "Si Marta pagó la cena y Luis pagó el taxi de regreso, Claramente compensa los saldos para hacer el mínimo de transferencias.",
+          pay: "Marta adelantó cena · Luis adelantó taxi",
+          result: "Solo ves las transferencias netas finales."
+        }
+      };
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tab-btn").forEach((b) => b.setAttribute("aria-selected", b === btn ? "true" : "false"));
+          const c = cases[btn.dataset.case];
+          document.getElementById("caseTitle").textContent = c.title;
+          document.getElementById("caseDesc").textContent = c.desc;
+          document.getElementById("casePay").textContent = c.pay;
+          document.getElementById("caseResult").textContent = c.result;
+        });
+      });
     </script>
   </body>
 </html>
