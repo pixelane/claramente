@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f4efe6">
-    <meta name="description" content="Aprende a dividir la cuenta de la mesa en cuatro toques.">
-    <title>Cómo se usa Claramente</title>
+    <meta name="description" content="La cuenta de la mesa, en palabras. Aprende los cuatro pasos y luego hazlo con la tuya.">
+    <title>Claramente</title>
     <link rel="icon" href="icon-192.png">
     <style>
       @font-face {
@@ -29,6 +29,7 @@
         --owe-soft: #f8eadc;
       }
       * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
       body {
         margin: 0;
         min-width: 320px;
@@ -40,161 +41,152 @@
       }
       button, a { font: inherit; }
       button { cursor: pointer; }
-      h1, h2 { margin: 0; font-weight: 700; line-height: 1.3; text-wrap: balance; }
-      p { text-wrap: pretty; }
+      h1, h2, h3 { margin: 0; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+      p { margin: 0; text-wrap: pretty; }
       a:focus-visible, button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
-      .page { width: min(960px, 100%); margin: 0 auto; padding: 24px 16px 40px; display: grid; gap: 28px; }
-      .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .bar {
+        position: sticky; top: 0; z-index: 2;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--bg);
+      }
+      .wrap { width: min(960px, 100%); margin: 0 auto; }
       .mark { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; font-size: 1.35rem; text-decoration: none; }
-      .go {
+      .go, .ghost, .ink {
         display: inline-flex; align-items: center; justify-content: center;
-        min-height: 48px; padding: 0 16px; border-radius: 999px;
-        background: var(--primary); color: var(--ink); font-weight: 700; text-decoration: none;
+        min-height: 48px; padding: 0 18px; border-radius: 999px; font-weight: 700; text-decoration: none;
       }
-      .lesson { display: grid; gap: 24px; align-items: start; }
-      @media (min-width: 860px) { .lesson { grid-template-columns: 1fr 22rem; align-items: center; } }
-      .kicker { margin: 0; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
-      .line { margin: 8px 0 0; max-width: 36rem; color: var(--muted); font-size: 1.15rem; }
-      ol { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px; }
-      .step {
-        width: 100%; min-height: 48px; text-align: left; padding: 8px 14px;
-        border-radius: 16px; border: 1px solid var(--line); background: transparent; color: var(--muted); font-weight: 700;
-      }
-      .step[aria-current="step"] { border-color: var(--ink); background: var(--surface); color: var(--ink); }
-      .phone { border: 1px solid var(--line); background: var(--surface); border-radius: 20px; padding: 16px; display: grid; gap: 12px; }
-      .phone h2 { font-size: 1.45rem; }
-      .person, .money-line, .drawing { border-radius: 16px; padding: 12px; }
-      .person { min-height: 48px; border: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; }
-      .person span { color: var(--muted); font-weight: 400; font-size: 0.95rem; }
-      .primary, .ink, .no {
-        min-height: 48px; border-radius: 16px; border: 0; font-weight: 700; font-size: 1.05rem;
-      }
-      .primary { background: var(--primary); color: var(--ink); }
+      .go { background: var(--primary); color: var(--ink); }
+      .ghost { border: 1px solid var(--ink); color: var(--ink); background: transparent; }
       .ink { background: var(--ink); color: var(--surface); }
+      .hero, .close, .steps { width: min(960px, 100%); margin: 0 auto; padding: 48px 16px; }
+      .hero { display: grid; gap: 32px; align-items: center; }
+      @media (min-width: 860px) { .hero { grid-template-columns: 1.1fr 0.9fr; min-height: 70vh; } }
+      h1 { font-size: 3rem; }
+      .lead { max-width: 34rem; color: var(--muted); font-size: 1.2rem; }
+      .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+      .bill, .card { border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+      .bill { display: grid; gap: 12px; padding: 16px; }
+      .bill-name { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+      .pay, .get { border-radius: 16px; padding: 12px; font-weight: 700; }
+      .pay { background: var(--owe-soft); color: var(--owe); }
+      .get { background: var(--receive-soft); color: var(--receive); }
+      .muted { color: var(--muted); }
+      .band { border-top: 1px solid var(--line); background: var(--surface); }
+      .steps { display: grid; gap: 14px; }
+      .card { display: grid; gap: 8px; padding: 18px; background: var(--bg); }
+      .num { color: var(--muted); font-weight: 700; }
+      h3 { font-size: 1.6rem; }
+      .people { display: grid; gap: 8px; }
+      @media (min-width: 640px) { .people { grid-template-columns: 1fr 1fr; } }
+      .person {
+        min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        padding: 8px 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); font-weight: 700;
+      }
+      .person span { color: var(--muted); font-weight: 400; }
+      .price { font-size: 2rem; font-weight: 700; }
       .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .pair button { min-height: 56px; border-radius: 16px; font-size: 1.25rem; font-weight: 700; }
-      .no { border: 1px solid var(--ink); background: var(--surface); color: var(--ink); }
-      .price { margin: 0; font-size: 2rem; font-weight: 700; }
-      .muted { margin: 0; color: var(--muted); }
-      .owe { background: var(--owe-soft); color: var(--owe); font-weight: 700; }
-      .receive { background: var(--receive-soft); color: var(--receive); font-weight: 700; }
-      .drawing { background: var(--bg); text-align: center; }
-      @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+      .pair button { min-height: 56px; border-radius: 16px; border: 1px solid var(--ink); background: var(--surface); font-size: 1.25rem; font-weight: 700; }
+      .pair button[aria-pressed="true"] { background: var(--primary); }
+      .close { display: grid; gap: 16px; }
+      .close h2 { max-width: 18ch; font-size: 2.2rem; }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
     </style>
   </head>
   <body>
-    <main class="page">
-      <header class="top">
-        <a class="mark" href="presentacion.html" aria-label="Claramente">
-          <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-          claramente
-        </a>
-        <a class="go" href="claramente.html">Hacerlo con mi mesa</a>
-      </header>
-      <section class="lesson">
+    <header class="bar">
+      <a class="mark" href="presentacion.html">
+        <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        claramente
+      </a>
+      <a class="go" href="claramente.html">Hacerlo con mi mesa</a>
+    </header>
+    <main>
+      <section class="hero">
         <div>
-          <p class="kicker" id="count">1 de 4</p>
-          <h1 id="title">Quién está</h1>
-          <p class="line" id="line" aria-live="polite">El anfitrión escribe los nombres. Uno por uno.</p>
-          <ol id="steps"></ol>
+          <h1>La cuenta, clara.</h1>
+          <p class="lead">Escribes quién está y qué se pidió. Cada quien dice si es suyo. Al final se lee quién paga.</p>
+          <div class="actions">
+            <a class="go" href="claramente.html">Empezar con mi mesa</a>
+            <a class="ghost" href="#pasos">Ver los cuatro pasos</a>
+          </div>
         </div>
-        <div class="phone" id="phone" aria-live="polite"></div>
+        <div class="bill" aria-live="polite">
+          <p class="bill-name">
+            <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+            claramente
+          </p>
+          <p class="pay" id="owes">Luis le paga $180.00 a Ana</p>
+          <p class="get" id="gets">Ana recibe $180.00</p>
+          <p class="muted" id="note">Luis dijo que sí. Ana pagó, así que Luis le devuelve todo.</p>
+        </div>
+      </section>
+      <div class="band">
+        <section class="steps" id="pasos">
+          <h2>Cuatro pasos. Nada más.</h2>
+          <article class="card">
+            <p class="num">1</p>
+            <h3>Quién está</h3>
+            <p class="muted">El anfitrión escribe los nombres. Uno por uno.</p>
+            <div class="people">
+              <p class="person">Ana <span>Sí va a pagar</span></p>
+              <p class="person">Luis <span>Sí va a pagar</span></p>
+            </div>
+          </article>
+          <article class="card">
+            <p class="num">2</p>
+            <h3>Qué se pidió</h3>
+            <p class="muted">Luego pone el producto y el precio. También quién pagó.</p>
+            <p class="price">Tacos $180.00</p>
+          </article>
+          <article class="card">
+            <p class="num">3</p>
+            <h3>De quién es</h3>
+            <p class="muted">Cada quien abre el dibujo y contesta una sola pregunta.</p>
+            <div class="pair">
+              <button type="button" id="yes" aria-pressed="true">Sí</button>
+              <button type="button" id="no" aria-pressed="false">No</button>
+            </div>
+          </article>
+          <article class="card">
+            <p class="num">4</p>
+            <h3>Quién paga</h3>
+            <p class="muted">El dinero se lee en palabras. El color solo acompaña.</p>
+            <div class="bill">
+              <p class="pay" id="owes2">Luis le paga $180.00 a Ana</p>
+              <p class="get" id="gets2">Ana recibe $180.00</p>
+              <p class="muted" id="note2">Luis dijo que sí. Ana pagó, así que Luis le devuelve todo.</p>
+            </div>
+          </article>
+        </section>
+      </div>
+      <section class="close">
+        <h2>Cuando ya se entendió, se hace con la mesa de verdad.</h2>
+        <a class="ink" href="claramente.html">Hacerlo con mi mesa</a>
       </section>
     </main>
     <script>
-      const beats = [
-        { title: "Quién está", line: "El anfitrión escribe los nombres. Uno por uno." },
-        { title: "Qué se pidió", line: "Luego pone el producto y el precio." },
-        { title: "De quién es", line: "Cada quien abre el dibujo y contesta sí o no." },
-        { title: "Quién paga", line: "Al final se lee en palabras, no solo en colores." }
-      ];
       const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
-      const count = document.getElementById("count");
-      const title = document.getElementById("title");
-      const line = document.getElementById("line");
-      const steps = document.getElementById("steps");
-      const phone = document.getElementById("phone");
-      let step = 0;
-      let mine = null;
-      let timer = 0;
-
-      beats.forEach((beat, index) => {
-        const item = document.createElement("li");
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "step";
-        button.textContent = (index + 1) + ". " + beat.title;
-        button.addEventListener("click", () => show(index));
-        item.appendChild(button);
-        steps.appendChild(item);
-      });
-
-      function show(next) {
-        step = next;
-        count.textContent = (step + 1) + " de 4";
-        title.textContent = beats[step].title;
-        line.textContent = beats[step].line;
-        Array.from(steps.querySelectorAll("button")).forEach((button, index) => {
-          if (index === step) button.setAttribute("aria-current", "step");
-          else button.removeAttribute("aria-current");
-        });
-        window.clearTimeout(timer);
-        const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        if (step === 3 && !reduce) {
-          phone.innerHTML = result(true);
-          timer = window.setTimeout(() => { phone.innerHTML = result(false); }, 450);
-        } else {
-          phone.innerHTML = step === 3 ? result(false) : view();
-        }
+      const yes = document.getElementById("yes");
+      const no = document.getElementById("no");
+      function paint(mine) {
+        const pays = mine ? 180 : 90;
+        const line = "Luis le paga " + money.format(pays) + " a Ana";
+        const back = "Ana recibe " + money.format(pays);
+        const note = mine
+          ? "Luis dijo que sí. Ana pagó, así que Luis le devuelve todo."
+          : "Luis dijo que no. Como nadie los marcó, se reparten entre todos.";
+        document.getElementById("owes").textContent = line;
+        document.getElementById("gets").textContent = back;
+        document.getElementById("note").textContent = note;
+        document.getElementById("owes2").textContent = line;
+        document.getElementById("gets2").textContent = back;
+        document.getElementById("note2").textContent = note;
+        yes.setAttribute("aria-pressed", mine ? "true" : "false");
+        no.setAttribute("aria-pressed", mine ? "false" : "true");
       }
-
-      function view() {
-        if (step === 0) return names();
-        if (step === 1) return food();
-        if (step === 2) return question();
-        return result(true);
-      }
-
-      function names() {
-        return "<h2>Quiénes están en la mesa</h2>"
-          + row("Ana") + row("Luis")
-          + "<button class=\"primary\" type=\"button\" id=\"next\">Seguir con la comida</button>";
-      }
-      function row(name) {
-        return "<p class=\"person\">" + name + "<span>Sí va a pagar</span></p>";
-      }
-      function food() {
-        return "<h2>Tacos</h2><p class=\"price\">" + money.format(180) + "</p><p class=\"muted\">Ana ya pagó la cuenta.</p><button class=\"primary\" type=\"button\" id=\"next\">Pasar el dibujo</button>";
-      }
-      function question() {
-        return "<p class=\"kicker\">Luis</p><h2>¿Los tacos son tuyos?</h2><p class=\"muted\">" + money.format(180) + ". Una pregunta.</p><div class=\"pair\"><button class=\"primary\" type=\"button\" id=\"yes\">Sí</button><button class=\"no\" type=\"button\" id=\"no\">No</button></div>";
-      }
-      function result(preparing) {
-        const pays = mine === false ? 90 : 180;
-        const note = mine === null
-          ? "Contesta sí o no para ver cómo cambia el dinero."
-          : mine
-            ? "Luis dijo que sí. Ana pagó la cuenta, así que Luis le devuelve todo."
-            : "Luis dijo que no. Como nadie los marcó, se reparten entre todos. Por eso no baja a cero.";
-        const drawing = preparing
-          ? "<p class=\"drawing\">Preparando el dibujo</p>"
-          : "<div class=\"drawing\"><svg width=\"64\" height=\"64\" viewBox=\"0 0 32 32\" aria-hidden=\"true\"><circle cx=\"16\" cy=\"16\" r=\"12.25\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\"/><path d=\"M16 4.2v23.6\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\"/></svg><p class=\"muted\">La otra persona lo escanea con la cámara.</p></div>";
-        return "<h2>Muestra este dibujo</h2>" + drawing
-          + "<p class=\"money-line owe\">Luis le paga " + money.format(pays) + " a Ana</p>"
-          + "<p class=\"money-line receive\">Ana recibe " + money.format(pays) + "</p>"
-          + "<p class=\"muted\">" + note + "</p>";
-      }
-
-      phone.addEventListener("click", (event) => {
-        const id = event.target.id;
-        if (id === "next") show(Math.min(3, step + 1));
-        if (id === "yes" || id === "no") {
-          mine = id === "yes";
-          show(3);
-        }
-      });
-
-      show(0);
+      yes.addEventListener("click", () => paint(true));
+      no.addEventListener("click", () => paint(false));
+      paint(true);
     </script>
   </body>
 </html>
