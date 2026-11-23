@@ -38,6 +38,7 @@
     guestList: null,
     guestPersonId: "",
     guestAte: [],
+    guestChoice: {},
     qrChunks: null,
     qrIndex: 0,
     qrInbox: [],
@@ -637,7 +638,7 @@
     const list = ui.guestList;
     if (!list) return "";
     return `
-      ${renderHeader("Que es tuyo?", "Los precios los puso el anfitrion. Marca solo lo que comiste.")}
+      ${renderHeader("Que es tuyo?", "En cada producto elige si es tuyo o no. Cuando termines, aparece tu codigo.")}
       <div class="person-picker" aria-label="Quien eres">
         ${list.people.map((person) => `<button class="pick-button ${ui.guestPersonId === person.id ? "active" : ""}" type="button" data-guest-person="${escapeAttr(person.id)}"><span>${escapeHtml(person.name)}</span></button>`).join("")}
       </div>
@@ -646,23 +647,44 @@
           if (item.type === "shared") {
             return `<article class="product-card"><h2 class="card-title">${escapeHtml(item.name)}</h2><p class="money">${formatMoney(item.amountCents)}</p><p class="card-meta">Se reparte entre todos</p></article>`;
           }
-          const active = ui.guestAte.includes(item.id);
-          return `<article class="product-card"><h2 class="card-title">${escapeHtml(item.name)}</h2><p class="money">${formatMoney(item.amountCents)}</p><button class="pick-button ${active ? "active" : ""}" type="button" data-guest-ate="${escapeAttr(item.id)}"><span>${active ? "Es mio" : "Esto es mio"}</span></button></article>`;
+          const choice = ui.guestChoice[item.id];
+          const mine = choice === true ? "active" : "";
+          const notMine = choice === false ? "active" : "";
+          return `<article class="product-card" id="guest-item-${escapeAttr(item.id)}"><h2 class="card-title">${escapeHtml(item.name)}</h2><p class="money">${formatMoney(item.amountCents)}</p><div class="person-picker"><button class="pick-button ${mine}" type="button" data-guest-choice="${escapeAttr(item.id)}:1"><span>Es mio</span></button><button class="pick-button ${notMine}" type="button" data-guest-choice="${escapeAttr(item.id)}:0"><span>No es mio</span></button></div></article>`;
         }).join("")}
       </div>
-      <div class="panel">
-        <button class="primary-button" type="button" data-share-part>${icon("send")}<span>Mostrar mi codigo</span></button>
+      <div class="panel" id="guestReady">
+        <button class="primary-button" type="button" data-share-part>${icon("send")}<span>${pendingGuestItem() ? "Revisa todos los productos" : "Mostrar mi codigo"}</span></button>
       </div>
       ${renderQrPanel()}
     `;
   }
 
-  function toggleGuestAte(itemId) {
-    ui.guestAte = ui.guestAte.includes(itemId)
-      ? ui.guestAte.filter((id) => id !== itemId)
-      : ui.guestAte.concat(itemId);
+  function guestProducts() {
+    const list = ui.guestList;
+    if (!list) return [];
+    return list.items.filter((item) => item.type !== "shared");
+  }
+
+  function pendingGuestItem() {
+    return guestProducts().find((item) => ui.guestChoice[item.id] !== true && ui.guestChoice[item.id] !== false);
+  }
+
+  function setGuestChoice(itemId, mine) {
+    ui.guestChoice[itemId] = mine;
+    ui.guestAte = guestProducts().filter((item) => ui.guestChoice[item.id] === true).map((item) => item.id);
     ui.qrChunks = null;
     render();
+    if (!pendingGuestItem()) scrollToNode("guestReady");
+  }
+
+  function scrollToNode(id) {
+    window.requestAnimationFrame(() => {
+      const node = document.getElementById(id);
+      if (!node) return;
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      node.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    });
   }
 
   async function openIncoming() {
@@ -698,6 +720,12 @@
 
   async function sharePart(toWhatsApp) {
     if (!window.ClaraExchange || !ui.guestList || !ui.guestPersonId) return showToast("Elige quien eres");
+    const pending = pendingGuestItem();
+    if (pending) {
+      showToast(`Falta revisar ${pending.name}`);
+      scrollToNode(`guest-item-${pending.id}`);
+      return;
+    }
     const code = await window.ClaraExchange.seal("part1", {
       kind: "part",
       billId: ui.guestList.billId,
@@ -707,6 +735,7 @@
     ui.qrChunks = [partUrl(code)];
     ui.qrIndex = 0;
     render();
+    scrollToNode("guestQr");
   }
 
   async function readPastedCode(form) {
@@ -737,8 +766,9 @@
         ? "Muestra este codigo al anfitrion. Al escanearlo, su cuenta se actualiza."
         : "Un codigo. El otro celular lo escanea y abre esta cuenta en el navegador.";
     return `
-      <section class="panel">
+      <section class="panel" id="guestQr">
         <p class="section-note">${note}</p>
+        ${state.screen === "guest" ? guestProducts().map((item) => `<p class="card-meta">${escapeHtml(item.name)}: ${ui.guestChoice[item.id] === true ? "es tuyo" : "no es tuyo"}</p>`).join("") : ""}
         ${window.ClaraQr.toSvg(current)}
       </section>
     `;
@@ -781,6 +811,7 @@
       ui.guestList = message;
       ui.guestPersonId = message.people[0] ? message.people[0].id : "";
       ui.guestAte = [];
+      ui.guestChoice = {};
       render();
       showToast("Lista recibida");
       return;
@@ -982,7 +1013,10 @@
       ui.qrChunks = null;
       return render();
     }
-    if (button.dataset.guestAte) return toggleGuestAte(button.dataset.guestAte);
+    if (button.dataset.guestChoice) {
+      const [itemId, mine] = button.dataset.guestChoice.split(":");
+      return setGuestChoice(itemId, mine === "1");
+    }
     if (button.hasAttribute("data-copy-part")) return sharePart(false);
     if (button.hasAttribute("data-share-part")) return sharePart(true);
     if (button.hasAttribute("data-qr-prev")) return stepQr(-1);
