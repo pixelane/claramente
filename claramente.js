@@ -14,7 +14,7 @@
     items: "2 de 4",
     paid: "3 de 4",
     result: "4 de 4",
-    guest: "Tu parte"
+    guest: "Tus respuestas"
   };
 
   // Domain is the only state that may be persisted or mapped.
@@ -142,7 +142,7 @@
           await deliverMessage(await readExchange(incoming));
         } catch (error) {
           state.screen = "result";
-          showToast("No pude abrir esta parte");
+          showToast("No pude abrir lo que marcaron");
         }
       } else {
         state.screen = "result";
@@ -214,9 +214,9 @@
       <div class="panel">
         <p class="panel-note">Todo queda en este celular y puedes compartir el resumen al final.</p>
         <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
-        <button class="secondary-button" type="button" data-prueba>Probar con una cuenta lista</button>
         ${savedAccountButton()}
-        <button class="secondary-button" type="button" data-ask-code>${ui.askCode ? "Ocultar" : "Ya me pasaron un codigo"}</button>
+        <button class="quiet-link" type="button" data-prueba>Probar con una cuenta lista</button>
+        <button class="quiet-link" type="button" data-ask-code>${ui.askCode ? "Ocultar" : "Ya me pasaron un enlace"}</button>
       </div>
       ${ui.askCode ? `<form class="panel form-grid" id="codeForm">
         <label class="field">
@@ -237,7 +237,7 @@
         : "Ir a productos";
 
     return `
-      ${renderHeader("Quienes estan en la mesa?", "Agrega una persona a la vez. Marca invitado o cumpleanero si esa persona no va a pagar.")}
+      ${renderHeader("Quienes estan en la mesa?", "Escribe un nombre y toca agregar.")}
       <form class="panel form-grid" id="personForm" novalidate>
         <label class="field">
           <span>Nombre</span>
@@ -256,7 +256,7 @@
   }
 
   function renderPersonCard(person) {
-    const badge = person.isGuest ? "Invitado: no paga" : "Paga su parte";
+    const badge = person.isGuest ? "No va a pagar" : "Si va a pagar";
     return `
       <article class="person-card ${person.isGuest ? "is-guest" : ""}">
         <span class="initial" aria-hidden="true">${escapeHtml(initialFor(person.name))}</span>
@@ -607,14 +607,15 @@
     return `
       ${renderHeader("Muestra este dibujo", "Pide que lo escaneen con la camara del celular.")}
       ${ui.qrChunks && ui.qrChunks.length ? renderQrPanel() : `<p class="section-note">Preparando el dibujo...</p>`}
-      <div class="panel">
-        <button class="primary-button" type="button" data-scan-live>Leer el dibujo de alguien</button>
-      </div>
       ${renderRectification()}
       ${renderWhoAte()}
+      ${renderSplitNote()}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
+      <div class="panel">
+        <button class="primary-button" type="button" data-scan-live>Leer el dibujo de alguien</button>
+      </div>
       <div class="panel">
         <button class="secondary-button" type="button" data-show-more>${ui.showMore ? "Ocultar opciones" : "Otras opciones"}</button>
         ${ui.showMore ? `
@@ -644,6 +645,12 @@
     });
     if (!lines.length) return "";
     return `<section class="list">${lines.join("")}</section>`;
+  }
+
+  function renderSplitNote() {
+    const open = state.items.some((item) => item.type === "product" && (!item.eatenBy || item.eatenBy.length === 0));
+    if (!open) return "";
+    return `<p class="section-note">Lo que nadie marco se reparte entre todos. Por eso un monto puede subir.</p>`;
   }
 
   function renderResultCard(card) {
@@ -817,7 +824,7 @@
       if (!message) return;
       await deliverMessage(message);
     } catch (error) {
-      showToast("No pude abrir este codigo");
+      showToast("No pude abrir este dibujo");
     }
   }
 
@@ -865,7 +872,7 @@
     try {
       await deliverMessage(await readExchange(form.elements.codeInput.value.trim()));
     } catch (error) {
-      showToast("No pude abrir este codigo");
+      showToast("No pude abrir este dibujo");
     }
   }
 
@@ -875,7 +882,7 @@
     try {
       await deliverMessage(await readExchange(code));
     } catch (error) {
-      showToast("No pude leer esa parte");
+      showToast("No pude leer ese enlace");
     }
   }
 
@@ -884,7 +891,7 @@
     const current = ui.qrChunks[ui.qrIndex] || "";
     const link = current.startsWith("http");
     const note = !link
-      ? "Codigo para la otra pantalla"
+      ? "Dibujo para la otra pantalla"
       : state.screen === "guest"
         ? "Ensenale esta pantalla a quien pago."
         : "Un dibujo. La otra persona lo escanea y abre la cuenta.";
@@ -918,7 +925,7 @@
       }
     }
     await copyText(text);
-    showToast("Codigo copiado");
+    showToast("Enlace copiado");
   }
 
   async function shareQrChunk() {
@@ -951,12 +958,12 @@
     }
     const base = persistEnabled ? domainSnapshot() : savedGuided;
     if (!base || base.billId !== message.billId) {
-      showToast("Esta parte no es de la cuenta de este celular");
+      showToast("Esto no es de la cuenta de este celular");
       return;
     }
     const applied = window.ClaraExchange.applyPart(base, message);
     if (!applied.ok) {
-      showToast("No pude aplicar esa parte");
+      showToast("No pude sumar lo que marcaron");
       return;
     }
     if (persistEnabled) applyDomain(applied.state);
@@ -973,7 +980,7 @@
     if (!file || !window.ClaraQr) return;
     try {
       const text = await window.ClaraQr.readFile(file);
-      if (!text) return showToast("No vi un codigo en esa foto");
+      if (!text) return showToast("No vi un dibujo en esa foto");
       await deliverMessage(await readExchange(text));
     } catch (error) {
       showToast("No pude leer esa foto");
@@ -1029,7 +1036,7 @@
       try {
         await deliverMessage(await readExchange(text));
       } catch (error) {
-        showToast("No pude abrir este codigo");
+        showToast("No pude abrir este dibujo");
       }
       return;
     }
@@ -1049,7 +1056,7 @@
     const chunk = ui.qrChunks && ui.qrChunks[ui.qrIndex];
     if (!chunk) return;
     await copyText(chunk);
-    showToast("Codigo copiado");
+    showToast("Enlace copiado");
   }
 
   async function readExchange(raw) {
@@ -1082,7 +1089,7 @@
     } catch (error) {
       if (error.message === "QR_INCOMPLETE") {
         ui.qrProgress = { have: error.have, total: error.total };
-        showToast(`Falta codigo. Van ${error.have} de ${error.total}`);
+        showToast(`Falta un dibujo. Van ${error.have} de ${error.total}`);
         render();
         return null;
       }

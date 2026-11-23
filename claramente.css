@@ -243,6 +243,22 @@ p {
   color: var(--action);
 }
 
+.quiet-link {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--action);
+  box-shadow: none;
+  font-size: 1rem;
+}
+
+.yes-no .secondary-button {
+  border-color: var(--ink);
+  background: var(--surface);
+  color: var(--ink);
+}
+
 .danger-button {
   width: 100%;
   border-color: #f0b99e;
