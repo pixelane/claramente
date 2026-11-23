@@ -160,6 +160,18 @@ p {
   padding: 0 13px;
 }
 
+a.topbar-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: var(--control-radius);
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--ink);
+  font-weight: 750;
+  text-decoration: none;
+}
+
 #supportBtn {
   width: 38px;
   padding: 0;

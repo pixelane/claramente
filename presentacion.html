@@ -3,8 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="text-scale" content="scale">
     <meta name="theme-color" content="#f4efe6">
-    <meta name="description" content="La cuenta de la mesa, en palabras. Aprende los cuatro pasos y luego hazlo con la tuya.">
+    <meta name="description" content="Cada quien sabe cuánto le toca. La cuenta de la mesa, en el celular.">
     <title>Claramente</title>
     <link rel="icon" href="icon-192.png">
     <style>
@@ -43,56 +44,64 @@
       button { cursor: pointer; }
       h1, h2, h3 { margin: 0; font-weight: 700; line-height: 1.25; text-wrap: balance; }
       p { margin: 0; text-wrap: pretty; }
-      a:focus-visible, button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+      a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+      .skip {
+        position: absolute; left: 0.5rem; top: 0.5rem; z-index: 5;
+        transform: translateY(-150%); background: var(--primary); color: var(--ink);
+        padding: 0.75rem 1rem; border-radius: 999px; font-weight: 700; text-decoration: none;
+      }
+      .skip:focus { transform: none; }
       .bar {
         position: sticky; top: 0; z-index: 2;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-        padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--bg);
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+        padding: 0.75rem 1rem; border-bottom: 1px solid var(--line); background: var(--bg);
       }
-      .wrap { width: min(960px, 100%); margin: 0 auto; }
-      .mark { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 700; font-size: 1.35rem; text-decoration: none; }
-      .go, .ghost, .ink {
+      .mark { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); font-weight: 700; font-size: 1.35rem; text-decoration: none; }
+      .go, .ghost {
         display: inline-flex; align-items: center; justify-content: center;
-        min-height: 48px; padding: 0 18px; border-radius: 999px; font-weight: 700; text-decoration: none;
+        min-height: 3rem; padding: 0 1.1rem; border-radius: 999px; font-weight: 700; text-decoration: none;
       }
       .go { background: var(--primary); color: var(--ink); }
-      .ghost { border: 1px solid var(--ink); color: var(--ink); background: transparent; }
-      .ink { background: var(--ink); color: var(--surface); }
-      .hero, .close, .steps { width: min(960px, 100%); margin: 0 auto; padding: 48px 16px; }
-      .hero { display: grid; gap: 32px; align-items: center; }
-      @media (min-width: 860px) { .hero { grid-template-columns: 1.1fr 0.9fr; min-height: 70vh; } }
-      h1 { font-size: 3rem; }
-      .lead { max-width: 34rem; color: var(--muted); font-size: 1.2rem; }
-      .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
-      .bill, .card { border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
-      .bill { display: grid; gap: 12px; padding: 16px; }
-      .bill-name { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-      .pay, .get { border-radius: 16px; padding: 12px; font-weight: 700; }
+      .ghost { border: 1px solid var(--ink); color: var(--ink); }
+      .wrap { width: min(60rem, 100%); margin: 0 auto; padding: 3.5rem 1rem; }
+      .hero { display: grid; gap: 2rem; align-items: center; }
+      @media (min-width: 54rem) { .hero { grid-template-columns: 1.15fr 0.85fr; } }
+      h1 { font-size: clamp(2.4rem, 1.4rem + 2.4vw, 3.5rem); }
+      h2 { font-size: clamp(1.8rem, 1.2rem + 1.4vw, 2.4rem); }
+      .kicker { font-weight: 700; color: var(--muted); }
+      .lead { max-width: 38rem; color: var(--muted); font-size: 1.2rem; }
+      .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+      .band { border-top: 1px solid var(--line); background: var(--surface); }
+      .pain { display: grid; gap: 0.2rem; border-left: 0.25rem solid var(--owe); padding-left: 1rem; }
+      .pain strong, .fix strong { font-size: 1.25rem; }
+      .stack, .fixes, .help { display: grid; gap: 1.25rem; }
+      .fix { display: grid; grid-template-columns: 2.5rem 1fr; gap: 0.75rem; }
+      .fix b { color: var(--primary); font-size: 1.8rem; line-height: 1; }
+      .roles { display: grid; gap: 0.8rem; }
+      @media (min-width: 40rem) { .roles { grid-template-columns: 1fr 1fr; } }
+      .card { display: grid; gap: 0.5rem; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--bg); padding: 1.25rem; }
+      .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; max-width: 28rem; }
+      .pair button { min-height: 3.5rem; border-radius: 1rem; border: 1px solid var(--ink); background: var(--surface); font-size: 1.25rem; font-weight: 700; }
+      .pair button[aria-pressed="true"] { background: var(--primary); }
+      .bill { display: grid; gap: 0.75rem; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--surface); color: var(--ink); padding: 1.25rem; }
+      .bill-name { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
+      .pay, .get { border-radius: 1rem; padding: 0.8rem; font-size: 1.2rem; font-weight: 700; }
       .pay { background: var(--owe-soft); color: var(--owe); }
       .get { background: var(--receive-soft); color: var(--receive); }
       .muted { color: var(--muted); }
-      .band { border-top: 1px solid var(--line); background: var(--surface); }
-      .steps { display: grid; gap: 14px; }
-      .card { display: grid; gap: 8px; padding: 18px; background: var(--bg); }
-      .num { color: var(--muted); font-weight: 700; }
-      h3 { font-size: 1.6rem; }
-      .people { display: grid; gap: 8px; }
-      @media (min-width: 640px) { .people { grid-template-columns: 1fr 1fr; } }
-      .person {
-        min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
-        padding: 8px 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); font-weight: 700;
-      }
-      .person span { color: var(--muted); font-weight: 400; }
-      .price { font-size: 2rem; font-weight: 700; }
-      .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-      .pair button { min-height: 56px; border-radius: 16px; border: 1px solid var(--ink); background: var(--surface); font-size: 1.25rem; font-weight: 700; }
-      .pair button[aria-pressed="true"] { background: var(--primary); }
-      .close { display: grid; gap: 16px; }
-      .close h2 { max-width: 18ch; font-size: 2.2rem; }
+      details { border-bottom: 1px solid var(--line); }
+      summary { min-height: 3rem; display: flex; align-items: center; cursor: pointer; font-size: 1.15rem; font-weight: 700; }
+      details p { padding: 0 0 0.9rem; }
+      .limits { display: grid; gap: 0.4rem; max-width: 36rem; padding-left: 1.1rem; color: var(--muted); }
+      .close { background: var(--ink); color: var(--surface); }
+      .close .wrap { display: grid; gap: 1rem; }
+      footer { width: min(60rem, 100%); margin: 0 auto; padding: 1.5rem 1rem 2rem; color: var(--muted); font-size: 0.95rem; }
+      footer a { color: var(--ink); }
       @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
     </style>
   </head>
   <body>
+    <a class="skip" href="#contenido">Saltar al contenido</a>
     <header class="bar">
       <a class="mark" href="presentacion.html">
         <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
@@ -100,70 +109,127 @@
       </a>
       <a class="go" href="claramente.html">Hacerlo con mi mesa</a>
     </header>
-    <main>
-      <section class="hero">
-        <div>
-          <h1>La cuenta, clara.</h1>
-          <p class="lead">Escribes quién está y qué se pidió. Cada quien dice si es suyo. Al final se lee quién paga.</p>
+    <main id="contenido">
+      <section class="wrap hero">
+        <div class="stack">
+          <p class="kicker">Para cuando alguien pagó la cena</p>
+          <h1>Cada quien sabe cuánto le toca.</h1>
+          <p class="lead">Claramente escribe la cuenta una vez. Los demás marcan lo suyo desde su celular. Al final no se discute el número: está escrito quién paga y quién recibe.</p>
           <div class="actions">
             <a class="go" href="claramente.html">Empezar con mi mesa</a>
-            <a class="ghost" href="#pasos">Ver los cuatro pasos</a>
+            <a class="ghost" href="#resuelve">Ver cómo se resuelve</a>
           </div>
         </div>
-        <div class="bill" aria-live="polite">
+        <div class="bill">
           <p class="bill-name">
             <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.25" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M16 4.2v23.6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
             claramente
           </p>
+          <p class="muted">Ejemplo de una cena</p>
           <p class="pay" id="owes">Luis le paga $180.00 a Ana</p>
           <p class="get" id="gets">Ana recibe $180.00</p>
           <p class="muted" id="note">Luis dijo que sí. Ana pagó, así que Luis le devuelve todo.</p>
         </div>
       </section>
+
       <div class="band">
-        <section class="steps" id="pasos">
-          <h2>Cuatro pasos. Nada más.</h2>
-          <article class="card">
-            <p class="num">1</p>
-            <h3>Quién está</h3>
-            <p class="muted">El anfitrión escribe los nombres. Uno por uno.</p>
-            <div class="people">
-              <p class="person">Ana <span>Sí va a pagar</span></p>
-              <p class="person">Luis <span>Sí va a pagar</span></p>
-            </div>
-          </article>
-          <article class="card">
-            <p class="num">2</p>
-            <h3>Qué se pidió</h3>
-            <p class="muted">Luego pone el producto y el precio. También quién pagó.</p>
-            <p class="price">Tacos $180.00</p>
-          </article>
-          <article class="card">
-            <p class="num">3</p>
-            <h3>De quién es</h3>
-            <p class="muted">Cada quien abre el dibujo y contesta una sola pregunta.</p>
-            <div class="pair">
-              <button type="button" id="yes" aria-pressed="true">Sí</button>
-              <button type="button" id="no" aria-pressed="false">No</button>
-            </div>
-          </article>
-          <article class="card">
-            <p class="num">4</p>
-            <h3>Quién paga</h3>
-            <p class="muted">El dinero se lee en palabras. El color solo acompaña.</p>
-            <div class="bill">
-              <p class="pay" id="owes2">Luis le paga $180.00 a Ana</p>
-              <p class="get" id="gets2">Ana recibe $180.00</p>
-              <p class="muted" id="note2">Luis dijo que sí. Ana pagó, así que Luis le devuelve todo.</p>
-            </div>
-          </article>
+        <section class="wrap" id="problema">
+          <div class="stack">
+            <h2>Lo que se atasca en la mesa</h2>
+            <p class="pain"><strong>Alguien pagó todo.</strong><span class="muted">Luego tiene que cobrar. El ticket ya no está en la mesa y cada quien recuerda otra cosa.</span></p>
+            <p class="pain"><strong>Repartir parejo no es justo.</strong><span class="muted">Quien no pidió el postre igual lo termina pagando.</span></p>
+            <p class="pain"><strong>Se discute al final.</strong><span class="muted">Cuando ya todos quieren irse y el número no cuadra.</span></p>
+          </div>
         </section>
       </div>
+
+      <section class="wrap" id="resuelve">
+        <div class="stack">
+          <h2>Cómo lo resuelve</h2>
+          <p class="muted">Sin cuenta, sin instalar una aplicación y sin mandar la cena a un servidor.</p>
+          <ol class="fixes">
+            <li class="fix"><b>1</b><p><strong>Una sola cuenta.</strong><br><span class="muted">El anfitrión escribe las personas, los precios y quién pagó. Queda en ese celular.</span></p></li>
+            <li class="fix"><b>2</b><p><strong>Un dibujo, no un código.</strong><br><span class="muted">Los demás lo abren con la cámara. No se copia un texto enorme.</span></p></li>
+            <li class="fix"><b>3</b><p><strong>Una pregunta por producto.</strong><br><span class="muted">Sí o no. Nada de listas ni de cuentas de usuario.</span></p></li>
+            <li class="fix"><b>4</b><p><strong>El resultado, en palabras.</strong><br><span class="muted">«Luis le paga $180 a Ana». Si el color no se distingue, la frase basta.</span></p></li>
+          </ol>
+        </div>
+      </section>
+
+      <div class="band">
+        <section class="wrap" id="quien">
+          <div class="stack">
+            <h2>Según el papel en la mesa</h2>
+            <div class="roles">
+              <article class="card">
+                <h3>Si pagaste</h3>
+                <p class="muted">Escribes quién está, qué se pidió y quién pagó. Muestras el dibujo. Cuando regresan el suyo, ves si ya marcaron y cuánto te deben.</p>
+              </article>
+              <article class="card">
+                <h3>Si te pasaron el dibujo</h3>
+                <p class="muted">Lo abres con la cámara. Contestas sí o no en cada producto. Al final muestras tu dibujo para que el anfitrión actualice la cuenta.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="wrap" id="regla">
+        <div class="stack">
+          <h2>La regla que más confunde</h2>
+          <p class="muted">Tacos, $180. Ana ya pagó. Luis contesta si son suyos. Prueba las dos respuestas.</p>
+          <div class="pair">
+            <button type="button" id="yes" aria-pressed="true">Sí</button>
+            <button type="button" id="no" aria-pressed="false">No</button>
+          </div>
+          <div class="bill" aria-live="polite">
+            <p class="pay" id="owes2">Luis le paga $180.00 a Ana</p>
+            <p class="get" id="gets2">Ana recibe $180.00</p>
+            <p class="muted" id="note2">Luis dijo que sí. Ana pagó, así que Luis le devuelve todo.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="band">
+        <section class="wrap" id="ayuda">
+          <div class="stack">
+            <h2>Si alguien se atora</h2>
+            <p class="muted">Abre solo la duda que tengas. La respuesta es corta y se puede hacer en el momento.</p>
+            <div class="help">
+              <details><summary>El celular se queda en blanco</summary><p class="muted">Cierra esa pestaña y abre otra vez el enlace, no una foto vieja del dibujo.</p></details>
+              <details><summary>El dibujo parece el mismo</summary><p class="muted">El primero abre la cuenta para marcar. Al terminar sale otro: ese lo escanea el anfitrión con la cámara.</p></details>
+              <details><summary>El monto subió</summary><p class="muted">Lo que nadie marcó se reparte entre todos. Si sí era de alguien, hay que decir que sí. Por eso no baja a cero cuando todos dicen que no.</p></details>
+              <details><summary>La cámara no abre</summary><p class="muted">El celular pide permiso. Si no se lo das, la otra persona enseña el dibujo y el anfitrión lo lee.</p></details>
+              <details><summary>No hay internet</summary><p class="muted">La primera vez el enlace tiene que abrir. Después la cuenta sigue en ese celular, sin red.</p></details>
+              <details><summary>Estoy en la computadora</summary><p class="muted">Sirve para armar la cuenta. Para que cada quien marque lo suyo, es más claro el celular.</p></details>
+              <details><summary>Quiero otra cena</summary><p class="muted">En el teléfono, el inicio puede ofrecer la cuenta guardada. Para una nueva, sigue con Agregar personas. En la computadora, Limpiar borra la de ese navegador.</p></details>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="wrap" id="limites">
+        <div class="stack">
+          <h2>Qué no pide</h2>
+          <ul class="limits">
+            <li>No pide correo ni una cuenta para entrar.</li>
+            <li>No manda la cena a un servidor.</li>
+            <li>No cobra por dividirla.</li>
+            <li>No adivina el ticket: alguien escribe los precios.</li>
+          </ul>
+        </div>
+      </section>
+
       <section class="close">
-        <h2>Cuando ya se entendió, se hace con la mesa de verdad.</h2>
-        <a class="ink" href="claramente.html">Hacerlo con mi mesa</a>
+        <div class="wrap">
+          <h2>La próxima cuenta, con la mesa enfrente.</h2>
+          <a class="go" href="claramente.html">Hacerlo con mi mesa</a>
+        </div>
       </section>
     </main>
+    <footer>
+      claramente. La cuenta se queda en el celular. <a href="claramente.html">Abrir la cuenta</a>
+    </footer>
     <script>
       const money = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
       const yes = document.getElementById("yes");
@@ -174,19 +240,15 @@
         const back = "Ana recibe " + money.format(pays);
         const note = mine
           ? "Luis dijo que sí. Ana pagó, así que Luis le devuelve todo."
-          : "Luis dijo que no. Como nadie los marcó, se reparten entre todos.";
-        document.getElementById("owes").textContent = line;
-        document.getElementById("gets").textContent = back;
-        document.getElementById("note").textContent = note;
-        document.getElementById("owes2").textContent = line;
-        document.getElementById("gets2").textContent = back;
-        document.getElementById("note2").textContent = note;
+          : "Luis dijo que no. Como nadie los marcó, se reparte entre todos.";
+        ["owes", "owes2"].forEach((id) => { document.getElementById(id).textContent = line; });
+        ["gets", "gets2"].forEach((id) => { document.getElementById(id).textContent = back; });
+        ["note", "note2"].forEach((id) => { document.getElementById(id).textContent = note; });
         yes.setAttribute("aria-pressed", mine ? "true" : "false");
         no.setAttribute("aria-pressed", mine ? "false" : "true");
       }
       yes.addEventListener("click", () => paint(true));
       no.addEventListener("click", () => paint(false));
-      paint(true);
     </script>
   </body>
 </html>
