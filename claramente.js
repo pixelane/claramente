@@ -1103,7 +1103,13 @@
 
   function persistDomain() {
     if (!persistEnabled || !window.ClaraStore) return;
-    window.ClaraStore.saveGuided(window.localStorage, domainSnapshot());
+    try {
+      window.ClaraStore.saveGuided(window.localStorage, domainSnapshot());
+    } catch (error) {
+      if (persistDomain.warned) return;
+      persistDomain.warned = true;
+      showToast("No pude guardar en este celular");
+    }
   }
 
   function openSavedAccount() {

@@ -37,7 +37,7 @@
 
   const STORAGE_KEY = "clara.state.v1";
   const BACKWARD_STORAGE_KEY = "linksplit.state.v1";
-  const CACHE_NAME = "clara-cache-v38";
+  const CACHE_NAME = "clara-cache-v39";
   const MAX_HASH_LENGTH = 180000;
   const MAX_BACKUP_BYTES = 350000;
   const MAX_PEOPLE = 80;
@@ -155,17 +155,6 @@
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (sessionStorage.getItem("clara.swReloaded") === CACHE_NAME) return;
-        sessionStorage.setItem("clara.swReloaded", CACHE_NAME);
-        window.location.reload();
-      });
-      navigator.serviceWorker.register("sw.js").catch((err) => {
-        console.warn("Service worker registration failed", err);
-      });
-    }
-
     // Detectar si se fuerza el modo celular mediante el query param 'mode' o 'view'
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("mode") === "mobile" || urlParams.get("view") === "mobile") {
