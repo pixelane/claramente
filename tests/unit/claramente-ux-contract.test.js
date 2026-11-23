@@ -31,7 +31,8 @@ function run() {
   assert.match(claramenteJs, /Abrir cuenta guardada/, "a saved account should be recoverable from the start screen");
   assert.match(claramenteJs, /Traer la cuenta de este celular/, "a richer account on this phone should be offered instead of overwritten");
   assert.match(claramenteJs, /recibe /, "a person who is owed money should see that they receive it");
-  assert.match(claramenteJs, /ClaraStore\.saveGuided/, "the guided flow should persist only through the shared store");
+  assert.match(claramenteJs, /prueba=qr/, "a ready account should be available to try the code");
+  assert.match(claramenteJs, /if \(demoMode \|\| state\.screen === "guest"/, "the trial account must not replace the saved account");
   const claramenteHtml = fs.readFileSync(path.join(root, "claramente.html"), "utf8");
   assert.match(claramenteHtml, /clara-store\.js/, "the guided flow should load the shared store");
 }

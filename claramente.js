@@ -96,6 +96,7 @@
   let scanDetector = null;
   let savedGuided = null;
   let savedCanonical = null;
+  let demoMode = false;
   let syncChoice = { action: "write", reason: "missing" };
 
   const iconPaths = {
@@ -125,6 +126,12 @@
       syncChoice = window.ClaraStore.syncDecision(window.localStorage, savedGuided || { updatedAt: 0 });
     }
     await openIncoming();
+    if (new URLSearchParams(window.location.search).get("prueba") === "qr" && state.screen !== "guest") {
+      demoMode = true;
+      beginSession(demoBill());
+      state.screen = "result";
+      await prepareListCode();
+    }
     const nextUrl = state.screen === "guest" ? window.location.href : window.location.pathname + window.location.search;
     window.history.replaceState({ claramenteScreen: state.screen }, "", nextUrl);
     window.addEventListener("popstate", handlePopState);
@@ -173,6 +180,7 @@
       <div class="panel">
         <p class="panel-note">Todo queda en este celular y puedes compartir el resumen al final.</p>
         <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
+        <button class="secondary-button" type="button" data-prueba>Probar con una cuenta lista</button>
         ${savedAccountButton()}
       </div>
       <form class="panel form-grid" id="codeForm">
@@ -556,7 +564,7 @@
   function renderResult() {
     const result = calculateResult();
     return `
-      ${renderHeader("Listo, asi queda la cuenta", result.help)}
+      ${renderHeader(demoMode ? "Cuenta de prueba" : "Listo, asi queda la cuenta", demoMode ? "Muestra este codigo al otro celular. Esta cuenta no se guarda." : result.help)}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
@@ -651,16 +659,21 @@
     }
   }
 
-  async function shareList() {
-    if (!window.ClaraExchange) return;
-    if (!state.people.length || !state.items.length) return showToast("Primero arma la cuenta");
+  async function prepareListCode() {
+    if (!window.ClaraExchange) return "";
+    if (!state.people.length || !state.items.length) return "";
     if (!state.billId) state.billId = createId("mesa");
     const code = await window.ClaraExchange.seal("list1", window.ClaraExchange.toList(domainSnapshot()));
-    const chunks = window.ClaraExchange.splitQr(code);
-    ui.qrChunks = chunks;
+    ui.qrChunks = window.ClaraExchange.splitQr(code);
     ui.qrIndex = 0;
-    if (chunks.length === 1) await shareOrCopy(codeUrl(code));
-    showToast(chunks.length === 1 ? "Lista lista para compartir" : `Lista en ${chunks.length} codigos`);
+    return code;
+  }
+
+  async function shareList() {
+    const code = await prepareListCode();
+    if (!code) return showToast("Primero arma la cuenta");
+    if (ui.qrChunks.length === 1) await shareOrCopy(codeUrl(code));
+    showToast(ui.qrChunks.length === 1 ? "Lista lista para compartir" : `Lista en ${ui.qrChunks.length} codigos`);
     render();
   }
 
@@ -944,6 +957,10 @@
     if (button.hasAttribute("data-share-whatsapp")) return shareWhatsApp();
     if (button.hasAttribute("data-copy-summary")) return copySummary();
     if (button.hasAttribute("data-share-list")) return shareList();
+    if (button.hasAttribute("data-prueba")) {
+      window.location.assign("?prueba=qr");
+      return;
+    }
     if (button.dataset.guestPerson) {
       ui.guestPersonId = button.dataset.guestPerson;
       return render();
@@ -1514,8 +1531,28 @@
     persistDomain.last = domainSnapshot();
   }
 
+  function demoBill() {
+    return {
+      people: [
+        { id: "p_ana", name: "Ana" },
+        { id: "p_luis", name: "Luis" }
+      ],
+      items: [
+        { id: "item_tacos", type: "product", name: "Tacos", amountCents: 18000, eatenBy: [], paidById: "p_ana" },
+        { id: "item_pizza", type: "product", name: "Pizza", amountCents: 24000, eatenBy: [], paidById: "p_ana" }
+      ],
+      paidMode: "single",
+      paymentMethod: "card",
+      cardPayerId: "p_ana",
+      paidById: "p_ana",
+      billId: "mesa_prueba",
+      claims: {},
+      updatedAt: 1
+    };
+  }
+
   function persistDomain() {
-    if (state.screen === "guest" || !persistEnabled || !window.ClaraStore) return;
+    if (demoMode || state.screen === "guest" || !persistEnabled || !window.ClaraStore) return;
     const snapshot = domainSnapshot();
     if (!sameBill(persistDomain.last, snapshot)) snapshot.updatedAt = Date.now();
     else snapshot.updatedAt = persistDomain.last ? persistDomain.last.updatedAt : snapshot.updatedAt;
