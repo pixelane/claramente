@@ -447,6 +447,24 @@ p {
   margin: 0;
 }
 
+.name-list {
+  display: grid;
+  gap: 10px;
+}
+
+.name-list .pick-button,
+.yes-no .primary-button,
+.yes-no .secondary-button {
+  min-height: 72px;
+  font-size: 1.35rem;
+}
+
+.yes-no {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .person-picker {
   display: flex;
   flex-wrap: wrap;

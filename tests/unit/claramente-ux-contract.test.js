@@ -31,8 +31,9 @@ function run() {
   assert.match(claramenteJs, /Abrir cuenta guardada/, "a saved account should be recoverable from the start screen");
   assert.match(claramenteJs, /Traer la cuenta de este celular/, "a richer account on this phone should be offered instead of overwritten");
   assert.match(claramenteJs, /recibe /, "a person who is owed money should see that they receive it");
-  assert.match(claramenteJs, /No es mio/, "each guest item should offer an explicit no, not only a yes");
-  assert.match(claramenteJs, /scrollToNode\("guestQr"\)/, "the guest code should come into view when the list is complete");
+  assert.match(claramenteJs, /¿\$\{item\.name\} es tuyo\?/, "the guest should answer one product at a time");
+  assert.match(claramenteJs, /data-guest-answer="0"/, "each product should have an explicit no");
+  assert.match(claramenteJs, /showGuestCode\(\)/, "the last answer should open the code without another hunt");
   assert.match(claramenteJs, /if \(demoMode \|\| state\.screen === "guest"/, "the trial account must not replace the saved account");
   const claramenteHtml = fs.readFileSync(path.join(root, "claramente.html"), "utf8");
   assert.match(claramenteHtml, /clara-store\.js/, "the guided flow should load the shared store");

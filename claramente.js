@@ -39,10 +39,13 @@
     guestPersonId: "",
     guestAte: [],
     guestChoice: {},
+    guestIndex: 0,
     qrChunks: null,
     qrIndex: 0,
     qrInbox: [],
-    qrProgress: null
+    qrProgress: null,
+    askCode: false,
+    showMore: false
   };
 
   const state = {
@@ -202,17 +205,15 @@
         <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
         <button class="secondary-button" type="button" data-prueba>Probar con una cuenta lista</button>
         ${savedAccountButton()}
+        <button class="secondary-button" type="button" data-ask-code>${ui.askCode ? "Ocultar" : "Ya me pasaron un codigo"}</button>
       </div>
-      <form class="panel form-grid" id="codeForm">
+      ${ui.askCode ? `<form class="panel form-grid" id="codeForm">
         <label class="field">
-          <span>Codigo recibido</span>
-          <textarea id="codeInput" name="codeInput" rows="3" placeholder="Pega uno o todos los codigos"></textarea>
+          <span>Pega aqui el enlace</span>
+          <textarea id="codeInput" name="codeInput" rows="3" placeholder="Pega el enlace"></textarea>
         </label>
-        ${ui.qrProgress ? `<p class="section-note">Van ${ui.qrProgress.have} de ${ui.qrProgress.total}</p>` : ""}
-        <button class="secondary-button" type="submit">Leer codigo</button>
-        <button class="secondary-button" type="button" data-scan-photo>Leer foto</button>
-        <button class="secondary-button" type="button" data-scan-live>Escanear</button>
-      </form>
+        <button class="primary-button" type="submit">Abrir</button>
+      </form>` : ""}
     `;
   }
 
@@ -584,30 +585,32 @@
   function renderResult() {
     const result = calculateResult();
     return `
-      ${renderHeader(demoMode ? "Cuenta de prueba" : "Listo, asi queda la cuenta", demoMode ? "El otro celular escanea el codigo y abre esta misma cuenta." : result.help)}
+      ${renderHeader("Muestra este codigo", "La otra persona lo escanea con la camara del celular.")}
+      ${renderQrPanel()}
+      <div class="panel">
+        <button class="primary-button" type="button" data-scan-live>Leer el codigo de alguien</button>
+      </div>
+      ${renderRectification()}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
       <div class="panel">
-        <button class="primary-button" type="button" data-share-whatsapp>${icon("send")}<span>Enviar por WhatsApp</span></button>
-        <button class="secondary-button" type="button" data-copy-summary>${icon("copy")}<span>Copiar resumen</span></button>
-        <button class="secondary-button" type="button" data-share-list>${icon("send")}<span>Compartir lista</span></button>
-      </div>
-      ${renderQrPanel()}
-      ${renderRectification()}
-      <form class="panel form-grid" id="partForm">
-        <label class="field">
-          <span>Parte recibida</span>
-          <textarea id="partCode" name="partCode" rows="3" placeholder="Pega el enlace o los codigos"></textarea>
-        </label>
-        <button class="primary-button" type="submit">Leer parte</button>
-        <button class="secondary-button" type="button" data-scan-photo>Leer foto</button>
-        <button class="secondary-button" type="button" data-scan-live>Escanear</button>
-      </form>
-      <div class="panel edit-shortcuts">
-        <button class="secondary-button" type="button" data-go="people">Editar personas</button>
-        <button class="secondary-button" type="button" data-go="items">Editar cuenta</button>
-        <button class="secondary-button" type="button" data-go="paid">Editar quien pago</button>
+        <button class="secondary-button" type="button" data-show-more>${ui.showMore ? "Ocultar opciones" : "Otras opciones"}</button>
+        ${ui.showMore ? `
+          <button class="secondary-button" type="button" data-share-whatsapp>${icon("send")}<span>Enviar por WhatsApp</span></button>
+          <button class="secondary-button" type="button" data-copy-summary>${icon("copy")}<span>Copiar resumen</span></button>
+          <button class="secondary-button" type="button" data-share-list>${icon("send")}<span>Compartir lista</span></button>
+          <form class="form-grid" id="partForm">
+            <label class="field">
+              <span>Si no puede escanear, pega el enlace</span>
+              <textarea id="partCode" name="partCode" rows="3" placeholder="Pega el enlace"></textarea>
+            </label>
+            <button class="secondary-button" type="submit">Abrir enlace</button>
+          </form>
+          <button class="secondary-button" type="button" data-go="people">Editar personas</button>
+          <button class="secondary-button" type="button" data-go="items">Editar cuenta</button>
+          <button class="secondary-button" type="button" data-go="paid">Editar quien pago</button>
+        ` : ""}
       </div>
     `;
   }
@@ -624,10 +627,8 @@
   function renderRectification() {
     if (!window.ClaraExchange || !state.billId) return "";
     const lines = window.ClaraExchange.rectify(domainSnapshot()).map((issue) => {
-      if (issue.type === "missing") return `Falta la parte de ${personName(issue.personId)}`;
-      if (issue.type === "unclaimed") return `Nadie marco ${itemName(issue.itemId)}`;
-      if (issue.type === "two-owners") return `Dos personas reclaman ${itemName(issue.itemId)}`;
-      if (issue.type === "released") return `${personName(issue.personId)} ya no reclama ${itemName(issue.itemId)}`;
+      if (issue.type === "missing") return `Falta el codigo de ${personName(issue.personId)}`;
+      if (issue.type === "two-owners") return `Dos personas marcaron ${itemName(issue.itemId)}. Preguntales.`;
       return "";
     }).filter(Boolean);
     if (!lines.length) return "";
@@ -637,26 +638,35 @@
   function renderGuest() {
     const list = ui.guestList;
     if (!list) return "";
+    if (!ui.guestPersonId) {
+      return `
+        ${renderHeader("Como te llamas?", "Toca tu nombre. Solo una vez.")}
+        <div class="name-list">
+          ${list.people.map((person) => `<button class="pick-button" type="button" data-guest-person="${escapeAttr(person.id)}"><span>${escapeHtml(person.name)}</span></button>`).join("")}
+        </div>
+      `;
+    }
+    const products = guestProducts();
+    const item = products[ui.guestIndex];
+    if (item && !ui.qrChunks) {
+      return `
+        ${renderHeader(`¿${item.name} es tuyo?`, `${formatMoney(item.amountCents)}. Pregunta ${ui.guestIndex + 1} de ${products.length}.`)}
+        <div class="yes-no">
+          <button class="primary-button" type="button" data-guest-answer="1">Si</button>
+          <button class="secondary-button" type="button" data-guest-answer="0">No</button>
+        </div>
+        <div class="panel">
+          <button class="secondary-button" type="button" data-guest-back>Atras</button>
+        </div>
+      `;
+    }
+    const person = list.people.find((entry) => entry.id === ui.guestPersonId);
     return `
-      ${renderHeader("Que es tuyo?", "En cada producto elige si es tuyo o no. Cuando termines, aparece tu codigo.")}
-      <div class="person-picker" aria-label="Quien eres">
-        ${list.people.map((person) => `<button class="pick-button ${ui.guestPersonId === person.id ? "active" : ""}" type="button" data-guest-person="${escapeAttr(person.id)}"><span>${escapeHtml(person.name)}</span></button>`).join("")}
-      </div>
-      <div class="list">
-        ${list.items.map((item) => {
-          if (item.type === "shared") {
-            return `<article class="product-card"><h2 class="card-title">${escapeHtml(item.name)}</h2><p class="money">${formatMoney(item.amountCents)}</p><p class="card-meta">Se reparte entre todos</p></article>`;
-          }
-          const choice = ui.guestChoice[item.id];
-          const mine = choice === true ? "active" : "";
-          const notMine = choice === false ? "active" : "";
-          return `<article class="product-card" id="guest-item-${escapeAttr(item.id)}"><h2 class="card-title">${escapeHtml(item.name)}</h2><p class="money">${formatMoney(item.amountCents)}</p><div class="person-picker"><button class="pick-button ${mine}" type="button" data-guest-choice="${escapeAttr(item.id)}:1"><span>Es mio</span></button><button class="pick-button ${notMine}" type="button" data-guest-choice="${escapeAttr(item.id)}:0"><span>No es mio</span></button></div></article>`;
-        }).join("")}
-      </div>
-      <div class="panel" id="guestReady">
-        <button class="primary-button" type="button" data-share-part>${icon("send")}<span>${pendingGuestItem() ? "Revisa todos los productos" : "Mostrar mi codigo"}</span></button>
-      </div>
+      ${renderHeader("Ensenale esto a quien pago", person ? `Listo, ${person.name}. No cierres esta pantalla.` : "No cierres esta pantalla.")}
       ${renderQrPanel()}
+      <div class="panel">
+        <button class="secondary-button" type="button" data-guest-fix>Cambiar una respuesta</button>
+      </div>
     `;
   }
 
@@ -670,12 +680,39 @@
     return guestProducts().find((item) => ui.guestChoice[item.id] !== true && ui.guestChoice[item.id] !== false);
   }
 
-  function setGuestChoice(itemId, mine) {
-    ui.guestChoice[itemId] = mine;
-    ui.guestAte = guestProducts().filter((item) => ui.guestChoice[item.id] === true).map((item) => item.id);
+  async function answerGuest(mine) {
+    const products = guestProducts();
+    const item = products[ui.guestIndex];
+    if (!item) return showGuestCode();
+    ui.guestChoice[item.id] = mine;
+    ui.guestAte = products.filter((product) => ui.guestChoice[product.id] === true).map((product) => product.id);
+    let next = -1;
+    for (let index = ui.guestIndex + 1; index < products.length; index += 1) {
+      if (ui.guestChoice[products[index].id] !== true && ui.guestChoice[products[index].id] !== false) {
+        next = index;
+        break;
+      }
+    }
+    if (next === -1) return showGuestCode();
+    ui.guestIndex = next;
     ui.qrChunks = null;
     render();
-    if (!pendingGuestItem()) scrollToNode("guestReady");
+  }
+
+  function guestBack() {
+    if (ui.qrChunks) {
+      ui.qrChunks = null;
+      ui.guestIndex = Math.max(guestProducts().length - 1, 0);
+      render();
+      return;
+    }
+    if (ui.guestIndex > 0) {
+      ui.guestIndex -= 1;
+      render();
+      return;
+    }
+    ui.guestPersonId = "";
+    render();
   }
 
   function scrollToNode(id) {
@@ -718,14 +755,8 @@
     render();
   }
 
-  async function sharePart(toWhatsApp) {
-    if (!window.ClaraExchange || !ui.guestList || !ui.guestPersonId) return showToast("Elige quien eres");
-    const pending = pendingGuestItem();
-    if (pending) {
-      showToast(`Falta revisar ${pending.name}`);
-      scrollToNode(`guest-item-${pending.id}`);
-      return;
-    }
+  async function showGuestCode() {
+    if (!window.ClaraExchange || !ui.guestList || !ui.guestPersonId) return showToast("Toca tu nombre");
     const code = await window.ClaraExchange.seal("part1", {
       kind: "part",
       billId: ui.guestList.billId,
@@ -763,7 +794,7 @@
     const note = !link
       ? "Codigo para la otra pantalla"
       : state.screen === "guest"
-        ? "Muestra este codigo al anfitrion. Al escanearlo, su cuenta se actualiza."
+        ? "Ensenale esta pantalla a quien pago."
         : "Un codigo. El otro celular lo escanea y abre esta cuenta en el navegador.";
     return `
       <section class="panel" id="guestQr">
@@ -809,11 +840,12 @@
     if (message.kind === "list") {
       ui.screen = "guest";
       ui.guestList = message;
-      ui.guestPersonId = message.people[0] ? message.people[0].id : "";
+      ui.guestPersonId = "";
       ui.guestAte = [];
       ui.guestChoice = {};
+      ui.guestIndex = 0;
+      ui.qrChunks = null;
       render();
-      showToast("Lista recibida");
       return;
     }
     const base = persistEnabled ? domainSnapshot() : savedGuided;
@@ -831,7 +863,7 @@
     state.screen = "result";
     persistDomain.last = null;
     render();
-    showToast("Parte aplicada");
+    showToast(`Listo. ${personName(message.personId)} ya marco lo suyo.`);
   }
 
   async function readQrPhoto() {
@@ -1008,17 +1040,29 @@
       window.location.assign(`${window.location.pathname}?prueba=qr#${TRIAL_CODE}`);
       return;
     }
-    if (button.dataset.guestPerson) {
-      ui.guestPersonId = button.dataset.guestPerson;
-      ui.qrChunks = null;
+    if (button.hasAttribute("data-ask-code")) {
+      ui.askCode = !ui.askCode;
       return render();
     }
-    if (button.dataset.guestChoice) {
-      const [itemId, mine] = button.dataset.guestChoice.split(":");
-      return setGuestChoice(itemId, mine === "1");
+    if (button.hasAttribute("data-show-more")) {
+      ui.showMore = !ui.showMore;
+      return render();
     }
-    if (button.hasAttribute("data-copy-part")) return sharePart(false);
-    if (button.hasAttribute("data-share-part")) return sharePart(true);
+    if (button.dataset.guestPerson) {
+      ui.guestPersonId = button.dataset.guestPerson;
+      ui.guestIndex = 0;
+      ui.qrChunks = null;
+      if (!guestProducts().length) return showGuestCode();
+      return render();
+    }
+    if (button.dataset.guestAnswer) return answerGuest(button.dataset.guestAnswer === "1");
+    if (button.hasAttribute("data-guest-back")) return guestBack();
+    if (button.hasAttribute("data-guest-fix")) {
+      ui.qrChunks = null;
+      ui.guestIndex = 0;
+      return render();
+    }
+    if (button.hasAttribute("data-copy-part") || button.hasAttribute("data-share-part")) return showGuestCode();
     if (button.hasAttribute("data-qr-prev")) return stepQr(-1);
     if (button.hasAttribute("data-qr-next")) return stepQr(1);
     if (button.hasAttribute("data-qr-copy")) return copyQrChunk();
