@@ -1,4 +1,4 @@
-const CACHE_NAME = "clara-cache-v54";
+const CACHE_NAME = "clara-cache-v55";
 const RUNTIME_CACHE = "clara-runtime";
 const MAX_RUNTIME_BYTES = 150 * 1024;
 const ASSETS = [
@@ -6,6 +6,8 @@ const ASSETS = [
   "./index.html",
   "./style.css",
   "./claramente.html",
+  "./presentacion.html",
+  "./fonts/OpenSans-latin.woff2",
   "./claramente.css",
   "./claramente.js",
   "./shell-router.js",

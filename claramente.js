@@ -222,6 +222,7 @@
         <button class="primary-button" type="button" data-go="people"><span>Agregar personas</span></button>
         ${savedAccountButton()}
         <button class="quiet-link" type="button" data-prueba>Probar con una cuenta lista</button>
+        <button class="quiet-link" type="button" data-presentacion>Ver como se usa</button>
         <button class="quiet-link" type="button" data-ask-code>${ui.askCode ? "Ocultar" : "Ya me pasaron un enlace"}</button>
       </div>
       ${ui.askCode ? `<form class="panel form-grid" id="codeForm">
@@ -1193,6 +1194,10 @@
     if (button.hasAttribute("data-share-code")) return shareQrChunk();
     if (button.hasAttribute("data-scan-photo")) {
       if (els.qrPhoto) els.qrPhoto.click();
+      return;
+    }
+    if (button.hasAttribute("data-presentacion")) {
+      window.location.href = "presentacion.html";
       return;
     }
     if (button.hasAttribute("data-scan-live")) return startScan();
