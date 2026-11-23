@@ -215,12 +215,385 @@
     return settlements;
   }
 
+  const PAID_MODES = new Set(["", "none", "single", "multiple"]);
+  const ITEM_TYPES = new Set(["product", "shared", "single"]);
+  const PAYMENT_METHODS = new Set(["", "cash", "card"]);
+  const CURRENCIES = new Set(["MXN", "USD", "EUR", "COP", "ARS", "CLP"]);
+  const UI_ONLY_KEYS = ["screen", "itemMode", "editing"];
+
+  function cleanText(value, maxLength) {
+    const text = typeof value === "string" ? value.trim() : "";
+    return text.slice(0, maxLength);
+  }
+
+  function positiveInteger(value) {
+    const number = typeof value === "number" ? value : Number(value);
+    if (!Number.isInteger(number) || number <= 0) return 0;
+    return number;
+  }
+
+  function nonNegativeInteger(value, fallback) {
+    const number = typeof value === "number" ? value : Number(value);
+    if (!Number.isInteger(number) || number < 0) return fallback;
+    return number;
+  }
+
+  function uniqueStrings(ids) {
+    if (!Array.isArray(ids)) return [];
+    return Array.from(new Set(ids.filter((id) => typeof id === "string" && id)));
+  }
+
+  function normalizePeople(rawPeople) {
+    const people = [];
+    const seen = new Set();
+    if (!Array.isArray(rawPeople)) return people;
+    rawPeople.forEach((person) => {
+      if (!person || typeof person !== "object") return;
+      const id = typeof person.id === "string" ? person.id : "";
+      const name = cleanText(person.name, 80);
+      if (!id || !name || seen.has(id)) return;
+      seen.add(id);
+      people.push({
+        id,
+        name,
+        reminder: cleanText(person.reminder, 240),
+        isGuest: Boolean(person.isGuest)
+      });
+    });
+    return people;
+  }
+
+  function normalizeCanonicalState(raw) {
+    const source = raw && typeof raw === "object" ? raw : {};
+    const people = normalizePeople(source.people);
+    const peopleIds = new Set(people.map((person) => person.id));
+    const expenses = [];
+    const seenExpenseIds = new Set();
+    if (Array.isArray(source.expenses)) {
+      source.expenses.forEach((expense, index) => {
+        if (!expense || typeof expense !== "object") return;
+        const amountCents = positiveInteger(expense.amountCents);
+        const paidBy = typeof expense.paidBy === "string" ? expense.paidBy : "";
+        const splitWith = uniqueStrings(expense.splitWith).filter((id) => peopleIds.has(id));
+        if (!amountCents || !peopleIds.has(paidBy) || !splitWith.length) return;
+        let id = typeof expense.id === "string" && expense.id ? expense.id : `expense-${index + 1}`;
+        if (seenExpenseIds.has(id)) id = `${id}-${index + 1}`;
+        seenExpenseIds.add(id);
+        const normalized = {
+          id,
+          description: cleanText(expense.description, 120) || "Gasto",
+          amountCents,
+          paidBy,
+          splitWith,
+          createdAt: nonNegativeInteger(expense.createdAt, index + 1)
+        };
+        if (expense.source === "restaurant") {
+          normalized.source = "restaurant";
+          if (typeof expense.restaurantId === "string" && expense.restaurantId) {
+            normalized.restaurantId = expense.restaurantId;
+          }
+          if (expense.restaurantPaidBy === "__self__" || peopleIds.has(expense.restaurantPaidBy)) {
+            normalized.restaurantPaidBy = expense.restaurantPaidBy;
+          }
+          if (Number.isInteger(expense.payerShareCents) && expense.payerShareCents >= 0) {
+            normalized.payerShareCents = expense.payerShareCents;
+          }
+          if (typeof expense.restaurantName === "string") {
+            normalized.restaurantName = cleanText(expense.restaurantName, 80);
+          }
+        }
+        expenses.push(normalized);
+      });
+    }
+    const tableClose = {};
+    if (source.tableClose && typeof source.tableClose === "object" && !Array.isArray(source.tableClose)) {
+      Object.keys(source.tableClose).forEach((key) => {
+        const record = source.tableClose[key];
+        if (!record || !Number.isInteger(record.paidCents) || record.paidCents < 0) return;
+        tableClose[key] = { paidCents: record.paidCents };
+      });
+    }
+    return {
+      version: 1,
+      groupName: cleanText(source.groupName, 80),
+      currency: CURRENCIES.has(source.currency) ? source.currency : "MXN",
+      people,
+      expenses,
+      tableClose,
+      updatedAt: nonNegativeInteger(source.updatedAt, 0)
+    };
+  }
+
+  function normalizeClaramenteItem(item, peopleIds, index, seenIds) {
+    if (!item || typeof item !== "object" || !ITEM_TYPES.has(item.type)) return null;
+    const amountCents = positiveInteger(item.amountCents);
+    if (!amountCents) return null;
+    let id = typeof item.id === "string" && item.id ? item.id : `item-${index + 1}`;
+    if (seenIds.has(id)) id = `${id}-${index + 1}`;
+    const name = cleanText(item.name, 120) || "Gasto";
+    if (item.type === "product") {
+      return {
+        id,
+        type: "product",
+        name,
+        amountCents,
+        eatenBy: uniqueStrings(item.eatenBy).filter((personId) => peopleIds.has(personId))
+      };
+    }
+    if (item.type === "shared") {
+      return {
+        id,
+        type: "shared",
+        name,
+        amountCents,
+        splitWith: uniqueStrings(item.splitWith).filter((personId) => peopleIds.has(personId))
+      };
+    }
+    if (!peopleIds.has(item.ownerId)) return null;
+    return {
+      id,
+      type: "single",
+      name,
+      amountCents,
+      ownerId: item.ownerId,
+      paidById: peopleIds.has(item.paidById) ? item.paidById : ""
+    };
+  }
+
+  function normalizeClaramenteState(raw) {
+    const source = raw && typeof raw === "object" ? raw : {};
+    const people = normalizePeople(source.people).map((person) => ({
+      id: person.id,
+      name: person.name,
+      isGuest: person.isGuest
+    }));
+    const peopleIds = new Set(people.map((person) => person.id));
+    const items = [];
+    const seenIds = new Set();
+    if (Array.isArray(source.items)) {
+      source.items.forEach((item, index) => {
+        const normalized = normalizeClaramenteItem(item, peopleIds, index, seenIds);
+        if (!normalized) return;
+        seenIds.add(normalized.id);
+        items.push(normalized);
+      });
+    }
+    return {
+      people,
+      items,
+      paidMode: PAID_MODES.has(source.paidMode) ? source.paidMode : "",
+      paymentMethod: PAYMENT_METHODS.has(source.paymentMethod) ? source.paymentMethod : "",
+      cardPayerId: peopleIds.has(source.cardPayerId) ? source.cardPayerId : "",
+      paidById: peopleIds.has(source.paidById) ? source.paidById : ""
+    };
+  }
+
+  function validateCanonicalState(raw) {
+    const errors = [];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return ["El estado canonico no es un objeto"];
+    }
+    if (raw.version !== 1) errors.push("version debe ser 1");
+    if (raw.currency !== undefined && !CURRENCIES.has(raw.currency)) errors.push("currency no esta soportada");
+    if (!Array.isArray(raw.people)) {
+      errors.push("people debe ser una lista");
+    } else {
+      const seen = new Set();
+      raw.people.forEach((person, index) => {
+        if (!person || typeof person.id !== "string" || !person.id) {
+          errors.push(`people[${index}] no tiene id`);
+        } else if (seen.has(person.id)) {
+          errors.push(`people id duplicado: ${person.id}`);
+        } else {
+          seen.add(person.id);
+        }
+        if (!person || typeof person.name !== "string" || !person.name.trim()) {
+          errors.push(`people[${index}] no tiene nombre`);
+        }
+      });
+    }
+    const peopleIds = new Set(Array.isArray(raw.people) ? raw.people.map((person) => person && person.id).filter(Boolean) : []);
+    if (!Array.isArray(raw.expenses)) {
+      errors.push("expenses debe ser una lista");
+    } else {
+      const seen = new Set();
+      raw.expenses.forEach((expense, index) => {
+        const label = `expenses[${index}]`;
+        if (!expense || typeof expense !== "object") {
+          errors.push(`${label} no es un objeto`);
+          return;
+        }
+        if (typeof expense.id !== "string" || !expense.id) errors.push(`${label} no tiene id`);
+        else if (seen.has(expense.id)) errors.push(`expenses id duplicado: ${expense.id}`);
+        else seen.add(expense.id);
+        if (!Number.isInteger(expense.amountCents) || expense.amountCents <= 0) {
+          errors.push(`${label} amountCents debe ser un entero positivo`);
+        }
+        if (!peopleIds.has(expense.paidBy)) errors.push(`${label} paidBy no existe`);
+        if (!Array.isArray(expense.splitWith) || expense.splitWith.length === 0) {
+          errors.push(`${label} splitWith esta vacio`);
+        } else {
+          if (new Set(expense.splitWith).size !== expense.splitWith.length) {
+            errors.push(`${label} splitWith tiene duplicados`);
+          }
+          expense.splitWith.forEach((id) => {
+            if (!peopleIds.has(id)) errors.push(`${label} splitWith incluye un id desconocido`);
+          });
+        }
+      });
+    }
+    if (raw.tableClose && typeof raw.tableClose === "object" && !Array.isArray(raw.tableClose)) {
+      Object.keys(raw.tableClose).forEach((key) => {
+        const record = raw.tableClose[key];
+        if (!record || !Number.isInteger(record.paidCents) || record.paidCents < 0) {
+          errors.push(`tableClose.${key} paidCents debe ser un entero mayor o igual a 0`);
+        }
+      });
+    }
+    return errors;
+  }
+
+  function validateClaramenteState(raw) {
+    const errors = [];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      return ["El estado de Claramente no es un objeto"];
+    }
+    UI_ONLY_KEYS.forEach((key) => {
+      if (Object.prototype.hasOwnProperty.call(raw, key)) {
+        errors.push(`${key} es estado de interfaz y no debe persistirse`);
+      }
+    });
+    if (!Array.isArray(raw.people)) {
+      errors.push("people debe ser una lista");
+    }
+    const peopleIds = new Set();
+    (Array.isArray(raw.people) ? raw.people : []).forEach((person, index) => {
+      if (!person || typeof person.id !== "string" || !person.id) {
+        errors.push(`people[${index}] no tiene id`);
+        return;
+      }
+      if (peopleIds.has(person.id)) errors.push(`people id duplicado: ${person.id}`);
+      peopleIds.add(person.id);
+      if (typeof person.name !== "string" || !person.name.trim()) errors.push(`people[${index}] no tiene nombre`);
+    });
+    if (!Array.isArray(raw.items)) {
+      errors.push("items debe ser una lista");
+    } else {
+      const seen = new Set();
+      raw.items.forEach((item, index) => {
+        const label = `items[${index}]`;
+        if (!item || !ITEM_TYPES.has(item.type)) {
+          errors.push(`${label} tiene un tipo invalido`);
+          return;
+        }
+        if (typeof item.id !== "string" || !item.id) errors.push(`${label} no tiene id`);
+        else if (seen.has(item.id)) errors.push(`items id duplicado: ${item.id}`);
+        else seen.add(item.id);
+        if (!Number.isInteger(item.amountCents) || item.amountCents <= 0) {
+          errors.push(`${label} amountCents debe ser un entero positivo`);
+        }
+        const checkIds = (ids, field) => {
+          if (!Array.isArray(ids)) {
+            errors.push(`${label} ${field} debe ser una lista`);
+            return;
+          }
+          if (new Set(ids).size !== ids.length) errors.push(`${label} ${field} tiene duplicados`);
+          ids.forEach((id) => {
+            if (!peopleIds.has(id)) errors.push(`${label} ${field} incluye un id desconocido`);
+          });
+        };
+        if (item.type === "product") checkIds(item.eatenBy, "eatenBy");
+        if (item.type === "shared") checkIds(item.splitWith, "splitWith");
+        if (item.type === "single") {
+          if (!peopleIds.has(item.ownerId)) errors.push(`${label} ownerId no existe`);
+          if (item.paidById && !peopleIds.has(item.paidById)) errors.push(`${label} paidById no existe`);
+        }
+      });
+    }
+    if (raw.paidMode !== undefined && !PAID_MODES.has(raw.paidMode)) errors.push("paidMode no es valido");
+    if (raw.paymentMethod !== undefined && !PAYMENT_METHODS.has(raw.paymentMethod)) errors.push("paymentMethod no es valido");
+    if (raw.paidById && !peopleIds.has(raw.paidById)) errors.push("paidById no existe");
+    if (raw.cardPayerId && !peopleIds.has(raw.cardPayerId)) errors.push("cardPayerId no existe");
+    return errors;
+  }
+
+  function isSelfContribution(expense) {
+    return expense.restaurantPaidBy === "__self__"
+      || (
+        expense.source === "restaurant"
+        && Array.isArray(expense.splitWith)
+        && expense.splitWith.length === 1
+        && expense.splitWith[0] === expense.paidBy
+      );
+  }
+
+  function claraStateToClaramente(raw) {
+    const canonical = normalizeCanonicalState(raw);
+    const people = canonical.people.map((person) => ({
+      id: person.id,
+      name: person.name,
+      isGuest: person.isGuest
+    }));
+    const selfPaid = canonical.expenses.length > 0 && canonical.expenses.every(isSelfContribution);
+    if (selfPaid) {
+      return {
+        people,
+        items: canonical.expenses.map((expense) => ({
+          id: expense.id,
+          type: "single",
+          name: expense.description,
+          amountCents: expense.amountCents,
+          ownerId: expense.paidBy,
+          paidById: expense.paidBy
+        })),
+        paidMode: "none",
+        paymentMethod: "",
+        cardPayerId: "",
+        paidById: ""
+      };
+    }
+    const payers = Array.from(new Set(canonical.expenses.map((expense) => expense.paidBy)));
+    const paidMode = payers.length > 1 ? "multiple" : (canonical.expenses.length ? "single" : "");
+    return {
+      people,
+      items: canonical.expenses.map((expense) => {
+        if (expense.splitWith.length === 1) {
+          return {
+            id: expense.id,
+            type: "single",
+            name: expense.description,
+            amountCents: expense.amountCents,
+            ownerId: expense.splitWith[0],
+            paidById: expense.paidBy
+          };
+        }
+        return {
+          id: expense.id,
+          type: "product",
+          name: expense.description,
+          amountCents: expense.amountCents,
+          eatenBy: expense.splitWith.slice(),
+          paidById: expense.paidBy
+        };
+      }),
+      paidMode,
+      paymentMethod: paidMode === "single" || paidMode === "multiple" ? "cash" : "",
+      cardPayerId: "",
+      paidById: paidMode === "single" ? payers[0] || "" : ""
+    };
+  }
+
   return {
     calculateClaramenteContributions,
     calculateClaramenteSettlements,
     calculateClaramenteCardSettlements,
     calculateSettlements,
     claramenteToClaraState,
+    claraStateToClaramente,
+    normalizeCanonicalState,
+    normalizeClaramenteState,
+    validateCanonicalState,
+    validateClaramenteState,
     distribute,
     settleBalances
   };

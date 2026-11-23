@@ -16,16 +16,42 @@
     result: "5 de 5"
   };
 
-  const state = {
-    screen: "start",
-    itemMode: "product",
+  // Domain is the only state that may be persisted or mapped.
+  // screen, itemMode and editing are interface state and must stay out of storage.
+  const domain = {
     people: [],
     items: [],
     paidMode: "",
     paymentMethod: "",
     cardPayerId: "",
-    paidById: "",
+    paidById: ""
+  };
+
+  const ui = {
+    screen: "start",
+    itemMode: "product",
     editing: null
+  };
+
+  const state = {
+    get screen() { return ui.screen; },
+    set screen(value) { ui.screen = value; },
+    get itemMode() { return ui.itemMode; },
+    set itemMode(value) { ui.itemMode = value; },
+    get editing() { return ui.editing; },
+    set editing(value) { ui.editing = value; },
+    get people() { return domain.people; },
+    set people(value) { domain.people = value; },
+    get items() { return domain.items; },
+    set items(value) { domain.items = value; },
+    get paidMode() { return domain.paidMode; },
+    set paidMode(value) { domain.paidMode = value; },
+    get paymentMethod() { return domain.paymentMethod; },
+    set paymentMethod(value) { domain.paymentMethod = value; },
+    get cardPayerId() { return domain.cardPayerId; },
+    set cardPayerId(value) { domain.cardPayerId = value; },
+    get paidById() { return domain.paidById; },
+    set paidById(value) { domain.paidById = value; }
   };
 
   const els = {
