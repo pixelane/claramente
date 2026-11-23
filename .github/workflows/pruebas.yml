@@ -1,0 +1,37 @@
+name: pruebas
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  contratos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Contratos de unidad
+        run: |
+          set -e
+          for test in tests/unit/*.test.js; do
+            node "$test"
+          done
+
+  navegador:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar Playwright
+        run: npm install --no-save --no-package-lock playwright@1.64.0
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Flujos del navegador
+        run: npx playwright test tests/e2e/critical-flows.spec.js
+        env:
+          CI: "true"
