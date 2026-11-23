@@ -50,6 +50,13 @@ function run() {
     hash: "",
     width: 1280
   }), "claramente.html");
+
+  assert.equal(getShellRedirect({
+    pathname: "/index.html",
+    search: "",
+    hash: "#list1:cuenta",
+    width: 1280
+  }), "claramente.html");
 }
 
 run();

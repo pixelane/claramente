@@ -99,6 +99,8 @@
   let demoMode = false;
   let syncChoice = { action: "write", reason: "missing" };
 
+  const TRIAL_CODE = "list1:AwMDAwMDAwMDAwMD.XtzIajRMfHhYLCovn3XTLo9VjIP98bZKDbPiwoK6MMrEwh9DudeHMKvnO2no7N0eXAZ6oKu4HwdzSUDCHACqBpaOXlqVhDV_KMTKq6-1rVffkOsFVQ87RJ9z-PUdYUxn5_gS69kKU2kBkAorA5d4yem3UzQEtq5ti6HF8Rkpc7_P1I6pUjXNBfF4Y4JBMLkeoQTzurDnmi0unxiYvGb_vTNQ9WIpTq9SPqTLxQLpuE8fyN3oQ-JP5o3n1KihJYkLFSa_jS9ZdErgcHst8M0VvT4zIbKtyQhNiEmbKkIZtsSCNaDTQbjZ5oiXTd0jC-c-sTLY1x3vlpOgY7n6G20wk6s8GXG4N0kH-C1N-XyL7pWxhxq1pWaN0Kp8XSzG_bD58Bk1:BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc";
+
   const iconPaths = {
     back: '<path d="M15 18l-6-6 6-6"/><path d="M9 12h12"/>',
     edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
@@ -125,14 +127,21 @@
       savedCanonical = window.ClaraStore.loadCanonicalAsGuided(window.localStorage);
       syncChoice = window.ClaraStore.syncDecision(window.localStorage, savedGuided || { updatedAt: 0 });
     }
-    await openIncoming();
-    if (new URLSearchParams(window.location.search).get("prueba") === "qr" && state.screen !== "guest") {
+    const trial = new URLSearchParams(window.location.search).get("prueba") === "qr";
+    if (trial && window.ClaraExchange) {
       demoMode = true;
       beginSession(demoBill());
       state.screen = "result";
-      await prepareListCode();
+      ui.qrChunks = window.ClaraExchange.splitQr(TRIAL_CODE);
+      ui.qrIndex = 0;
+    } else {
+      await openIncoming();
     }
-    const nextUrl = state.screen === "guest" ? window.location.href : window.location.pathname + window.location.search;
+    const nextUrl = demoMode
+      ? `${window.location.pathname}${window.location.search}#${TRIAL_CODE}`
+      : state.screen === "guest"
+        ? window.location.href
+        : window.location.pathname + window.location.search;
     window.history.replaceState({ claramenteScreen: state.screen }, "", nextUrl);
     window.addEventListener("popstate", handlePopState);
     els.backBtn.addEventListener("click", goBack);
@@ -564,7 +573,7 @@
   function renderResult() {
     const result = calculateResult();
     return `
-      ${renderHeader(demoMode ? "Cuenta de prueba" : "Listo, asi queda la cuenta", demoMode ? "Muestra este codigo al otro celular. Esta cuenta no se guarda." : result.help)}
+      ${renderHeader(demoMode ? "Cuenta de prueba" : "Listo, asi queda la cuenta", demoMode ? "Este enlace ya trae la cuenta. El otro celular debe abrir el mismo enlace." : result.help)}
       <section class="list">
         ${result.cards.map(renderResultCard).join("")}
       </section>
@@ -958,7 +967,7 @@
     if (button.hasAttribute("data-copy-summary")) return copySummary();
     if (button.hasAttribute("data-share-list")) return shareList();
     if (button.hasAttribute("data-prueba")) {
-      window.location.assign("?prueba=qr");
+      window.location.assign(`${window.location.pathname}?prueba=qr#${TRIAL_CODE}`);
       return;
     }
     if (button.dataset.guestPerson) {

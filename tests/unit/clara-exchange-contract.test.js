@@ -1,4 +1,6 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const exchange = require("../../clara-exchange.js");
 
 function host() {
@@ -79,6 +81,12 @@ async function run() {
   const flipped = chunks[0].replace(/.$/, (char) => (char === "a" ? "b" : "a"));
   await assert.rejects(exchange.openCode(exchange.joinQr([flipped].concat(chunks.slice(1)))));
   assert.throws(() => exchange.joinQr([chunks[0], chunks[0].replace(/:([^:]+)$/, ":otra")].concat(chunks.slice(1))), /QR_CONFLICT/);
+  const trial = fs.readFileSync(path.join(__dirname, "..", "..", "claramente.js"), "utf8").match(/const TRIAL_CODE = "([^"]+)"/);
+  assert.ok(trial, "the trial link should carry the sealed account");
+  const trialList = await exchange.openCode(trial[1]);
+  assert.equal(trialList.billId, "mesa_prueba");
+  assert.deepEqual(trialList.items.map((item) => item.name), ["Tacos", "Pizza"]);
+  assert.equal(exchange.joinQr(exchange.splitQr(trial[1])), trial[1]);
 }
 
 run().catch((error) => {

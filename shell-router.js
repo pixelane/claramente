@@ -21,7 +21,9 @@
     const forcedShell = params.get("shell");
 
     if (["claramente-full", "clara", "claramente"].includes(forcedShell)) return "";
-    if (params.get("prueba") === "qr") return page === "claramente.html" ? "" : "claramente.html";
+    if (params.get("prueba") === "qr" || hash.startsWith("#list1:") || hash.startsWith("#part1:") || hash.startsWith("#qr1:")) {
+      return page === "claramente.html" ? "" : "claramente.html";
+    }
     if (hash && page === "index.html") return "";
     if (page === "index.html" && width > 0 && width <= MOBILE_MAX_WIDTH) return "claramente.html";
     if (page === "claramente.html" && width > MOBILE_MAX_WIDTH) return "index.html";
